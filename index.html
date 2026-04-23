@@ -2,33 +2,21 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Springer Dispo - Final Edition</title>
+    <title>Springer Dispo - Professional</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
         :root { --blue: #2563eb; --green: #16a34a; --bg: #f1f5f9; --card-bg: #ffffff; --text: #1e293b; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); padding: 15px; margin: 0; color: var(--text); }
-        
-        .card { background: var(--card-bg); padding: 20px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 15px; border: 1px solid #e2e8f0; }
-        h2 { margin: 0 0 15px 0; font-size: 1.2rem; color: #0f172a; display: flex; align-items: center; gap: 8px; }
-        
-        label { display: block; font-size: 0.8rem; font-weight: 600; color: #64748b; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.025em; }
-        input { width: 100%; padding: 14px; margin-bottom: 15px; border: 1px solid #cbd5e1; border-radius: 12px; font-size: 16px; box-sizing: border-box; background: #f8fafc; }
-        input:focus { border-color: var(--blue); outline: none; background: #fff; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
-        
-        .btn { width: 100%; padding: 16px; border: none; border-radius: 12px; font-weight: 700; font-size: 16px; cursor: pointer; transition: all 0.2s; }
-        .btn-save { background: #64748b; color: white; padding: 10px; font-size: 0.85rem; margin-top: -5px; }
-        .btn-calc { background: var(--green); color: white; margin-top: 10px; box-shadow: 0 10px 15px -3px rgba(22, 163, 74, 0.2); }
-        .btn:active { transform: scale(0.98); opacity: 0.9; }
-
-        #status { text-align: center; color: var(--blue); margin: 20px 0; font-weight: 600; font-size: 0.95rem; }
-        
-        .res-item { background: white; padding: 16px; border-radius: 14px; margin-bottom: 10px; border-left: 6px solid var(--blue); display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .best { border-left-color: var(--green); background: #f0fdf4; border-top-right-radius: 14px; border-bottom-right-radius: 14px; }
-        
-        .driver-name { font-weight: 700; font-size: 1rem; color: #0f172a; }
-        .driver-loc { font-size: 0.75rem; color: #64748b; margin-top: 2px; }
-        .dist-pill { background: #e2e8f0; padding: 6px 12px; border-radius: 20px; font-weight: 800; font-size: 0.9rem; color: #1e293b; white-space: nowrap; }
-        .best .dist-pill { background: var(--green); color: white; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); padding: 15px; margin: 0; color: var(--text); }
+        .card { background: var(--card-bg); padding: 20px; border-radius: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 15px; border: 1px solid #e2e8f0; }
+        h2 { margin: 0 0 15px 0; font-size: 1.2rem; }
+        label { display: block; font-size: 0.8rem; font-weight: 600; color: #64748b; margin-bottom: 6px; text-transform: uppercase; }
+        input { width: 100%; padding: 14px; margin-bottom: 15px; border: 1px solid #cbd5e1; border-radius: 12px; font-size: 16px; box-sizing: border-box; }
+        .btn { width: 100%; padding: 16px; border: none; border-radius: 12px; font-weight: 700; font-size: 16px; cursor: pointer; }
+        .btn-calc { background: var(--green); color: white; margin-top: 10px; }
+        #status { text-align: center; color: var(--blue); margin: 20px 0; font-weight: 600; }
+        .res-item { background: white; padding: 16px; border-radius: 14px; margin-bottom: 10px; border-left: 6px solid var(--blue); display: flex; justify-content: space-between; align-items: center; }
+        .best { border-left-color: var(--green); background: #f0fdf4; }
+        .dist-pill { background: #e2e8f0; padding: 6px 12px; border-radius: 20px; font-weight: 800; }
     </style>
 </head>
 <body>
@@ -36,26 +24,21 @@
     <div class="card">
         <h2>🔑 Setup</h2>
         <label>Google API Key</label>
-        <input type="password" id="apiKey" placeholder="Key einfügen">
-        <button class="btn btn-save" onclick="saveKey()">SCHLÜSSEL SPEICHERN</button>
+        <input type="password" id="apiKey" placeholder="Key hier einfügen">
+        <button class="btn" style="background:#64748b; color:white;" onclick="saveAndReload()">KEY SPEICHERN & STARTEN</button>
     </div>
 
     <div class="card">
         <h2>📍 Tour-Eingabe</h2>
-        <label>Abholort (Kind / PLZ)</label>
-        <input id="startPos" placeholder="z.B. 30659" type="text">
-        
-        <label>Zielort (Schule / PLZ)</label>
-        <input id="schoolPos" placeholder="z.B. 30177" type="text">
-        
-        <button class="btn btn-calc" onclick="run()">🚀 SPRINGER RANKING ERSTELLEN</button>
+        <input id="startPos" placeholder="Abholort (PLZ)">
+        <input id="schoolPos" placeholder="Zielort (Schule)">
+        <button class="btn btn-calc" onclick="calculateDistances()">🚀 RANKING ERSTELLEN</button>
     </div>
 
-    <div id="status">Bereit für neue Tour</div>
+    <div id="status">Warte auf API Key...</div>
     <div id="results"></div>
 
 <script>
-// Die komplette Master-Liste mit allen 18 Springern
 const staticDrivers = [
     { name: "Aschenbach André", plz: "30989", ort: "Gehrden" },
     { name: "Ohm Lars", plz: "30559", ort: "Hannover Anderten" },
@@ -77,70 +60,74 @@ const staticDrivers = [
     { name: "Beka Jonel", plz: "31275", ort: "Lehrte" }
 ];
 
-window.onload = () => {
-    const saved = localStorage.getItem("dispo_master_v15");
-    if(saved) document.getElementById("apiKey").value = saved;
-};
-
-function saveKey() {
-    const val = document.getElementById("apiKey").value.trim();
-    localStorage.setItem("dispo_master_v15", val);
-    alert("Key wurde auf diesem Gerät gespeichert!");
-}
-
-async function getDistance(from, to) {
-    const key = localStorage.getItem("dispo_master_v15");
-    // Suche in ganz Deutschland (flexibel für Garbsen, Wunstorf etc.)
-    const url = `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${encodeURIComponent(from + ", Germany")}&destinations=${encodeURIComponent(to + ", Germany")}&key=${key}`;
-    
-    try {
-        const res = await fetch(url);
-        const data = await res.json();
-        if(data.status === "OK" && data.rows[0].elements[0].status === "OK") {
-            return data.rows[0].elements[0].distance.value;
-        }
-        return null;
-    } catch(e) { return null; }
-}
-
-async function run() {
-    const start = document.getElementById("startPos").value.trim();
-    const school = document.getElementById("schoolPos").value.trim();
-    const resDiv = document.getElementById("results");
-    const stat = document.getElementById("status");
-    const key = localStorage.getItem("dispo_master_v15");
-
-    if(!start || !school) return alert("Bitte Abholort und Schule eingeben!");
-    if(!key) return alert("Bitte zuerst den Google Key speichern!");
-
-    resDiv.innerHTML = "";
-    stat.innerText = "⏳ Berechnung läuft...";
-
-    let results = [];
-    for(let d of staticDrivers) {
-        stat.innerText = `Prüfe: ${d.name}...`;
-        const d1 = await getDistance(`${d.plz} ${d.ort}`, start);
-        const d2 = await getDistance(school, `${d.plz} ${d.ort}`);
-        
-        if(d1 !== null && d2 !== null) {
-            results.push({ name: d.name, km: (d1 + d2) / 1000, loc: `${d.plz} ${d.ort}` });
-        }
+function saveAndReload() {
+    const key = document.getElementById("apiKey").value.trim();
+    if(key) {
+        localStorage.setItem("gmaps_key", key);
+        location.reload();
     }
+}
 
-    results.sort((a,b) => a.km - b.km);
-    stat.innerText = results.length > 0 ? "✅ Beste Springer gefunden:" : "❌ Fehler (CORS Add-on aktiv?)";
+// Lade die Google API offiziell
+const savedKey = localStorage.getItem("gmaps_key");
+if (savedKey) {
+    document.getElementById("apiKey").value = savedKey;
+    document.getElementById("status").innerText = "API bereit. Tour eingeben.";
+    const script = document.createElement('script');
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${savedKey}&libraries=geometry`;
+    document.head.appendChild(script);
+}
 
-    results.forEach((r, i) => {
-        const item = document.createElement("div");
-        item.className = "res-item" + (i === 0 ? " best" : "");
-        item.innerHTML = `
-            <div>
-                <div class="driver-name">${i + 1}. ${r.name}</div>
-                <div class="driver-loc">${r.loc}</div>
-            </div>
-            <div class="dist-pill">${r.km.toFixed(1)} km</div>
-        `;
-        resDiv.appendChild(item);
+function calculateDistances() {
+    const start = document.getElementById("startPos").value;
+    const school = document.getElementById("schoolPos").value;
+    const stat = document.getElementById("status");
+    const resDiv = document.getElementById("results");
+
+    if (!window.google) return alert("API noch nicht geladen oder Key falsch!");
+
+    stat.innerText = "Berechne...";
+    resDiv.innerHTML = "";
+    
+    const service = new google.maps.DistanceMatrixService();
+    const driverAddresses = staticDrivers.map(d => `${d.plz} ${d.ort}, Germany`);
+
+    // Anfrage 1: Fahrer -> Start
+    service.getDistanceMatrix({
+        origins: driverAddresses,
+        destinations: [start],
+        travelMode: 'DRIVING'
+    }, (response1, status1) => {
+        if (status1 !== "OK") return stat.innerText = "Fehler: " + status1;
+
+        // Anfrage 2: Schule -> Fahrer
+        service.getDistanceMatrix({
+            origins: [school],
+            destinations: driverAddresses,
+            travelMode: 'DRIVING'
+        }, (response2, status2) => {
+            if (status2 !== "OK") return stat.innerText = "Fehler: " + status2;
+
+            let results = [];
+            staticDrivers.forEach((driver, i) => {
+                const d1 = response1.rows[i].elements[0].distance?.value || 0;
+                const d2 = response2.rows[0].elements[i].distance?.value || 0;
+                results.push({
+                    name: driver.name,
+                    km: (d1 + d2) / 1000,
+                    loc: `${driver.plz} ${driver.ort}`
+                });
+            });
+
+            results.sort((a, b) => a.km - b.km);
+            stat.innerText = "Ergebnis:";
+            results.forEach((r, i) => {
+                const item = document.createElement("div");
+                item.className = "res-item" + (i === 0 ? " best" : "");
+                item.innerHTML = `<div><b>${i+1}. ${r.name}</b><br><small>${r.loc}</small></div><div class="dist-pill">${r.km.toFixed(1)} km</div>`;
+                resDiv.appendChild(item);
+            });
+        });
     });
 }
 </script>
