@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>Springer Dispo Tool PRO</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body { font-family: Arial; background:#f5f5f5; padding:15px;}
+.card { background:white; padding:15px; margin-top:10px; border-radius:10px;}
+input, button { width:100%; padding:10px; margin-top:5px;}
+.dropzone { border:2px dashed #999; padding:20px; text-align:center; margin-top:10px;}
+.best { background:#d4edda; padding:5px; border-radius:5px;}
+</style>
+</head>
+
+<body>
+
+<h2>🚚 Springer Dispo Tool PRO</h2>
+
+<div class="card">
+<h3>🔑 API Key</h3>
+<input id="apiKey">
+<button onclick="saveApi()">Speichern</button>
+</div>
+
+<div class="card">
+<h3>📍 Tour</h3>
+<input id="start" placeholder="1. Kind">
+<input id="school" placeholder="Schule">
+</div>
+
+<div class="card">
+<h3>📦 Import</h3>
+<input type="file" id="fileInput">
+</div>
+
+<div class="card">
+<button onclick="calculate()">🚀 Berechnen</button>
+</div>
+
+<div id="drivers"></div>
+<div id="result"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+<script>
+
+let drivers = JSON.parse(localStorage.getItem("drivers")) || [];
+let apiKey = localStorage.getItem("apiKey") || "";
+
+document.getElementById("apiKey").value = apiKey;
+
+function saveApi(){
+  localStorage.setItem("apiKey", document.getElementById("apiKey").value);
+  alert("API gespeichert");
+}
+
+// -------- IMPORT --------
+document.getElementById("fileInput").addEventListener("change", e=>{
+  let file = e.target.files[0];
+  let reader = new FileReader();
+
+  reader.onload = function(evt){
+    let data = new Uint8Array(evt.target.result);
+    let workbook = XLSX.read(data, {type:"array"});
+    let sheet = workbook.Sheets[workbook.SheetNames[0]];
+    let json = XLSX.utils.sheet_to_json(sheet, {header:1});
+
+    drivers = [];
+
+    for(let i=1;i<json.length;i++){
+      let row = json[i];
+      if(!row || !row[0]) continue;
+
+      drivers.push({
+        name: row[0],
+        address: (row[1] || "") + (row[2] ? ", " + row[2] : "")
+      });
+    }
+
+    localStorage.setItem("drivers", JSON.stringify(drivers));
+    render();
+  };
+
+  reader.readAsArrayBuffer(file);
+});
+
+// -------- RENDER --------
+function render(){
+  let html = "<div class='card'><h3>👥 Fahrer</h3>";
+  drivers.forEach(d=>{
+    html += `<p>${d.name} - ${d.address}</p>`;
+  });
+  html += "</div>";
+  document.getElementById("drivers").innerHTML = html;
+}
+
+render();
+
+// -------- DISTANCE --------
+async function getDistance(origin, destination){
+
+  let key = localStorage.getItem("apiKey");
+
+  let url = `https://api.allorigins.win/raw?url=${encodeURIComponent(
+    `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${origin}&destinations=${destination}&key=${key}`
+  )}`;
+
+  let res = await fetch(url);
+  let data = await res.json();
+
+  return data.rows[0].elements[0].distance.value;
+}
+
+// -------- CALCULATE --------
+async function calculate(){
+
+  let start = document.getElementById("start").value;
+  let school = document.getElementById("school").value;
+
+  let results = [];
+
+  for(let d of drivers){
+
+    let toStart = await getDistance(d.address, start);
+    let fromSchool = await getDistance(school, d.address);
+
+    let score = toStart + fromSchool;
+
+    results.push({
+      name: d.name,
+      toStart,
+      fromSchool,
+      score
+    });
+  }
+
+  results.sort((a,b)=>a.score-b.score);
+
+  let html = "<div class='card'><h3>🏆 Ergebnis</h3>";
+
+  results.forEach((r,i)=>{
+    html += `<p class="${i===0?'best':''}">
+      ${i+1}. ${r.name}<br>
+      Start: ${Math.round(r.toStart/1000)} km | Rückweg: ${Math.round(r.fromSchool/1000)} km
+    </p>`;
+  });
+
+  html += "</div>";
+
+  document.getElementById("result").innerHTML = html;
+}
+
+</script>
+
+</body>
+</html>
