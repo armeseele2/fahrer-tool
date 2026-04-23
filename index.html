@@ -1,158 +1,148 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-<meta charset="UTF-8">
-<title>Springer Dispo Tool PRO</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <title>Springer Dispo - Final Edition</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <style>
+        :root { --blue: #2563eb; --green: #16a34a; --bg: #f1f5f9; --card-bg: #ffffff; --text: #1e293b; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); padding: 15px; margin: 0; color: var(--text); }
+        
+        .card { background: var(--card-bg); padding: 20px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 15px; border: 1px solid #e2e8f0; }
+        h2 { margin: 0 0 15px 0; font-size: 1.2rem; color: #0f172a; display: flex; align-items: center; gap: 8px; }
+        
+        label { display: block; font-size: 0.8rem; font-weight: 600; color: #64748b; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.025em; }
+        input { width: 100%; padding: 14px; margin-bottom: 15px; border: 1px solid #cbd5e1; border-radius: 12px; font-size: 16px; box-sizing: border-box; background: #f8fafc; }
+        input:focus { border-color: var(--blue); outline: none; background: #fff; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
+        
+        .btn { width: 100%; padding: 16px; border: none; border-radius: 12px; font-weight: 700; font-size: 16px; cursor: pointer; transition: all 0.2s; }
+        .btn-save { background: #64748b; color: white; padding: 10px; font-size: 0.85rem; margin-top: -5px; }
+        .btn-calc { background: var(--green); color: white; margin-top: 10px; box-shadow: 0 10px 15px -3px rgba(22, 163, 74, 0.2); }
+        .btn:active { transform: scale(0.98); opacity: 0.9; }
 
-<style>
-body { font-family: Arial; background:#f5f5f5; padding:15px;}
-.card { background:white; padding:15px; margin-top:10px; border-radius:10px;}
-input, button { width:100%; padding:10px; margin-top:5px;}
-.dropzone { border:2px dashed #999; padding:20px; text-align:center; margin-top:10px;}
-.best { background:#d4edda; padding:5px; border-radius:5px;}
-</style>
+        #status { text-align: center; color: var(--blue); margin: 20px 0; font-weight: 600; font-size: 0.95rem; }
+        
+        .res-item { background: white; padding: 16px; border-radius: 14px; margin-bottom: 10px; border-left: 6px solid var(--blue); display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .best { border-left-color: var(--green); background: #f0fdf4; border-top-right-radius: 14px; border-bottom-right-radius: 14px; }
+        
+        .driver-name { font-weight: 700; font-size: 1rem; color: #0f172a; }
+        .driver-loc { font-size: 0.75rem; color: #64748b; margin-top: 2px; }
+        .dist-pill { background: #e2e8f0; padding: 6px 12px; border-radius: 20px; font-weight: 800; font-size: 0.9rem; color: #1e293b; white-space: nowrap; }
+        .best .dist-pill { background: var(--green); color: white; }
+    </style>
 </head>
-
 <body>
 
-<h2>🚚 Springer Dispo Tool PRO</h2>
+    <div class="card">
+        <h2>🔑 Setup</h2>
+        <label>Google API Key</label>
+        <input type="password" id="apiKey" placeholder="Key einfügen">
+        <button class="btn btn-save" onclick="saveKey()">SCHLÜSSEL SPEICHERN</button>
+    </div>
 
-<div class="card">
-<h3>🔑 API Key</h3>
-<input id="apiKey">
-<button onclick="saveApi()">Speichern</button>
-</div>
+    <div class="card">
+        <h2>📍 Tour-Eingabe</h2>
+        <label>Abholort (Kind / PLZ)</label>
+        <input id="startPos" placeholder="z.B. 30659" type="text">
+        
+        <label>Zielort (Schule / PLZ)</label>
+        <input id="schoolPos" placeholder="z.B. 30177" type="text">
+        
+        <button class="btn btn-calc" onclick="run()">🚀 SPRINGER RANKING ERSTELLEN</button>
+    </div>
 
-<div class="card">
-<h3>📍 Tour</h3>
-<input id="start" placeholder="1. Kind">
-<input id="school" placeholder="Schule">
-</div>
-
-<div class="card">
-<h3>📦 Import</h3>
-<input type="file" id="fileInput">
-</div>
-
-<div class="card">
-<button onclick="calculate()">🚀 Berechnen</button>
-</div>
-
-<div id="drivers"></div>
-<div id="result"></div>
-
-<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    <div id="status">Bereit für neue Tour</div>
+    <div id="results"></div>
 
 <script>
+// Die komplette Master-Liste mit allen 18 Springern
+const staticDrivers = [
+    { name: "Aschenbach André", plz: "30989", ort: "Gehrden" },
+    { name: "Ohm Lars", plz: "30559", ort: "Hannover Anderten" },
+    { name: "Bachmeier Reinhard", plz: "30659", ort: "Hannover Bothfeld" },
+    { name: "Isfahan Mozaffaey Hamid", plz: "30519", ort: "Hannover Döhren Wülfel" },
+    { name: "Otto Alexander", plz: "30173", ort: "Hannover Südstadt" },
+    { name: "Türkel Tuncer", plz: "30161", ort: "Hannover Vahrenwald" },
+    { name: "Schrader Harald", plz: "30880", ort: "Laatzen" },
+    { name: "Neubauer Michael", plz: "30853", ort: "Langenhagen" },
+    { name: "Ferkau Eckart", plz: "30851", ort: "Langenhagen" },
+    { name: "Bethmann Ekkehard", plz: "31535", ort: "Neustadt-Helstorf" },
+    { name: "Hauer Frank", plz: "30900", ort: "Wedemark Oegenbostel" },
+    { name: "Kruse Jens Roland", plz: "31275", ort: "Lehrte" },
+    { name: "Grimpe Dirk", plz: "30823", ort: "Garbsen" },
+    { name: "Häge Klaus Dieter", plz: "30519", ort: "Döhren" },
+    { name: "Von Treskow Albrecht", plz: "30659", ort: "Bothfeld" },
+    { name: "Caruso Guiseppe", plz: "30880", ort: "Laatzen" },
+    { name: "Popescu Viorel", plz: "30827", ort: "Garbsen" },
+    { name: "Beka Jonel", plz: "31275", ort: "Lehrte" }
+];
 
-let drivers = JSON.parse(localStorage.getItem("drivers")) || [];
-let apiKey = localStorage.getItem("apiKey") || "";
+window.onload = () => {
+    const saved = localStorage.getItem("dispo_master_v15");
+    if(saved) document.getElementById("apiKey").value = saved;
+};
 
-document.getElementById("apiKey").value = apiKey;
-
-function saveApi(){
-  localStorage.setItem("apiKey", document.getElementById("apiKey").value);
-  alert("API gespeichert");
+function saveKey() {
+    const val = document.getElementById("apiKey").value.trim();
+    localStorage.setItem("dispo_master_v15", val);
+    alert("Key wurde auf diesem Gerät gespeichert!");
 }
 
-// -------- IMPORT --------
-document.getElementById("fileInput").addEventListener("change", e=>{
-  let file = e.target.files[0];
-  let reader = new FileReader();
+async function getDistance(from, to) {
+    const key = localStorage.getItem("dispo_master_v15");
+    // Suche in ganz Deutschland (flexibel für Garbsen, Wunstorf etc.)
+    const url = `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${encodeURIComponent(from + ", Germany")}&destinations=${encodeURIComponent(to + ", Germany")}&key=${key}`;
+    
+    try {
+        const res = await fetch(url);
+        const data = await res.json();
+        if(data.status === "OK" && data.rows[0].elements[0].status === "OK") {
+            return data.rows[0].elements[0].distance.value;
+        }
+        return null;
+    } catch(e) { return null; }
+}
 
-  reader.onload = function(evt){
-    let data = new Uint8Array(evt.target.result);
-    let workbook = XLSX.read(data, {type:"array"});
-    let sheet = workbook.Sheets[workbook.SheetNames[0]];
-    let json = XLSX.utils.sheet_to_json(sheet, {header:1});
+async function run() {
+    const start = document.getElementById("startPos").value.trim();
+    const school = document.getElementById("schoolPos").value.trim();
+    const resDiv = document.getElementById("results");
+    const stat = document.getElementById("status");
+    const key = localStorage.getItem("dispo_master_v15");
 
-    drivers = [];
+    if(!start || !school) return alert("Bitte Abholort und Schule eingeben!");
+    if(!key) return alert("Bitte zuerst den Google Key speichern!");
 
-    for(let i=1;i<json.length;i++){
-      let row = json[i];
-      if(!row || !row[0]) continue;
+    resDiv.innerHTML = "";
+    stat.innerText = "⏳ Berechnung läuft...";
 
-      drivers.push({
-        name: row[0],
-        address: (row[1] || "") + (row[2] ? ", " + row[2] : "")
-      });
+    let results = [];
+    for(let d of staticDrivers) {
+        stat.innerText = `Prüfe: ${d.name}...`;
+        const d1 = await getDistance(`${d.plz} ${d.ort}`, start);
+        const d2 = await getDistance(school, `${d.plz} ${d.ort}`);
+        
+        if(d1 !== null && d2 !== null) {
+            results.push({ name: d.name, km: (d1 + d2) / 1000, loc: `${d.plz} ${d.ort}` });
+        }
     }
 
-    localStorage.setItem("drivers", JSON.stringify(drivers));
-    render();
-  };
+    results.sort((a,b) => a.km - b.km);
+    stat.innerText = results.length > 0 ? "✅ Beste Springer gefunden:" : "❌ Fehler (CORS Add-on aktiv?)";
 
-  reader.readAsArrayBuffer(file);
-});
-
-// -------- RENDER --------
-function render(){
-  let html = "<div class='card'><h3>👥 Fahrer</h3>";
-  drivers.forEach(d=>{
-    html += `<p>${d.name} - ${d.address}</p>`;
-  });
-  html += "</div>";
-  document.getElementById("drivers").innerHTML = html;
-}
-
-render();
-
-// -------- DISTANCE --------
-async function getDistance(origin, destination){
-
-  let key = localStorage.getItem("apiKey");
-
-  let url = `https://api.allorigins.win/raw?url=${encodeURIComponent(
-    `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${origin}&destinations=${destination}&key=${key}`
-  )}`;
-
-  let res = await fetch(url);
-  let data = await res.json();
-
-  return data.rows[0].elements[0].distance.value;
-}
-
-// -------- CALCULATE --------
-async function calculate(){
-
-  let start = document.getElementById("start").value;
-  let school = document.getElementById("school").value;
-
-  let results = [];
-
-  for(let d of drivers){
-
-    let toStart = await getDistance(d.address, start);
-    let fromSchool = await getDistance(school, d.address);
-
-    let score = toStart + fromSchool;
-
-    results.push({
-      name: d.name,
-      toStart,
-      fromSchool,
-      score
+    results.forEach((r, i) => {
+        const item = document.createElement("div");
+        item.className = "res-item" + (i === 0 ? " best" : "");
+        item.innerHTML = `
+            <div>
+                <div class="driver-name">${i + 1}. ${r.name}</div>
+                <div class="driver-loc">${r.loc}</div>
+            </div>
+            <div class="dist-pill">${r.km.toFixed(1)} km</div>
+        `;
+        resDiv.appendChild(item);
     });
-  }
-
-  results.sort((a,b)=>a.score-b.score);
-
-  let html = "<div class='card'><h3>🏆 Ergebnis</h3>";
-
-  results.forEach((r,i)=>{
-    html += `<p class="${i===0?'best':''}">
-      ${i+1}. ${r.name}<br>
-      Start: ${Math.round(r.toStart/1000)} km | Rückweg: ${Math.round(r.fromSchool/1000)} km
-    </p>`;
-  });
-
-  html += "</div>";
-
-  document.getElementById("result").innerHTML = html;
 }
-
 </script>
-
 </body>
 </html>
