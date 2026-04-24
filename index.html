@@ -2,27 +2,26 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Springer-Dispo 8.7 (Firefox-Direkt)</title>
+    <title>Springer-Dispo 9.0 (Detektiv)</title>
     <style>
         :root { --p: #007bff; --s: #28a745; --d: #dc3545; --bg: #f4f7f6; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); padding: 20px; color: #333; }
         .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 600px; margin: auto; }
         label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.85rem; color: #666; }
-        input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 15px; box-sizing: border-box; font-size: 1rem; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 15px; box-sizing: border-box; }
         .btn-main { width: 100%; padding: 16px; background: var(--p); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1.1rem; }
-        .log-box { background: #000; color: #0f0; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 0.8rem; margin-bottom: 20px; min-height: 50px; white-space: pre-wrap; border: 1px solid #333; }
+        .log-box { background: #000; color: #0f0; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 0.8rem; margin-bottom: 20px; min-height: 50px; white-space: pre-wrap; }
         .driver { background: white; padding: 12px; border-radius: 10px; margin-top: 8px; display: flex; justify-content: space-between; align-items: center; border-left: 6px solid #ccc; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .is-busy { border-left-color: var(--d); background: #fff5f5; }
         .is-free { border-left-color: var(--s); }
-        .setup-area { text-align: center; margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; }
-        .setup-area a { color: #888; text-decoration: none; font-size: 0.8rem; }
+        .setup-area { text-align: center; margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; font-size: 0.8rem; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2 style="text-align:center; color:var(--p); margin-top:0;">Springer-Dispo 8.7</h2>
-    <div id="statusLog" class="log-box">Status: Bereit für Firefox-Scan.</div>
+    <h2 style="text-align:center; color:var(--p); margin-top:0;">Springer-Dispo 9.0</h2>
+    <div id="statusLog" class="log-box">Bereit für Analyse.</div>
 
     <label>Einrichtung wählen</label>
     <select id="schoolSelect" onchange="document.getElementById('destPlz').value = this.value">
@@ -41,11 +40,11 @@
         <div style="flex:1;"><label>Bis</label><input type="date" id="dateTo" value="2026-04-24"></div>
     </div>
 
-    <button class="btn-main" onclick="run()">Verfügbarkeit prüfen</button>
+    <button class="btn-main" onclick="run()">Analyse & Prüfung starten</button>
 
     <div class="setup-area">
-        <p style="color:var(--s); font-weight:bold; margin-bottom:10px;">CORS Everywhere in Firefox muss AN sein!</p>
-        <a href="#" onclick="setup()">Keys & IDs konfigurieren</a>
+        <p style="color:var(--s); font-weight:bold;">Firefox CORS Everywhere muss GRÜN sein!</p>
+        <a href="#" onclick="setup()">Keys & IDs anpassen</a>
     </div>
 </div>
 
@@ -73,16 +72,21 @@
         const log = document.getElementById('statusLog');
         const resDiv = document.getElementById('results');
 
-        if(!kKey || !kId) return alert("Setup fehlt!");
+        if(!kKey || !kId) return alert("Setup unvollständig!");
         
-        log.innerHTML = "🚀 Suche Termine...";
+        log.innerHTML = `🔍 Rufe Kalender ${kId} ab...`;
         try {
             const url = `https://api.kalender.digital/public/event?calendarId=${kId}&startDate=${from}&endDate=${to}`;
             const resp = await fetch(url, { headers: { 'X-API-KEY': kKey.trim() } });
             const data = await resp.json();
+            
             const events = data.events || [];
             
-            log.innerHTML = `✅ ${events.length} Kalender-Einträge geladen.\nBerechne Entfernungen...`;
+            if(events.length === 0) {
+                log.innerHTML = `⚠️ Warnung: Kalender ${kId} lieferte 0 Termine für diesen Zeitraum.\nBitte ID prüfen!`;
+            } else {
+                log.innerHTML = `✅ ${events.length} Termine gefunden.\nVerarbeite Daten...`;
+            }
 
             const service = new google.maps.DistanceMatrixService();
             service.getDistanceMatrix({
@@ -91,32 +95,27 @@
                 travelMode: 'DRIVING'
             }, (mResp, status) => {
                 if(status !== 'OK') return;
-
                 let ranking = drivers.map((d, i) => {
                     const lastName = d.name.split(' ').pop().toLowerCase();
-                    // Sucht jetzt im Titel UND in den Unterkalendern
                     const event = events.find(ev => {
                         const inTitle = ev.title.toLowerCase().includes(lastName);
                         const inSub = ev.subCalendars && ev.subCalendars.some(sc => sc.toLowerCase().includes(lastName));
                         return inTitle || inSub;
                     });
-
                     const distT = mResp.rows[i].elements[0].distance.text;
                     const distV = mResp.rows[i].elements[0].distance.value;
                     return { ...d, distT, distV, isBusy: !!event, eName: event ? event.title : '' };
                 });
-
                 ranking.sort((a,b) => a.isBusy - b.isBusy || a.distV - b.distV);
                 resDiv.innerHTML = "";
                 ranking.forEach(d => {
-                    resDiv.innerHTML += `
-                        <div class="driver ${d.isBusy ? 'is-busy' : 'is-free'}">
-                            <div><strong>${d.name} (${d.distT})</strong>${d.isBusy ? `<br><small style="color:red">${d.eName}</small>` : ''}</div>
-                            <span style="font-weight:bold">${d.isBusy ? '🔴 BELEGT' : '🟢 FREI'}</span>
-                        </div>`;
+                    resDiv.innerHTML += `<div class="driver ${d.isBusy ? 'is-busy' : 'is-free'}">
+                        <div><strong>${d.name} (${d.distT})</strong>${d.isBusy ? `<br><small style="color:red">${d.eName}</small>` : ''}</div>
+                        <span style="font-weight:bold">${d.isBusy ? '🔴 BELEGT' : '🟢 FREI'}</span>
+                    </div>`;
                 });
             });
-        } catch(e) { log.innerHTML = "❌ Fehler beim Laden. CORS Everywhere aktiv?"; }
+        } catch(e) { log.innerHTML = "❌ Kritischer Fehler. Ist die Firefox-Erweiterung wirklich an?"; }
     }
 
     (function() {
