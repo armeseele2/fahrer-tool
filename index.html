@@ -2,109 +2,83 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Springer-Dispo-Zentrale 4.9 🚀</title>
+    <title>Springer-Dispo 5.0</title>
     <style>
-        :root { --primary: #007bff; --success: #28a745; --danger: #dc3545; --bg: #f4f7f6; }
+        :root { --p: #007bff; --s: #28a745; --d: #dc3545; --bg: #f4f7f6; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); padding: 20px; }
-        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 650px; margin: auto; }
-        label { display: block; margin: 12px 0 5px; font-weight: bold; }
-        input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 10px; }
-        .date-row { display: flex; gap: 10px; }
-        .date-row div { flex: 1; }
-        .btn-main { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1.1rem; }
-        .driver-card { background: white; padding: 15px; border-radius: 10px; margin-top: 10px; display: flex; justify-content: space-between; align-items: center; border-left: 6px solid #ccc; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        .is-free { border-left-color: var(--success); }
-        .is-busy { border-left-color: var(--danger); background: #fff5f5; }
-        .status-badge { padding: 5px 10px; border-radius: 5px; font-weight: bold; }
-        .free { background: #d4edda; color: #155724; }
-        .busy { background: #f8d7da; color: #721c24; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 600px; margin: auto; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 10px; box-sizing: border-box; }
+        .btn-main { width: 100%; padding: 16px; background: var(--p); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .driver { background: white; padding: 15px; border-radius: 10px; margin-top: 10px; display: flex; justify-content: space-between; align-items: center; border-left: 6px solid #ccc; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .busy { border-left-color: var(--d); background: #fff5f5; }
+        .free { border-left-color: var(--s); }
+        .status { font-weight: bold; padding: 4px 8px; border-radius: 4px; }
+        .st-busy { background: #f8d7da; color: #721c24; }
+        .st-free { background: #d4edda; color: #155724; }
+        .btn-book { background: var(--s); color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; margin-top: 5px; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2 style="text-align:center; color:var(--primary);">Springer-Dispo-Zentrale 4.9</h2>
+    <h2 style="text-align:center; color:var(--p);">Springer-Dispo 5.0</h2>
     
-    <label>Einrichtung auswählen</label>
-    <select id="schoolSelect" onchange="document.getElementById('destinationPlz').value = this.value">
-        <option value="">-- Bitte wählen --</option>
-        <option value="30655">Albert-Liebmann-Schule (30655)</option>
-        <option value="30165">Lebenshilfe Büttnerstraße (30165)</option>
-        <option value="30449">Wilhelm-Schade-Schule (30449)</option>
-        <option value="30900">Kindergarten Domino (30900)</option>
-    </select>
-
     <label>Ziel-PLZ</label>
-    <input type="text" id="destinationPlz" value="30177">
+    <input type="text" id="destPlz" value="30177">
 
-    <div class="date-row">
-        <div><label>Von</label><input type="date" id="dateFrom" value="2026-04-24"></div>
-        <div><label>Bis</label><input type="date" id="dateTo" value="2026-04-24"></div>
+    <div style="display:flex; gap:10px;">
+        <div style="flex:1;"><label>Von</label><input type="date" id="dateFrom" value="2026-04-24"></div>
+        <div style="flex:1;"><label>Bis</label><input type="date" id="dateTo" value="2026-04-24"></div>
     </div>
 
-    <button class="btn-main" onclick="runCheck()">Anfrage gemäß API-Vorgabe senden</button>
-    
-    <p style="text-align:center; margin-top:15px;">
-        <small><a href="#" onclick="setup()" style="color:#888;">⚙️ IDs & API-Keys verwalten</a></small>
-    </p>
+    <button class="btn-main" onclick="run()">Doku-konforme Abfrage starten</button>
+    <p style="text-align:center;"><small><a href="#" onclick="setup()">⚙️ API-Keys & Kalender-ID korrigieren</a></small></p>
 </div>
 
-<div id="results" style="max-width: 650px; margin: 20px auto;"></div>
+<div id="results" style="max-width: 600px; margin: 20px auto;"></div>
 
 <script>
     const drivers = [
-        { name: "Türkel Tuncer", plz: "30161" },
-        { name: "Von Treskow Albrecht", plz: "30175" },
-        { name: "Otto Alexander", plz: "30173" },
-        { name: "Ferkau Eckart", plz: "30851" },
-        { name: "Ohm Lars", plz: "30559" },
-        { name: "Bachmeier Reinhard", plz: "30659" },
-        { name: "Isfahan Mozaffaey Hamid", plz: "30519" },
-        { name: "Schrader Harald", plz: "30880" },
-        { name: "Aschenbach André", plz: "30989" },
-        { name: "Neubauer Michael", plz: "30853" }
+        { name: "Türkel Tuncer", plz: "30161" }, { name: "Von Treskow Albrecht", plz: "30175" },
+        { name: "Otto Alexander", plz: "30173" }, { name: "Ferkau Eckart", plz: "30851" },
+        { name: "Ohm Lars", plz: "30559" }, { name: "Bachmeier Reinhard", plz: "30659" },
+        { name: "Isfahan Mozaffaey Hamid", plz: "30519" }, { name: "Schrader Harald", plz: "30880" },
+        { name: "Aschenbach André", plz: "30989" }, { name: "Neubauer Michael", plz: "30853" }
     ];
 
     function setup() {
-        const kId = prompt("1. Kalender-ID (aus deinem Admin-Link):", localStorage.getItem('kId') || "");
-        const kKey = prompt("2. Dein API-KEY (von Kalender Digital):", localStorage.getItem('kKey') || "");
-        const gKey = prompt("3. Google Maps Key:", localStorage.getItem('gKey') || "");
-        
-        if(kId) localStorage.setItem('kId', kId);
-        if(kKey) localStorage.setItem('kKey', kKey);
-        if(gKey) localStorage.setItem('gKey', gKey);
+        localStorage.setItem('kId', prompt("Kalender-ID:", localStorage.getItem('kId') || ""));
+        localStorage.setItem('kKey', prompt("X-API-KEY:", localStorage.getItem('kKey') || ""));
+        localStorage.setItem('gKey', prompt("Google API Key:", localStorage.getItem('gKey') || ""));
         location.reload();
     }
 
-    async function runCheck() {
-        const kId = localStorage.getItem('kId');
-        const kKey = localStorage.getItem('kKey');
-        const gKey = localStorage.getItem('gKey');
-        const from = document.getElementById('dateFrom').value;
-        const to = document.getElementById('dateTo').value;
-        const dest = document.getElementById('destinationPlz').value;
+    async function run() {
+        const id = localStorage.getItem('kId'), key = localStorage.getItem('kKey'), g = localStorage.getItem('gKey');
+        const from = document.getElementById('dateFrom').value, to = document.getElementById('dateTo').value;
         const resDiv = document.getElementById('results');
-
-        if(!kId || !kKey) { alert("Bitte Kalender-ID und API-Key in den Einstellungen hinterlegen!"); return; }
-        resDiv.innerHTML = "Lade Daten nach Doku-Vorgabe...";
+        
+        if(!id || !key) { alert("Daten fehlen!"); return; }
+        resDiv.innerHTML = "Prüfe Kalender...";
 
         try {
-            // 1. Termine abrufen (Strikt nach deiner curl-Vorgabe)
-            const apiUrl = `https://api.kalender.digital/public/event?calendarId=${kId}&startDate=${from}&endDate=${to}&timeZone=Europe/Berlin`;
-            const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(apiUrl)}`;
+            // URL exakt nach curl-Vorgabe: Kalender-ID gehört NICHT in die Query-Params, wenn Header genutzt wird
+            const url = `https://api.kalender.digital/public/event?startDate=${from}&endDate=${to}&timeZone=Europe/Berlin`;
+            const proxy = `https://corsproxy.io/?${encodeURIComponent(url)}`;
             
-            const resp = await fetch(proxyUrl, {
+            const resp = await fetch(proxy, {
                 method: 'GET',
-                headers: { 'X-API-KEY': kKey } // Das ist der entscheidende Teil aus deiner Doku!
+                headers: { 'X-API-KEY': key.trim() } // Header laut Doku
             });
 
-            const data = await resp.json();
-            const calendarText = JSON.stringify(data).toLowerCase();
+            if(!resp.ok) throw new Error("API-Fehler " + resp.status);
+            const events = await resp.json();
+            const text = JSON.stringify(events).toLowerCase();
 
-            // 2. Google Maps für Entfernungen
+            // Google Maps
             if (typeof google === 'undefined') {
                 const s = document.createElement('script');
-                s.src = `https://maps.googleapis.com/maps/api/js?key=${gKey}&libraries=geometry`;
+                s.src = `https://maps.googleapis.com/maps/api/js?key=${g}`;
                 document.head.appendChild(s);
                 await new Promise(r => s.onload = r);
             }
@@ -112,28 +86,26 @@
             const service = new google.maps.DistanceMatrixService();
             service.getDistanceMatrix({
                 origins: drivers.map(d => d.plz),
-                destinations: [dest],
+                destinations: [document.getElementById('destPlz').value],
                 travelMode: 'DRIVING'
             }, (mResp, status) => {
                 let ranking = drivers.map((d, i) => {
                     const lastName = d.name.split(' ').pop().toLowerCase();
-                    const isBusy = calendarText.includes(lastName);
+                    const isBusy = text.includes(lastName);
                     const dist = mResp.rows[i].elements[0].distance;
-                    return { ...d, distText: dist.text, distVal: dist.value, isBusy };
+                    return { ...d, distT: dist.text, distV: dist.value, isBusy };
                 });
 
-                ranking.sort((a,b) => a.isBusy - b.isBusy || a.distVal - b.distVal);
-                
+                ranking.sort((a,b) => a.isBusy - b.isBusy || a.distV - b.distV);
                 resDiv.innerHTML = "";
                 ranking.forEach(d => {
                     resDiv.innerHTML += `
-                        <div class="driver-card ${d.isBusy ? 'is-busy' : 'is-free'}">
+                        <div class="driver ${d.isBusy ? 'busy' : 'free'}">
                             <div>
-                                <strong>${d.name}</strong><br>
-                                <small>${d.distText} von ${d.plz}</small><br>
-                                ${!d.isBusy ? `<button class="btn-main" style="padding:5px 10px; width:auto; font-size:0.8rem; margin-top:5px; background:#28a745;">Buchen</button>` : ''}
+                                <strong>${d.name}</strong><br><small>${d.distT} entfernt</small><br>
+                                ${!d.isBusy ? `<button class="btn-book" onclick="alert('Buchung...')">Jetzt buchen</button>` : ''}
                             </div>
-                            <span class="status-badge ${d.isBusy ? 'busy' : 'free'}">${d.isBusy ? 'BESETZT' : 'FREI'}</span>
+                            <span class="status ${d.isBusy ? 'st-busy' : 'st-free'}">${d.isBusy ? 'BESETZT' : 'FREI'}</span>
                         </div>`;
                 });
             });
