@@ -2,36 +2,39 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Springer-Dispo 3.1 (Deep Scan Mode)</title>
+    <title>Springer-Dispo 3.2 (Full Restore)</title>
     <style>
         :root { --primary: #007bff; --success: #28a745; --danger: #dc3545; --bg: #f4f7f6; }
         body { font-family: sans-serif; background: var(--bg); padding: 20px; }
         .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 600px; margin: auto; }
-        input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; }
+        input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
         button { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
-        .driver-row { background: white; padding: 15px; border-radius: 8px; margin-top: 10px; display: flex; justify-content: space-between; align-items: center; border-left: 5px solid #ddd; }
+        .driver-row { background: white; padding: 15px; border-radius: 8px; margin-top: 10px; display: flex; justify-content: space-between; align-items: center; border-left: 5px solid #ddd; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .is-free { border-left-color: var(--success); }
-        .is-busy { border-left-color: var(--danger); opacity: 0.7; background: #fff5f5; }
+        .is-busy { border-left-color: var(--danger); opacity: 0.8; background: #fff5f5; }
         .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; }
         .free { background: #d4edda; color: #155724; }
         .busy { background: #f8d7da; color: #721c24; }
+        .settings-btn { background: #6c757d; font-size: 0.7rem; margin-top: 10px; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2>Springer-Dispo 3.1 🚀</h2>
+    <h2>Springer-Dispo 3.2 🚀</h2>
     <label>Ziel-PLZ</label>
-    <input type="text" id="destinationPlz" value="30177">
+    <input type="text" id="destinationPlz" value="30177" placeholder="z.B. 30177">
+    
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-        <input type="date" id="startDate">
-        <input type="date" id="endDate">
+        <div><label>Von</label><input type="date" id="startDate"></div>
+        <div><label>Bis</label><input type="date" id="endDate"></div>
     </div>
-    <button onclick="generateRanking()">Kalender Deep-Scan starten</button>
-    <button style="margin-top:10px; background:#6c757d; font-size:0.7rem;" onclick="setupAdmin()">⚙️ API-Daten prüfen</button>
+    
+    <button onclick="generateRanking()">Verfügbarkeit prüfen & Ranking</button>
+    <button class="settings-btn" onclick="setupKeys()">⚙️ API-Keys & Kalender-ID verwalten</button>
 </div>
 
-<div id="results"></div>
+<div id="results" style="max-width: 600px; margin: 20px auto;"></div>
 
 <script>
     const drivers = [
@@ -41,53 +44,73 @@
         { name: "Otto Alexander", plz: "30173" },
         { name: "Schrader Harald", plz: "30880" },
         { name: "Aschenbach André", plz: "30989" },
-        { name: "Ohm Lars", plz: "30559" }
+        { name: "Ohm Lars", plz: "30559" },
+        { name: "Neubauer Michael", plz: "30853" },
+        { name: "Ferkau Eckart", plz: "30851" }
     ];
 
     document.getElementById('startDate').value = "2026-04-24";
     document.getElementById('endDate').value = "2026-04-24";
 
-    function setupAdmin() {
-        localStorage.setItem('kalender_id', prompt("Kalender-ID:", localStorage.getItem('kalender_id') || ""));
-        localStorage.setItem('kalender_key', prompt("Admin-API-Key:", localStorage.getItem('kalender_key') || ""));
-        localStorage.setItem('google_key', prompt("Google Maps Key:", localStorage.getItem('google_key') || ""));
+    function setupKeys() {
+        const kId = prompt("Kalender-ID:", localStorage.getItem('kalender_id') || "");
+        const kKey = prompt("Kalender API-Key:", localStorage.getItem('kalender_key') || "");
+        const gKey = prompt("Google Maps API-Key:", localStorage.getItem('google_key') || "");
+        if(kId) localStorage.setItem('kalender_id', kId);
+        if(kKey) localStorage.setItem('kalender_key', kKey);
+        if(gKey) localStorage.setItem('google_key', gKey);
         location.reload();
     }
+
+    // Lädt Google Maps dynamisch mit deinem gespeicherten Key
+    (function loadGoogle() {
+        const key = localStorage.getItem('google_key');
+        if(key) {
+            const s = document.createElement('script');
+            s.src = `https://maps.googleapis.com/maps/api/js?key=${key}&libraries=geometry`;
+            document.head.appendChild(s);
+        }
+    })();
 
     async function generateRanking() {
         const kId = localStorage.getItem('kalender_id');
         const kKey = localStorage.getItem('kalender_key');
         const start = document.getElementById('startDate').value;
         const end = document.getElementById('endDate').value;
+        const dest = document.getElementById('destinationPlz').value;
         const resDiv = document.getElementById('results');
-        resDiv.innerHTML = "Durchsuche alle Unterkalender...";
+
+        if(!kId || !kKey) { alert("Bitte erst Keys eintragen!"); return; }
+        resDiv.innerHTML = "<p style='text-align:center;'>Kalender-Check läuft...</p>";
 
         try {
-            // WICHTIG: Wir hängen &includeSubcalendars=1 an, damit die API ALLES schickt
+            // Abfrage inklusive aller Unterkalender
             const kUrl = `https://corsproxy.io/?${encodeURIComponent(`https://api.kalender.digital/public/event?calendarId=${kId}&startDate=${start}&endDate=${end}&includeSubcalendars=1`)}`;
             const resp = await fetch(kUrl, { headers: { 'X-API-KEY': kKey } });
             const data = await resp.json();
             
-            // Wir erstellen eine Liste aller Namen, die heute irgendwo einen Termin haben
-            const bookedNames = (data.events || []).map(e => 
-                (e.title + " " + (e.subcalendarName || "")).toLowerCase()
-            );
+            // Wir sammeln alle Namen aus den Kalendereinträgen
+            const busyText = JSON.stringify(data.events || []).toLowerCase();
 
-            // Google Maps Abfrage
             const service = new google.maps.DistanceMatrixService();
             service.getDistanceMatrix({
                 origins: drivers.map(d => d.plz),
-                destinations: [document.getElementById('destinationPlz').value],
+                destinations: [dest],
                 travelMode: 'DRIVING'
             }, (mResp, status) => {
+                if(status !== "OK") { resDiv.innerHTML = "Google Maps Fehler! Key prüfen."; return; }
+                
                 let ranking = drivers.map((d, i) => {
                     const lastName = d.name.split(' ')[0].toLowerCase();
-                    // Prüfen, ob der Nachname in irgendeinem gebuchten Termin vorkommt
-                    const isBusy = bookedNames.some(b => b.includes(lastName));
-                    return { ...d, dist: mResp.rows[i].elements[0].distance.text, isBusy };
+                    const isBusy = busyText.includes(lastName);
+                    const dist = mResp.rows[i].elements[0].distance.text;
+                    const val = mResp.rows[i].elements[0].distance.value;
+                    return { ...d, dist, val, isBusy };
                 });
 
-                ranking.sort((a,b) => a.isBusy - b.isBusy);
+                // Sortierung: Freie zuerst, dann nach Entfernung
+                ranking.sort((a,b) => a.isBusy - b.isBusy || a.val - b.val);
+
                 resDiv.innerHTML = "";
                 ranking.forEach(d => {
                     resDiv.innerHTML += `
@@ -97,9 +120,8 @@
                         </div>`;
                 });
             });
-        } catch(e) { resDiv.innerHTML = "Fehler!"; }
+        } catch(e) { resDiv.innerHTML = "Fehler bei der Abfrage."; }
     }
 </script>
-<script src="https://maps.googleapis.com/maps/api/js?key=DEIN_GOOGLE_KEY&libraries=geometry"></script>
 </body>
 </html>
