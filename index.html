@@ -2,36 +2,52 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Springer-Dispo 6.1</title>
+    <title>Springer-Dispo 6.3 🚛</title>
     <style>
         :root { --p: #007bff; --s: #28a745; --d: #dc3545; --bg: #f4f7f6; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); padding: 20px; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); padding: 20px; color: #333; }
         .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 600px; margin: auto; }
-        input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 10px; box-sizing: border-box; }
-        .btn-main { width: 100%; padding: 16px; background: var(--p); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1.1rem; }
+        label { display: block; margin: 12px 0 5px; font-weight: bold; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 10px; box-sizing: border-box; font-size: 1rem; }
+        .btn-main { width: 100%; padding: 16px; background: var(--p); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1.1rem; transition: background 0.2s; }
+        .btn-main:hover { background: #0056b3; }
         .driver { background: white; padding: 15px; border-radius: 10px; margin-top: 10px; display: flex; justify-content: space-between; align-items: center; border-left: 6px solid #ccc; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
         .is-busy { border-left-color: var(--d); background: #fff5f5; }
         .is-free { border-left-color: var(--s); }
-        .log-box { background: #333; color: #0f0; padding: 10px; border-radius: 8px; font-family: monospace; font-size: 0.8rem; margin-bottom: 15px; }
+        .log-box { background: #333; color: #0f0; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 0.8rem; margin-bottom: 15px; white-space: pre-wrap; border: 1px solid #555; }
+        .status-badge { font-weight: bold; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2 style="text-align:center; color:var(--p); margin-top:0;">Springer-Dispo 6.1</h2>
+    <h2 style="text-align:center; color:var(--p); margin-top:0;">Springer-Dispo 6.3</h2>
     
-    <div id="statusLog" class="log-box">Status: Bereit</div>
+    <div id="statusLog" class="log-box">System bereit. Warte auf Eingabe...</div>
 
-    <label>Ziel-PLZ</label>
-    <input type="text" id="destPlz" value="30177">
+    <label>Ziel-Einrichtung auswählen</label>
+    <select id="schoolSelect" onchange="document.getElementById('destPlz').value = this.value">
+        <option value="">-- Bitte wählen --</option>
+        <option value="30655">Albert-Liebmann-Schule (30655)</option>
+        <option value="30165">Lebenshilfe Büttnerstraße (30165)</option>
+        <option value="30449">Wilhelm-Schade-Schule (30449)</option>
+        <option value="30900">Kindergarten Domino (30900)</option>
+        <option value="30177">Test-Standort (30177)</option>
+    </select>
+
+    <label>Ziel-PLZ (automatisch)</label>
+    <input type="text" id="destPlz" value="30177" placeholder="PLZ eingeben">
 
     <div style="display:flex; gap:10px;">
-        <div style="flex:1;"><label>Von</label><input type="date" id="dateFrom" value="2026-04-24"></div>
-        <div style="flex:1;"><label>Bis</label><input type="date" id="dateTo" value="2026-04-24"></div>
+        <div style="flex:1;"><label>Einsatz von</label><input type="date" id="dateFrom" value="2026-04-24"></div>
+        <div style="flex:1;"><label>Einsatz bis</label><input type="date" id="dateTo" value="2026-04-24"></div>
     </div>
 
-    <button class="btn-main" onclick="run()">Abfrage starten</button>
-    <p style="text-align:center;"><small><a href="#" onclick="setup()" style="color:#888;">⚙️ API-Keys verwalten</a></small></p>
+    <button class="btn-main" onclick="run()">Verfügbarkeit prüfen</button>
+    
+    <p style="text-align:center; margin-top: 20px;">
+        <small><a href="#" onclick="setup()" style="color:#888; text-decoration: none;">⚙️ API-Keys konfigurieren</a></small>
+    </p>
 </div>
 
 <div id="results" style="max-width: 600px; margin: 20px auto;"></div>
@@ -46,65 +62,99 @@
     ];
 
     function setup() {
-        localStorage.setItem('kKey', prompt("X-API-KEY eingeben:"));
-        localStorage.setItem('gKey', prompt("Google API Key eingeben:"));
+        const k = prompt("1. Kalender X-API-KEY:", localStorage.getItem('kKey') || "");
+        const g = prompt("2. Google API Key:", localStorage.getItem('gKey') || "");
+        if(k) localStorage.setItem('kKey', k);
+        if(g) localStorage.setItem('gKey', g);
         location.reload();
     }
 
     async function run() {
         const kKey = localStorage.getItem('kKey'), gKey = localStorage.getItem('gKey');
-        const from = document.getElementById('dateFrom').value, to = document.getElementById('dateTo').value;
+        const rawFrom = document.getElementById('dateFrom').value;
+        const rawTo = document.getElementById('dateTo').value;
         const log = document.getElementById('statusLog');
         const resDiv = document.getElementById('results');
 
-        if(!kKey) { alert("Bitte API-Key im Setup hinterlegen!"); return; }
-        log.innerHTML = "📡 Abfrage nach curl-Standard...";
+        if(!kKey || !gKey) { alert("Bitte erst API-Keys im Setup hinterlegen!"); return; }
+
+        // Hilfsfunktion für das korrekte Datum JJJJ-MM-TT
+        const formatDate = (dateStr) => {
+            const d = new Date(dateStr);
+            return d.toISOString().split('T')[0];
+        };
 
         try {
-            // URL EXAKT WIE IN DEINER DOKU (ohne calendarId)
-            const url = `https://api.kalender.digital/public/event?startDate=${from}&endDate=${to}&timeZone=Europe/Berlin`;
+            const start = formatDate(rawFrom);
+            const end = formatDate(rawTo);
+            
+            log.innerHTML = `📡 Abfrage läuft...\nZeitraum: ${start} bis ${end}`;
+            resDiv.innerHTML = "Lade Google Maps Daten...";
+
+            const url = `https://api.kalender.digital/public/event?startDate=${start}&endDate=${end}&timeZone=Europe/Berlin`;
             const proxy = `https://corsproxy.io/?${encodeURIComponent(url)}`;
             
             const resp = await fetch(proxy, {
                 method: 'GET',
-                headers: { 'X-API-KEY': kKey.trim() }
+                headers: { 'X-API-KEY': kKey.trim(), 'Accept': 'application/json' }
             });
 
-            if(!resp.ok) throw new Error("Fehler " + resp.status);
+            if(!resp.ok) throw new Error("API meldet Fehler: " + resp.status);
+            
             const data = await resp.json();
             const events = data.events || [];
             
-            log.innerHTML = `✅ ${events.length} Termine gefunden.`;
+            log.innerHTML += `\n✅ ${events.length} Termine gefunden.`;
 
-            // Google Distance Matrix
             const service = new google.maps.DistanceMatrixService();
             service.getDistanceMatrix({
                 origins: drivers.map(d => d.plz),
                 destinations: [document.getElementById('destPlz').value],
                 travelMode: 'DRIVING'
             }, (mResp, status) => {
+                if(status !== 'OK') { 
+                    log.innerHTML += `\n❌ Google Fehler: ${status}`;
+                    return; 
+                }
+
                 let ranking = drivers.map((d, i) => {
                     const lastName = d.name.split(' ').pop().toLowerCase();
-                    // Deep Scan im Event-Objekt
+                    // Durchsucht den gesamten Termin-Inhalt nach dem Nachnamen
                     const isBusy = events.some(ev => JSON.stringify(ev).toLowerCase().includes(lastName));
-                    const dist = mResp.rows[i].elements[0].distance;
-                    return { ...d, distT: dist.text, distV: dist.value, isBusy };
+                    const element = mResp.rows[i].elements[0];
+                    const distT = element.status === "OK" ? element.distance.text : "N/A";
+                    const distV = element.status === "OK" ? element.distance.value : 999999;
+
+                    return { ...d, distT, distV, isBusy };
                 });
 
+                // Sortierung: Erst nach Verfügbarkeit (Freie zuerst), dann nach Entfernung
                 ranking.sort((a,b) => a.isBusy - b.isBusy || a.distV - b.distV);
+                
                 resDiv.innerHTML = "";
                 ranking.forEach(d => {
                     resDiv.innerHTML += `
                         <div class="driver ${d.isBusy ? 'is-busy' : 'is-free'}">
-                            <div><strong>${d.name}</strong><br><small>${d.distT} (${d.plz})</small></div>
-                            <span style="font-weight:bold">${d.isBusy ? '🔴 BESETZT' : '🟢 FREI'}</span>
+                            <div>
+                                <strong>${d.name}</strong><br>
+                                <small>${d.distT} entfernt (${d.plz})</small>
+                            </div>
+                            <div style="text-align:right">
+                                <span class="status-badge" style="color:${d.isBusy ? '#dc3545' : '#28a745'}">
+                                    ${d.isBusy ? '● BESETZT' : '● FREI'}
+                                </span>
+                            </div>
                         </div>`;
                 });
             });
 
-        } catch(e) { log.innerHTML = "❌ Fehler: " + e.message; }
+        } catch(e) { 
+            log.innerHTML += `\n❌ Fehler: ${e.message}`; 
+            resDiv.innerHTML = "";
+        }
     }
 
+    // Google Maps API dynamisch laden
     (function() {
         const key = localStorage.getItem('gKey');
         if(key) {
