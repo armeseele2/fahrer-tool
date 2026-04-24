@@ -2,30 +2,45 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Springer-Dispo 6.4</title>
+    <title>Springer-Dispo 6.5</title>
     <style>
-        :root { --p: #007bff; --bg: #f4f7f6; }
+        :root { --p: #007bff; --s: #28a745; --d: #dc3545; --bg: #f4f7f6; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); padding: 20px; }
         .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 600px; margin: auto; }
-        .log-box { background: #000; color: #0f0; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 0.8rem; margin-bottom: 15px; min-height: 80px; }
-        .btn-main { width: 100%; padding: 16px; background: var(--p); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        label { display: block; margin: 10px 0 5px; font-weight: bold; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 10px; box-sizing: border-box; }
+        .btn-main { width: 100%; padding: 16px; background: var(--p); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1rem; }
+        .log-box { background: #000; color: #0f0; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 0.8rem; margin-bottom: 15px; white-space: pre-wrap; }
+        .driver { background: white; padding: 15px; border-radius: 10px; margin-top: 10px; display: flex; justify-content: space-between; border-left: 6px solid #ccc; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .is-busy { border-left-color: var(--d); }
+        .is-free { border-left-color: var(--s); }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2 style="text-align:center; color:var(--p);">Springer-Dispo 6.4</h2>
+    <h2 style="text-align:center; color:var(--p); margin-top:0;">Springer-Dispo 6.5</h2>
     
-    <div id="statusLog" class="log-box">Status: Test-Modus aktiv</div>
+    <div id="statusLog" class="log-box">Status: Bereit</div>
 
     <label>Ziel-Einrichtung</label>
-    <select id="schoolSelect" style="width:100%; padding:10px; margin-bottom:15px;">
+    <select id="schoolSelect" onchange="document.getElementById('destPlz').value = this.value">
+        <option value="">-- Bitte wählen --</option>
         <option value="30655">Albert-Liebmann-Schule (30655)</option>
+        <option value="30165">Lebenshilfe Büttnerstraße (30165)</option>
+        <option value="30449">Wilhelm-Schade-Schule (30449)</option>
+        <option value="30900">Kindergarten Domino (30900)</option>
         <option value="30177">Test-Standort (30177)</option>
     </select>
+    <input type="text" id="destPlz" value="30177">
 
-    <button class="btn-main" onclick="run()">Abfrage mit neuem Proxy starten</button>
-    <p style="text-align:center;"><small><a href="#" onclick="setup()">⚙️ Keys verwalten</a></small></p>
+    <div style="display:flex; gap:10px;">
+        <div style="flex:1;"><label>Von</label><input type="date" id="dateFrom" value="2026-04-24"></div>
+        <div style="flex:1;"><label>Bis</label><input type="date" id="dateTo" value="2026-04-24"></div>
+    </div>
+
+    <button class="btn-main" onclick="run()">Verfügbarkeit & Ranking prüfen</button>
+    <p style="text-align:center;"><small><a href="#" onclick="setup()" style="color:#888;">⚙️ API-Keys & Kalender-ID verwalten</a></small></p>
 </div>
 
 <div id="results" style="max-width: 600px; margin: 20px auto;"></div>
@@ -40,64 +55,60 @@
     ];
 
     function setup() {
-        localStorage.setItem('kKey', prompt("X-API-KEY:"));
-        localStorage.setItem('gKey', prompt("Google API Key:"));
+        localStorage.setItem('kKey', prompt("1. X-API-KEY:", localStorage.getItem('kKey') || ""));
+        localStorage.setItem('kId', prompt("2. Kalender-ID (NUR EINE zum Testen!):", localStorage.getItem('kId') || ""));
+        localStorage.setItem('gKey', prompt("3. Google API Key:", localStorage.getItem('gKey') || ""));
         location.reload();
     }
 
     async function run() {
-        const kKey = localStorage.getItem('kKey'), gKey = localStorage.getItem('gKey');
+        const kKey = localStorage.getItem('kKey'), kId = localStorage.getItem('kId'), gKey = localStorage.getItem('gKey');
+        const from = document.getElementById('dateFrom').value, to = document.getElementById('dateTo').value;
         const log = document.getElementById('statusLog');
-        if(!kKey) return alert("Key fehlt!");
+        const resDiv = document.getElementById('results');
 
-        log.innerHTML = "📡 Teste Verbindung über AllOrigins...";
+        if(!kKey || !kId) { alert("Bitte Setup ausfüllen!"); return; }
+        log.innerHTML = "📡 Starte Abfrage...";
 
         try {
-            // Wir nutzen diesmal ein festes Datum für den Test (Jahr-Monat-Tag)
-            const targetDate = "2026-04-24";
-            const apiUrl = `https://api.kalender.digital/public/event?startDate=${targetDate}&endDate=${targetDate}&timeZone=Europe/Berlin`;
+            // Wir nutzen jetzt wieder die Kalender-ID, da "0 Termine" oft an fehlender ID liegt
+            const apiUrl = `https://api.kalender.digital/public/event?calendarId=${kId}&startDate=${from}&endDate=${to}&timeZone=Europe/Berlin`;
             
-            // NEUER PROXY: allorigins umgeht oft Probleme, die corsproxy hat
-            const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(apiUrl)}`;
+            // NEUER PROXY: ThingProxy ist oft stabiler für API-Header
+            const proxyUrl = `https://thingproxy.freeboard.io/fetch/${apiUrl}`;
             
             const resp = await fetch(proxyUrl, {
+                method: 'GET',
                 headers: { 'X-API-KEY': kKey.trim() }
             });
 
-            const wrapper = await resp.json();
-            // AllOrigins packt die Antwort in ein "contents" Feld
-            const data = JSON.parse(wrapper.contents);
+            const data = await resp.json();
             const events = data.events || [];
-            
-            log.innerHTML = `✅ Erfolg!\nDatum: ${targetDate}\nEvents: ${events.length}`;
+            log.innerHTML = `✅ Verbindung steht!\nEvents gefunden: ${events.length}`;
 
-            // Distance Matrix & Ranking (wie gehabt)
             const service = new google.maps.DistanceMatrixService();
             service.getDistanceMatrix({
                 origins: drivers.map(d => d.plz),
-                destinations: [document.getElementById('schoolSelect').value],
+                destinations: [document.getElementById('destPlz').value],
                 travelMode: 'DRIVING'
             }, (mResp, status) => {
                 let ranking = drivers.map((d, i) => {
                     const lastName = d.name.split(' ').pop().toLowerCase();
                     const isBusy = events.some(ev => JSON.stringify(ev).toLowerCase().includes(lastName));
-                    const distText = mResp.rows[i].elements[0].distance.text;
-                    const distVal = mResp.rows[i].elements[0].distance.value;
-                    return { ...d, distT: distText, distV: distVal, isBusy };
+                    const dist = mResp.rows[i].elements[0].distance.text;
+                    const val = mResp.rows[i].elements[0].distance.value;
+                    return { ...d, distT: dist, distV: val, isBusy };
                 });
 
                 ranking.sort((a,b) => a.isBusy - b.isBusy || a.distV - b.distV);
-                const resDiv = document.getElementById('results');
                 resDiv.innerHTML = "";
                 ranking.forEach(d => {
-                    resDiv.innerHTML += `
-                        <div style="background:white; padding:10px; margin-top:5px; border-left:5px solid ${d.isBusy ? 'red' : 'green'}; display:flex; justify-content:space-between;">
-                            <span>${d.name} (${d.distT})</span>
-                            <strong>${d.isBusy ? 'BESETZT' : 'FREI'}</strong>
-                        </div>`;
+                    resDiv.innerHTML += `<div class="driver ${d.isBusy ? 'is-busy' : 'is-free'}">
+                        <div><strong>${d.name}</strong><br><small>${d.distT} entfernt</small></div>
+                        <span style="font-weight:bold">${d.isBusy ? '🔴 BESETZT' : '🟢 FREI'}</span>
+                    </div>`;
                 });
             });
-
         } catch(e) { log.innerHTML = "❌ Fehler: " + e.message; }
     }
 
