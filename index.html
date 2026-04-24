@@ -1,6 +1,121 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
+    <meta charset="UTF-8">
+    <title>Springer-Dispo 5.0</title>
+    <style>
+        :root { --p: #007bff; --s: #28a745; --d: #dc3545; --bg: #f4f7f6; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); padding: 20px; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 600px; margin: auto; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 10px; box-sizing: border-box; }
+        .btn-main { width: 100%; padding: 16px; background: var(--p); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .driver { background: white; padding: 15px; border-radius: 10px; margin-top: 10px; display: flex; justify-content: space-between; align-items: center; border-left: 6px solid #ccc; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .busy { border-left-color: var(--d); background: #fff5f5; }
+        .free { border-left-color: var(--s); }
+        .status { font-weight: bold; padding: 4px 8px; border-radius: 4px; }
+        .st-busy { background: #f8d7da; color: #721c24; }
+        .st-free { background: #d4edda; color: #155724; }
+        .btn-book { background: var(--s); color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; margin-top: 5px; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2 style="text-align:center; color:var(--p);">Springer-Dispo 5.0</h2>
+    
+    <label>Ziel-PLZ</label>
+    <input type="text" id="destPlz" value="30177">
+
+    <div style="display:flex; gap:10px;">
+        <div style="flex:1;"><label>Von</label><input type="date" id="dateFrom" value="2026-04-24"></div>
+        <div style="flex:1;"><label>Bis</label><input type="date" id="dateTo" value="2026-04-24"></div>
+    </div>
+
+    <button class="btn-main" onclick="run()">Doku-konforme Abfrage starten</button>
+    <p style="text-align:center;"><small><a href="#" onclick="setup()">⚙️ API-Keys & Kalender-ID korrigieren</a></small></p>
+</div>
+
+<div id="results" style="max-width: 600px; margin: 20px auto;"></div>
+
+<script>
+    const drivers = [
+        { name: "Türkel Tuncer", plz: "30161" }, { name: "Von Treskow Albrecht", plz: "30175" },
+        { name: "Otto Alexander", plz: "30173" }, { name: "Ferkau Eckart", plz: "30851" },
+        { name: "Ohm Lars", plz: "30559" }, { name: "Bachmeier Reinhard", plz: "30659" },
+        { name: "Isfahan Mozaffaey Hamid", plz: "30519" }, { name: "Schrader Harald", plz: "30880" },
+        { name: "Aschenbach André", plz: "30989" }, { name: "Neubauer Michael", plz: "30853" }
+    ];
+
+    function setup() {
+        localStorage.setItem('kId', prompt("Kalender-ID:", localStorage.getItem('kId') || ""));
+        localStorage.setItem('kKey', prompt("X-API-KEY:", localStorage.getItem('kKey') || ""));
+        localStorage.setItem('gKey', prompt("Google API Key:", localStorage.getItem('gKey') || ""));
+        location.reload();
+    }
+
+    async function run() {
+        const id = localStorage.getItem('kId'), key = localStorage.getItem('kKey'), g = localStorage.getItem('gKey');
+        const from = document.getElementById('dateFrom').value, to = document.getElementById('dateTo').value;
+        const resDiv = document.getElementById('results');
+        
+        if(!id || !key) { alert("Daten fehlen!"); return; }
+        resDiv.innerHTML = "Prüfe Kalender...";
+
+        try {
+            // URL exakt nach curl-Vorgabe: Kalender-ID gehört NICHT in die Query-Params, wenn Header genutzt wird
+            const url = `https://api.kalender.digital/public/event?startDate=${from}&endDate=${to}&timeZone=Europe/Berlin`;
+            const proxy = `https://corsproxy.io/?${encodeURIComponent(url)}`;
+            
+            const resp = await fetch(proxy, {
+                method: 'GET',
+                headers: { 'X-API-KEY': key.trim() } // Header laut Doku
+            });
+
+            if(!resp.ok) throw new Error("API-Fehler " + resp.status);
+            const events = await resp.json();
+            const text = JSON.stringify(events).toLowerCase();
+
+            // Google Maps
+            if (typeof google === 'undefined') {
+                const s = document.createElement('script');
+                s.src = `https://maps.googleapis.com/maps/api/js?key=${g}`;
+                document.head.appendChild(s);
+                await new Promise(r => s.onload = r);
+            }
+
+            const service = new google.maps.DistanceMatrixService();
+            service.getDistanceMatrix({
+                origins: drivers.map(d => d.plz),
+                destinations: [document.getElementById('destPlz').value],
+                travelMode: 'DRIVING'
+            }, (mResp, status) => {
+                let ranking = drivers.map((d, i) => {
+                    const lastName = d.name.split(' ').pop().toLowerCase();
+                    const isBusy = text.includes(lastName);
+                    const dist = mResp.rows[i].elements[0].distance;
+                    return { ...d, distT: dist.text, distV: dist.value, isBusy };
+                });
+
+                ranking.sort((a,b) => a.isBusy - b.isBusy || a.distV - b.distV);
+                resDiv.innerHTML = "";
+                ranking.forEach(d => {
+                    resDiv.innerHTML += `
+                        <div class="driver ${d.isBusy ? 'busy' : 'free'}">
+                            <div>
+                                <strong>${d.name}</strong><br><small>${d.distT} entfernt</small><br>
+                                ${!d.isBusy ? `<button class="btn-book" onclick="alert('Buchung...')">Jetzt buchen</button>` : ''}
+                            </div>
+                            <span class="status ${d.isBusy ? 'st-busy' : 'st-free'}">${d.isBusy ? 'BESETZT' : 'FREI'}</span>
+                        </div>`;
+                });
+            });
+        } catch(e) { resDiv.innerHTML = "Fehler: " + e.message; }
+    }
+</script>
+</body>
+</html><!DOCTYPE html>
+<html lang="de">
+<head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Springer-Dispo 6.0</title>
