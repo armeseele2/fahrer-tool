@@ -10,16 +10,16 @@
         .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 500px; margin: auto; }
         h2 { margin-top: 0; color: var(--primary); font-size: 1.2rem; }
         label { display: block; margin: 10px 0 5px; font-weight: bold; font-size: 0.9rem; }
-        input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 1rem; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 1rem; margin-bottom: 10px; }
         button { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; margin-top: 20px; cursor: pointer; }
-        .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; margin-left: 10px; }
+        .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; }
         .free { background: #d4edda; color: #155724; }
         .busy { background: #f8d7da; color: #721c24; }
-        #results { margin-top: 20px; }
+        #results { margin-top: 20px; max-width: 500px; margin-left: auto; margin-right: auto; }
         .driver-row { background: white; padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 5px solid #ddd; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .driver-row.is-free { border-left-color: var(--success); }
-        .driver-row.is-busy { border-left-color: var(--danger); opacity: 0.7; }
-        .info-btn { background: none; border: none; color: var(--primary); cursor: pointer; font-size: 0.8rem; text-decoration: underline; }
+        .driver-row.is-busy { border-left-color: var(--danger); opacity: 0.8; }
+        .info-btn { background: none; border: none; color: var(--primary); cursor: pointer; font-size: 0.8rem; text-decoration: underline; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -43,7 +43,7 @@
 
     <button onclick="generateRanking()">Verfügbarkeit & Ranking prüfen</button>
     
-    <div style="margin-top: 15px; font-size: 0.7rem; color: #999; text-align: center;">
+    <div style="text-align: center;">
         <button class="info-btn" onclick="setupKeys()">Keys verwalten (Google & Kalender)</button>
     </div>
 </div>
@@ -51,7 +51,6 @@
 <div id="results"></div>
 
 <script>
-    // Liste der Fahrer
     const drivers = [
         { name: "Aschenbach André", plz: "30629" },
         { name: "Ohm Lars", plz: "30823" },
@@ -67,7 +66,6 @@
         { name: "Kruse Jens Roland", plz: "30659" }
     ];
 
-    // Standard-Datum auf Heute setzen
     document.getElementById('targetDate').valueAsDate = new Date();
 
     function updatePlz() {
@@ -79,12 +77,13 @@
 
     function setupKeys() {
         const gKey = prompt("Google Maps API Key:", localStorage.getItem('google_key') || "");
-        const kKey = prompt("Kalender.digital API Key:", "15cb3f2874a76f790d353cd1b763e54f450243fb6b03e7997a2efc90cfb39ed9");
-        const kId = prompt("Kalender-ID:", "d7b6580ed5d9bc4a2061");
+        const kKey = prompt("Kalender.digital API Key:", localStorage.getItem('kalender_key') || "15cb3f2874a76f790d353cd1b763e54f450243fb6b03e7997a2efc90cfb39ed9");
+        const kId = prompt("Kalender-ID:", localStorage.getItem('kalender_id') || "d7b6580ed5d9bc4a2061");
         
         if (gKey) localStorage.setItem('google_key', gKey);
         if (kKey) localStorage.setItem('kalender_key', kKey);
         if (kId) localStorage.setItem('kalender_id', kId);
+        alert("Keys gespeichert!");
     }
 
     async function generateRanking() {
@@ -100,33 +99,39 @@
         }
 
         const resDiv = document.getElementById('results');
-        resDiv.innerHTML = "Prüfe Entfernungen und Kalender...";
+        resDiv.innerHTML = "<p style='text-align:center;'>Daten werden geladen...</p>";
 
         try {
-            // 1. Kalender-Abfrage
-            const kResponse = await fetch(`https://api.kalender.digital/public/event?startDate=${date}&endDate=${date}&calendarId=${kId}`, {
-                headers: { 'X-API-KEY': kKey }
-            });
-            const kData = await kResponse.json();
-            const busyNames = kData.events.map(e => e.subcalendarName);
+            // 1. Kalender-Abfrage über Proxy zur Umgehung von CORS
+            const kUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(`https://api.kalender.digital/public/event?calendarId=${kId}&startDate=${date}&endDate=${date}`)}`;
+            
+            const kResponse = await fetch(kUrl);
+            const kDataRaw = await kResponse.json();
+            const kData = JSON.parse(kDataRaw.contents);
+            
+            const busyNames = kData.events ? kData.events.map(e => e.subcalendarName.toLowerCase()) : [];
 
             // 2. Google Maps Abfrage
             const origins = drivers.map(d => d.plz).join('|');
             const gUrl = `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${origins}&destinations=${dest}&key=${gKey}`;
             
-            // Da Google CORS blockiert, nutzen wir im echten Tool oft ein Proxy oder das SDK. 
-            // Hier die Logik zur Anzeige:
             const gResponse = await fetch(gUrl);
             const gData = await gResponse.json();
 
+            if (gData.status !== "OK") throw new Error(gData.error_message || "Google API Fehler");
+
             let ranking = drivers.map((d, index) => {
-                const dist = gData.rows[index].elements[0].distance.text;
-                const distVal = gData.rows[index].elements[0].distance.value;
-                const isBusy = busyNames.some(name => name.includes(d.name));
-                return { ...d, distance: dist, distVal, isBusy };
+                const element = gData.rows[index].elements[0];
+                const distText = element.status === "OK" ? element.distance.text : "N/A";
+                const distVal = element.status === "OK" ? element.distance.value : 999999;
+                
+                // Prüfen ob Name im Kalender vorkommt (Groß/Kleinschreibung egal)
+                const isBusy = busyNames.some(bn => bn.includes(d.name.toLowerCase()));
+                
+                return { ...d, distance: distText, distVal, isBusy };
             });
 
-            // Sortierung: Erst Frei (nach Entfernung), dann Besetzt
+            // Sortierung
             ranking.sort((a, b) => {
                 if (a.isBusy === b.isBusy) return a.distVal - b.distVal;
                 return a.isBusy ? 1 : -1;
@@ -139,7 +144,7 @@
                 row.innerHTML = `
                     <div>
                         <strong>${d.name}</strong><br>
-                        <small>${d.plz} -> ${dest}: ${d.distance}</small>
+                        <small>${d.plz} → ${dest}: ${d.distance}</small>
                     </div>
                     <span class="status-badge ${d.isBusy ? 'busy' : 'free'}">
                         ${d.isBusy ? 'BESETZT' : 'FREI'}
@@ -149,8 +154,7 @@
             });
 
         } catch (err) {
-            resDiv.innerHTML = "Fehler bei der Abfrage. Bitte Keys und Internet prüfen.";
-            console.error(err);
+            resDiv.innerHTML = `<p style='color:red; text-align:center;'>Fehler: ${err.message}<br>Bitte Keys prüfen.</p>`;
         }
     }
 </script>
