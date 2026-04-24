@@ -2,144 +2,104 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Springer-Dispo-Zentrale 3.0 (Admin-Modus)</title>
+    <title>Springer-Dispo 3.1 (Deep Scan Mode)</title>
     <style>
         :root { --primary: #007bff; --success: #28a745; --danger: #dc3545; --bg: #f4f7f6; }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 20px; color: #333; }
+        body { font-family: sans-serif; background: var(--bg); padding: 20px; }
         .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 600px; margin: auto; }
-        h2 { margin-top: 0; color: var(--primary); text-align: center; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        label { display: block; margin: 10px 0 5px; font-weight: bold; font-size: 0.85rem; }
-        input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 1rem; margin-bottom: 10px; }
-        button { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; margin-top: 10px; cursor: pointer; }
-        .btn-book { padding: 6px 12px; background: var(--success); font-size: 0.8rem; margin-top: 8px; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; }
+        button { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .driver-row { background: white; padding: 15px; border-radius: 8px; margin-top: 10px; display: flex; justify-content: space-between; align-items: center; border-left: 5px solid #ddd; }
+        .is-free { border-left-color: var(--success); }
+        .is-busy { border-left-color: var(--danger); opacity: 0.7; background: #fff5f5; }
         .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; }
         .free { background: #d4edda; color: #155724; }
         .busy { background: #f8d7da; color: #721c24; }
-        #results { margin-top: 20px; max-width: 600px; margin: auto; }
-        .driver-row { background: white; padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 5px solid #ddd; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .driver-row.is-free { border-left-color: var(--success); }
-        .driver-row.is-busy { border-left-color: var(--danger); opacity: 0.8; }
-        .config-area { margin-top: 20px; padding: 10px; border-top: 1px solid #eee; font-size: 0.8rem; text-align: center; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2>Springer-Dispo 3.0 🚀</h2>
-    
-    <label>Einsatzort (Ziel-PLZ)</label>
-    <select id="schoolSelect" onchange="document.getElementById('destinationPlz').value = this.value">
-        <option value="">-- Einrichtung wählen --</option>
-        <option value="30655">Albert-Liebmann-Schule (30655)</option>
-        <option value="30165">Lebenshilfe Büttnerstraße (30165)</option>
-        <option value="30900">Kindergarten Domino (30900)</option>
-        <option value="30449">Wilhelm-Schade-Schule (30449)</option>
-        <option value="manual">Manuelle Eingabe...</option>
-    </select>
-    <input type="text" id="destinationPlz" placeholder="z.B. 30655">
-
-    <div class="grid">
-        <div><label>Datum von</label><input type="date" id="startDate"></div>
-        <div><label>Datum bis</label><input type="date" id="endDate"></div>
+    <h2>Springer-Dispo 3.1 🚀</h2>
+    <label>Ziel-PLZ</label>
+    <input type="text" id="destinationPlz" value="30177">
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+        <input type="date" id="startDate">
+        <input type="date" id="endDate">
     </div>
-
-    <button onclick="generateRanking()">Verfügbarkeit & Ranking prüfen</button>
-    
-    <div class="config-area">
-        <button style="background:#6c757d; padding:8px; font-size:0.7rem;" onclick="setupAdmin()">⚙️ Admin-Zugang einrichten</button>
-    </div>
+    <button onclick="generateRanking()">Kalender Deep-Scan starten</button>
+    <button style="margin-top:10px; background:#6c757d; font-size:0.7rem;" onclick="setupAdmin()">⚙️ API-Daten prüfen</button>
 </div>
 
 <div id="results"></div>
 
 <script>
     const drivers = [
-        { name: "Aschenbach André", plz: "30989" },
         { name: "Bachmeier Reinhard", plz: "30659" },
         { name: "Türkel Tuncer", plz: "30161" },
         { name: "Isfahan Mozaffaey Hamid", plz: "30519" },
         { name: "Otto Alexander", plz: "30173" },
         { name: "Schrader Harald", plz: "30880" },
+        { name: "Aschenbach André", plz: "30989" },
         { name: "Ohm Lars", plz: "30559" }
     ];
 
-    document.getElementById('startDate').valueAsDate = new Date();
-    document.getElementById('endDate').valueAsDate = new Date();
+    document.getElementById('startDate').value = "2026-04-24";
+    document.getElementById('endDate').value = "2026-04-24";
 
     function setupAdmin() {
-        const kId = prompt("Kalender-ID (vom Admin-Link):", localStorage.getItem('kalender_id') || "");
-        const kKey = prompt("API-Key (Administrator-Ebene):", localStorage.getItem('kalender_key') || "");
-        const gKey = prompt("Google Maps Key:", localStorage.getItem('google_key') || "");
-        if(kId) localStorage.setItem('kalender_id', kId);
-        if(kKey) localStorage.setItem('kalender_key', kKey);
-        if(gKey) localStorage.setItem('google_key', gKey);
-        alert("Admin-Daten gespeichert. Seite wird neu geladen.");
+        localStorage.setItem('kalender_id', prompt("Kalender-ID:", localStorage.getItem('kalender_id') || ""));
+        localStorage.setItem('kalender_key', prompt("Admin-API-Key:", localStorage.getItem('kalender_key') || ""));
+        localStorage.setItem('google_key', prompt("Google Maps Key:", localStorage.getItem('google_key') || ""));
         location.reload();
     }
-
-    (function loadGoogle() {
-        const gKey = localStorage.getItem('google_key');
-        if(gKey) {
-            const s = document.createElement('script');
-            s.src = `https://maps.googleapis.com/maps/api/js?key=${gKey}&libraries=geometry`;
-            document.head.appendChild(s);
-        }
-    })();
 
     async function generateRanking() {
         const kId = localStorage.getItem('kalender_id');
         const kKey = localStorage.getItem('kalender_key');
         const start = document.getElementById('startDate').value;
         const end = document.getElementById('endDate').value;
-        const destPlz = document.getElementById('destinationPlz').value;
         const resDiv = document.getElementById('results');
-
-        if(!kId || !kKey) { alert("Bitte zuerst Admin-Zugang einrichten!"); return; }
-        resDiv.innerHTML = "Lade Kalender-Daten mit Admin-Rechten...";
+        resDiv.innerHTML = "Durchsuche alle Unterkalender...";
 
         try {
-            // Wir nutzen corsproxy.io um die Sperre zu umgehen
-            const kUrl = `https://corsproxy.io/?${encodeURIComponent(`https://api.kalender.digital/public/event?calendarId=${kId}&startDate=${start}&endDate=${end}`)}`;
-            const response = await fetch(kUrl, { headers: { 'X-API-KEY': kKey } });
-            const data = await response.json();
+            // WICHTIG: Wir hängen &includeSubcalendars=1 an, damit die API ALLES schickt
+            const kUrl = `https://corsproxy.io/?${encodeURIComponent(`https://api.kalender.digital/public/event?calendarId=${kId}&startDate=${start}&endDate=${end}&includeSubcalendars=1`)}`;
+            const resp = await fetch(kUrl, { headers: { 'X-API-KEY': kKey } });
+            const data = await resp.json();
             
-            // Wir wandeln alle Termine in einen durchsuchbaren Text um
-            const allBookedString = JSON.stringify(data.events || []).toLowerCase();
+            // Wir erstellen eine Liste aller Namen, die heute irgendwo einen Termin haben
+            const bookedNames = (data.events || []).map(e => 
+                (e.title + " " + (e.subcalendarName || "")).toLowerCase()
+            );
 
+            // Google Maps Abfrage
             const service = new google.maps.DistanceMatrixService();
             service.getDistanceMatrix({
                 origins: drivers.map(d => d.plz),
-                destinations: [destPlz],
+                destinations: [document.getElementById('destinationPlz').value],
                 travelMode: 'DRIVING'
-            }, (mapResp, status) => {
-                if(status !== "OK") { resDiv.innerHTML = "Google Maps Fehler"; return; }
-                
+            }, (mResp, status) => {
                 let ranking = drivers.map((d, i) => {
-                    const el = mapResp.rows[i].elements[0];
                     const lastName = d.name.split(' ')[0].toLowerCase();
-                    // Wenn der Nachname irgendwo in den Admin-Daten auftaucht -> BESETZT
-                    const isBusy = allBookedString.includes(lastName);
-
-                    return { ...d, distText: el.distance.text, distVal: el.distance.value, isBusy };
+                    // Prüfen, ob der Nachname in irgendeinem gebuchten Termin vorkommt
+                    const isBusy = bookedNames.some(b => b.includes(lastName));
+                    return { ...d, dist: mResp.rows[i].elements[0].distance.text, isBusy };
                 });
 
-                ranking.sort((a,b) => a.isBusy - b.isBusy || a.distVal - b.distVal);
-
+                ranking.sort((a,b) => a.isBusy - b.isBusy);
                 resDiv.innerHTML = "";
                 ranking.forEach(d => {
                     resDiv.innerHTML += `
                         <div class="driver-row ${d.isBusy ? 'is-busy' : 'is-free'}">
-                            <div>
-                                <strong>${d.name}</strong><br><small>${d.distText}</small>
-                            </div>
+                            <div><strong>${d.name}</strong><br><small>${d.dist}</small></div>
                             <span class="status-badge ${d.isBusy ? 'busy' : 'free'}">${d.isBusy ? 'BESETZT' : 'FREI'}</span>
                         </div>`;
                 });
             });
-        } catch(e) { resDiv.innerHTML = "Fehler bei der Admin-Abfrage."; }
+        } catch(e) { resDiv.innerHTML = "Fehler!"; }
     }
 </script>
+<script src="https://maps.googleapis.com/maps/api/js?key=DEIN_GOOGLE_KEY&libraries=geometry"></script>
 </body>
 </html>
