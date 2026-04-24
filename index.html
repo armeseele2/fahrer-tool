@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Springer-Dispo-Zentrale 2.6</title>
+    <title>Springer-Dispo-Zentrale 2.8</title>
     <style>
         :root { --primary: #007bff; --success: #28a745; --danger: #dc3545; --bg: #f4f7f6; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 20px; color: #333; }
@@ -21,18 +21,21 @@
         .driver-row { background: white; padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 5px solid #ddd; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .driver-row.is-free { border-left-color: var(--success); }
         .driver-row.is-busy { border-left-color: var(--danger); opacity: 0.7; }
+        .info-btn { background: none; border: none; color: var(--primary); cursor: pointer; font-size: 0.8rem; text-decoration: underline; margin-top: 15px; width: 100%; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2>Springer-Dispo-Zentrale 2.6</h2>
+    <h2>Springer-Dispo-Zentrale 2.8</h2>
+    
     <label>Ziel auswählen</label>
     <select id="schoolSelect" onchange="updatePlz()">
         <option value="">-- Einrichtung wählen --</option>
         <option value="30655">Albert-Liebmann-Schule (30655)</option>
         <option value="30165">Lebenshilfe Büttnerstraße (30165)</option>
         <option value="30900">Kindergarten Domino (30900)</option>
+        <option value="30419">Kindergarten Forst Mecklenheide (30419)</option>
         <option value="30880">Freie Martinschule (30880)</option>
         <option value="30449">Wilhelm-Schade-Schule (30449)</option>
         <option value="manual">Manuelle Eingabe...</option>
@@ -42,9 +45,12 @@
     <input type="text" id="destinationPlz" placeholder="z.B. 30655">
 
     <div class="grid">
-        <div><label>Datum</label><input type="date" id="targetDate"></div>
+        <div><label>Einsatz von</label><input type="date" id="startDate"></div>
+        <div><label>Einsatz bis</label><input type="date" id="endDate"></div>
     </div>
-    <button onclick="generateRanking()">Verfügbarkeit & Ranking prüfen</button>
+
+    <button onclick="generateRanking()">Verfügbarkeit prüfen & Sortieren</button>
+    <button class="info-btn" onclick="setupKeys()">⚙️ API-Einstellungen (Keys & Kalender-ID)</button>
 </div>
 
 <div id="results"></div>
@@ -54,21 +60,32 @@
         { name: "Aschenbach André", plz: "30989" },
         { name: "Bachmeier Reinhard", plz: "30659" },
         { name: "Türkel Tuncer", plz: "30161" },
+        { name: "Isfahan Mozaffaey Hamid", plz: "30519" },
         { name: "Otto Alexander", plz: "30173" },
         { name: "Schrader Harald", plz: "30880" },
         { name: "Neubauer Michael", plz: "30853" },
         { name: "Ferkau Eckart", plz: "30851" },
         { name: "Bethmann Ekkehard", plz: "31535" },
         { name: "Hauer Frank", plz: "30900" },
-        { name: "Kruse Jens Roland", plz: "31275" },
         { name: "Ohm Lars", plz: "30559" }
     ];
 
-    document.getElementById('targetDate').valueAsDate = new Date();
+    document.getElementById('startDate').valueAsDate = new Date();
+    document.getElementById('endDate').valueAsDate = new Date();
 
     function updatePlz() {
         const sel = document.getElementById('schoolSelect');
         if (sel.value && sel.value !== 'manual') document.getElementById('destinationPlz').value = sel.value;
+    }
+
+    function setupKeys() {
+        const gKey = prompt("Google Maps API Key:", localStorage.getItem('google_key') || "");
+        const kKey = prompt("Kalender API Key:", localStorage.getItem('kalender_key') || "");
+        const kId = prompt("Kalender-ID (z.B. d7b6...):", localStorage.getItem('kalender_id') || "");
+        if (gKey) localStorage.setItem('google_key', gKey);
+        if (kKey) localStorage.setItem('kalender_key', kKey);
+        if (kId) localStorage.setItem('kalender_id', kId);
+        location.reload();
     }
 
     (function loadGoogleMaps() {
@@ -80,52 +97,48 @@
         }
     })();
 
-    async function bookDriver(name, date) {
+    async function bookDriver(name, start, end) {
         const schoolName = document.getElementById('schoolSelect').options[document.getElementById('schoolSelect').selectedIndex].text;
-        if (!confirm(`${name} für ${schoolName} am ${date} buchen?`)) return;
+        if (!confirm(`${name} für ${schoolName} buchen?`)) return;
 
         const kKey = localStorage.getItem('kalender_key');
         const kId = localStorage.getItem('kalender_id');
-        
-        // POST-Anfrage über Proxy
-        const apiUrl = `https://api.kalender.digital/public/event?calendarId=${kId}`;
-        const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(apiUrl)}`;
+        const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(`https://api.kalender.digital/public/event?calendarId=${kId}`)}`;
 
         try {
             const response = await fetch(proxyUrl, {
                 method: 'POST',
-                headers: { 
-                    'X-API-KEY': kKey, 
-                    'Content-Type': 'application/json' 
-                },
+                headers: { 'X-API-KEY': kKey, 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    startDate: `${date} 08:00:00`,
-                    endDate: `${date} 16:00:00`,
+                    startDate: start + " 08:00:00",
+                    endDate: end + " 16:00:00",
                     timezone: "Europe/Berlin",
                     title: `Einsatz: ${schoolName}`,
                     subcalendarName: name
                 })
             });
-            if (response.ok) { alert("Gebucht!"); generateRanking(); }
-            else { alert("Fehler beim Schreiben in den Kalender."); }
-        } catch (e) { alert("Netzwerkfehler."); }
+            if (response.ok) { alert("Erfolgreich gebucht!"); generateRanking(); }
+            else { alert("Fehler beim Buchen (Proxy/API)."); }
+        } catch (e) { alert("Netzwerkfehler beim Buchen."); }
     }
 
     async function generateRanking() {
         const dest = document.getElementById('destinationPlz').value;
-        const date = document.getElementById('targetDate').value;
+        const start = document.getElementById('startDate').value;
+        const end = document.getElementById('endDate').value;
         const kId = localStorage.getItem('kalender_id');
         const resDiv = document.getElementById('results');
         
-        resDiv.innerHTML = "<p style='text-align:center;'>Kalender-Scan läuft...</p>";
+        if (!dest) { alert("Ziel-PLZ fehlt!"); return; }
+        resDiv.innerHTML = "<p style='text-align:center;'>Kalender-Check läuft...</p>";
 
         try {
-            // Wir fragen alle Termine für den Tag ab
-            const kUrl = `https://corsproxy.io/?${encodeURIComponent(`https://api.kalender.digital/public/event?calendarId=${kId}&startDate=${date}&endDate=${date}`)}`;
+            const kUrl = `https://corsproxy.io/?${encodeURIComponent(`https://api.kalender.digital/public/event?calendarId=${kId}&startDate=${start}&endDate=${end}`)}`;
             const kResponse = await fetch(kUrl);
             const kData = await kResponse.json();
             
-            const bookedContent = kData.events ? JSON.stringify(kData.events).toLowerCase() : "";
+            // Aggressiver Check über alle Event-Felder
+            const bookedText = kData.events ? JSON.stringify(kData.events).toLowerCase() : "";
 
             const service = new google.maps.DistanceMatrixService();
             service.getDistanceMatrix({ 
@@ -133,14 +146,12 @@
                 destinations: [dest], 
                 travelMode: 'DRIVING' 
             }, (response, status) => {
-                if (status !== "OK") { resDiv.innerHTML = "Google Fehler"; return; }
+                if (status !== "OK") { resDiv.innerHTML = "Fehler bei Google Maps API"; return; }
                 
                 let ranking = drivers.map((d, index) => {
                     const el = response.rows[index].elements[0];
                     const lastName = d.name.split(' ')[0].toLowerCase();
-                    
-                    // Wir prüfen, ob der Nachname irgendwo in den Kalenderdaten (Titel, Subkalender etc.) auftaucht
-                    const isBusy = bookedContent.includes(lastName);
+                    const isBusy = bookedText.includes(lastName);
 
                     return { 
                         ...d, 
@@ -160,14 +171,14 @@
                         <div>
                             <strong>${d.name}</strong><br>
                             <small>${d.distance}</small><br>
-                            ${!d.isBusy ? `<button class="btn-book" onclick="bookDriver('${d.name}', '${date}')">Jetzt buchen</button>` : ''}
+                            ${!d.isBusy ? `<button class="btn-book" onclick="bookDriver('${d.name}', '${start}', '${end}')">Jetzt buchen</button>` : ''}
                         </div>
                         <span class="status-badge ${d.isBusy ? 'busy' : 'free'}">${d.isBusy ? 'BESETZT' : 'FREI'}</span>
                     `;
                     resDiv.appendChild(row);
                 });
             });
-        } catch (e) { resDiv.innerHTML = "Fehler bei der Abfrage."; }
+        } catch (e) { resDiv.innerHTML = "Fehler beim Kalender-Abruf."; }
     }
 </script>
 </body>
