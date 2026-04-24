@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Springer-Dispo-Zentrale 2.5</title>
+    <title>Springer-Dispo-Zentrale 2.6</title>
     <style>
         :root { --primary: #007bff; --success: #28a745; --danger: #dc3545; --bg: #f4f7f6; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 20px; color: #333; }
@@ -26,35 +26,15 @@
 <body>
 
 <div class="card">
-    <h2>Springer-Dispo-Zentrale 2.5</h2>
-    
-    <label>Ziel auswählen (Schule/Einrichtung)</label>
+    <h2>Springer-Dispo-Zentrale 2.6</h2>
+    <label>Ziel auswählen</label>
     <select id="schoolSelect" onchange="updatePlz()">
         <option value="">-- Einrichtung wählen --</option>
         <option value="30655">Albert-Liebmann-Schule (30655)</option>
         <option value="30165">Lebenshilfe Büttnerstraße (30165)</option>
         <option value="30900">Kindergarten Domino (30900)</option>
-        <option value="30419">Kindergarten Forst Mecklenheide (30419)</option>
         <option value="30880">Freie Martinschule (30880)</option>
-        <option value="30851">Kindergarten Langenhagen (30851)</option>
-        <option value="30629">Kindergarten Misburg (30629)</option>
-        <option value="31535">Michael-Ende-Schule (31535)</option>
-        <option value="31515">Paul-Moor-Schule (31515)</option>
-        <option value="30938">Pestalozzi-Schule (30938)</option>
-        <option value="31303">Grundschule Otze (31303)</option>
-        <option value="31303">Schule am Wasserwerk (31303)</option>
-        <option value="31319">Schule im Großen Freien (31319)</option>
-        <option value="30900">Unter den Eichen/BOS (30900)</option>
-        <option value="30165">Stötzner-Schule (30165)</option>
         <option value="30449">Wilhelm-Schade-Schule (30449)</option>
-        <option value="30559">Bildungszentrum Taubblinde (30559)</option>
-        <option value="30900">GS Bissendorf/Brelingen (30900)</option>
-        <option value="30855">Adolf-Reichwein-Schule (30855)</option>
-        <option value="30982">Calenberger Schule (30982)</option>
-        <option value="30938">Kindergarten Craney (30938)</option>
-        <option value="30890">Bert-Brecht-Schule (30890)</option>
-        <option value="30853">Gutzmann Schule (30853)</option>
-        <option value="30926">Anne Frank Schule (30926)</option>
         <option value="manual">Manuelle Eingabe...</option>
     </select>
 
@@ -62,11 +42,9 @@
     <input type="text" id="destinationPlz" placeholder="z.B. 30655">
 
     <div class="grid">
-        <div><label>Einsatz von</label><input type="date" id="startDate"></div>
-        <div><label>Einsatz bis</label><input type="date" id="endDate"></div>
+        <div><label>Datum</label><input type="date" id="targetDate"></div>
     </div>
-
-    <button onclick="generateRanking()">Verfügbarkeit prüfen & Ranking erstellen</button>
+    <button onclick="generateRanking()">Verfügbarkeit & Ranking prüfen</button>
 </div>
 
 <div id="results"></div>
@@ -74,27 +52,19 @@
 <script>
     const drivers = [
         { name: "Aschenbach André", plz: "30989" },
-        { name: "Ohm Lars", plz: "30559" },
         { name: "Bachmeier Reinhard", plz: "30659" },
-        { name: "Isfahan Mozaffaey Hamid", plz: "30519" },
-        { name: "Otto Alexander", plz: "30173" },
         { name: "Türkel Tuncer", plz: "30161" },
+        { name: "Otto Alexander", plz: "30173" },
         { name: "Schrader Harald", plz: "30880" },
         { name: "Neubauer Michael", plz: "30853" },
         { name: "Ferkau Eckart", plz: "30851" },
         { name: "Bethmann Ekkehard", plz: "31535" },
         { name: "Hauer Frank", plz: "30900" },
         { name: "Kruse Jens Roland", plz: "31275" },
-        { name: "Grimpe Dirk", plz: "30827" },
-        { name: "Häge Klaus Dieter", plz: "30519" },
-        { name: "Von Treskow Albrecht", plz: "30659" },
-        { name: "Caruso Guiseppe", plz: "30880" },
-        { name: "Popescu Viorel", plz: "30827" },
-        { name: "Beka Jonel", plz: "31275" }
+        { name: "Ohm Lars", plz: "30559" }
     ];
 
-    document.getElementById('startDate').valueAsDate = new Date();
-    document.getElementById('endDate').valueAsDate = new Date();
+    document.getElementById('targetDate').valueAsDate = new Date();
 
     function updatePlz() {
         const sel = document.getElementById('schoolSelect');
@@ -110,52 +80,52 @@
         }
     })();
 
-    async function bookDriver(name, start, end) {
+    async function bookDriver(name, date) {
         const schoolName = document.getElementById('schoolSelect').options[document.getElementById('schoolSelect').selectedIndex].text;
-        if (!confirm(`${name} für ${schoolName} vom ${start} bis ${end} fest im Kalender eintragen?`)) return;
+        if (!confirm(`${name} für ${schoolName} am ${date} buchen?`)) return;
 
         const kKey = localStorage.getItem('kalender_key');
         const kId = localStorage.getItem('kalender_id');
+        
+        // POST-Anfrage über Proxy
+        const apiUrl = `https://api.kalender.digital/public/event?calendarId=${kId}`;
+        const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(apiUrl)}`;
 
         try {
-            const response = await fetch(`https://api.kalender.digital/public/event?calendarId=${kId}`, {
+            const response = await fetch(proxyUrl, {
                 method: 'POST',
-                headers: { 'X-API-KEY': kKey, 'Content-Type': 'application/json' },
+                headers: { 
+                    'X-API-KEY': kKey, 
+                    'Content-Type': 'application/json' 
+                },
                 body: JSON.stringify({
-                    startDate: start + " 08:00:00",
-                    endDate: end + " 16:00:00",
+                    startDate: `${date} 08:00:00`,
+                    endDate: `${date} 16:00:00`,
                     timezone: "Europe/Berlin",
                     title: `Einsatz: ${schoolName}`,
-                    subcalendarName: name,
-                    allDay: false
+                    subcalendarName: name
                 })
             });
-            if (response.ok) { alert("Erfolgreich gebucht!"); generateRanking(); }
-            else { alert("Fehler beim Buchen. Kalender-Antwort war nicht erfolgreich."); }
-        } catch (e) { alert("Netzwerkfehler beim Buchen."); }
+            if (response.ok) { alert("Gebucht!"); generateRanking(); }
+            else { alert("Fehler beim Schreiben in den Kalender."); }
+        } catch (e) { alert("Netzwerkfehler."); }
     }
 
     async function generateRanking() {
         const dest = document.getElementById('destinationPlz').value;
-        const start = document.getElementById('startDate').value;
-        const end = document.getElementById('endDate').value;
+        const date = document.getElementById('targetDate').value;
         const kId = localStorage.getItem('kalender_id');
         const resDiv = document.getElementById('results');
         
-        if (!dest) { alert("Bitte Ziel-PLZ eingeben!"); return; }
-        resDiv.innerHTML = "<p style='text-align:center;'>Kalender-Daten werden abgerufen...</p>";
+        resDiv.innerHTML = "<p style='text-align:center;'>Kalender-Scan läuft...</p>";
 
         try {
-            const kUrl = `https://corsproxy.io/?${encodeURIComponent(`https://api.kalender.digital/public/event?calendarId=${kId}&startDate=${start}&endDate=${end}`)}`;
+            // Wir fragen alle Termine für den Tag ab
+            const kUrl = `https://corsproxy.io/?${encodeURIComponent(`https://api.kalender.digital/public/event?calendarId=${kId}&startDate=${date}&endDate=${date}`)}`;
             const kResponse = await fetch(kUrl);
             const kData = await kResponse.json();
             
-            let allBookedText = "";
-            if (kData.events) {
-                allBookedText = kData.events.map(e => 
-                    `${e.title} ${e.subcalendarName} ${e.description || ""}`.toLowerCase()
-                ).join(" | ");
-            }
+            const bookedContent = kData.events ? JSON.stringify(kData.events).toLowerCase() : "";
 
             const service = new google.maps.DistanceMatrixService();
             service.getDistanceMatrix({ 
@@ -163,12 +133,14 @@
                 destinations: [dest], 
                 travelMode: 'DRIVING' 
             }, (response, status) => {
-                if (status !== "OK") { resDiv.innerHTML = "Google Maps Fehler"; return; }
+                if (status !== "OK") { resDiv.innerHTML = "Google Fehler"; return; }
                 
                 let ranking = drivers.map((d, index) => {
                     const el = response.rows[index].elements[0];
                     const lastName = d.name.split(' ')[0].toLowerCase();
-                    const isBusy = allBookedText.includes(lastName);
+                    
+                    // Wir prüfen, ob der Nachname irgendwo in den Kalenderdaten (Titel, Subkalender etc.) auftaucht
+                    const isBusy = bookedContent.includes(lastName);
 
                     return { 
                         ...d, 
@@ -188,14 +160,14 @@
                         <div>
                             <strong>${d.name}</strong><br>
                             <small>${d.distance}</small><br>
-                            ${!d.isBusy ? `<button class="btn-book" onclick="bookDriver('${d.name}', '${start}', '${end}')">Jetzt buchen</button>` : ''}
+                            ${!d.isBusy ? `<button class="btn-book" onclick="bookDriver('${d.name}', '${date}')">Jetzt buchen</button>` : ''}
                         </div>
                         <span class="status-badge ${d.isBusy ? 'busy' : 'free'}">${d.isBusy ? 'BESETZT' : 'FREI'}</span>
                     `;
                     resDiv.appendChild(row);
                 });
             });
-        } catch (e) { resDiv.innerHTML = "Fehler beim Datenabruf."; }
+        } catch (e) { resDiv.innerHTML = "Fehler bei der Abfrage."; }
     }
 </script>
 </body>
