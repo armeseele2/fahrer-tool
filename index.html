@@ -2,40 +2,40 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Springer-Dispo-Zentrale 4.0 🚀</title>
+    <title>Springer-Dispo-Zentrale 4.1 🚀</title>
     <style>
         :root { --primary: #007bff; --success: #28a745; --danger: #dc3545; --bg: #f4f7f6; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); margin: 0; padding: 20px; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 20px; }
         .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 600px; margin: auto; }
         h2 { color: var(--primary); text-align: center; margin-bottom: 20px; }
-        label { display: block; margin: 12px 0 5px; font-weight: bold; font-size: 0.9rem; }
-        input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 1rem; }
+        label { display: block; margin: 12px 0 5px; font-weight: bold; }
+        input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 1rem; }
         .btn-main { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 20px; font-size: 1.1rem; }
-        .settings-link { display: block; text-align: center; margin-top: 15px; color: #888; font-size: 0.8rem; text-decoration: none; cursor: pointer; }
         
         #results { max-width: 600px; margin: 25px auto; }
         .driver-card { background: white; padding: 18px; border-radius: 10px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; border-left: 6px solid #ccc; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
         .is-free { border-left-color: var(--success); }
         .is-busy { border-left-color: var(--danger); background: #fff5f5; opacity: 0.8; }
+        .btn-book { background: var(--success); color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 5px; }
         .status-badge { padding: 5px 10px; border-radius: 5px; font-weight: bold; font-size: 0.85rem; }
         .free { background: #d4edda; color: #155724; }
         .busy { background: #f8d7da; color: #721c24; }
+        .settings-btn { display: block; text-align: center; margin-top: 15px; color: #888; font-size: 0.8rem; text-decoration: none; cursor: pointer; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2>Springer-Dispo 4.0</h2>
+    <h2>Springer-Dispo 4.1</h2>
     
-    <label>Ziel-PLZ (Einrichtung)</label>
-    <input type="text" id="destinationPlz" placeholder="z.B. 30177" value="30177">
+    <label>Ziel-PLZ</label>
+    <input type="text" id="destinationPlz" value="30177">
 
-    <div style="display:flex; gap:10px;">
-        <div style="flex:1;"><label>Datum</label><input type="date" id="checkDate"></div>
-    </div>
+    <label>Datum</label>
+    <input type="date" id="checkDate" value="2026-04-24">
 
-    <button class="btn-main" onclick="runDispoCheck()">Verfügbarkeit prüfen</button>
-    <a class="settings-link" onclick="openKeySetup()">⚙️ Schlüssel-Einstellungen (API & Google)</a>
+    <button class="btn-main" onclick="checkAvailability()">Verfügbarkeit prüfen & Ranking</button>
+    <a class="settings-btn" onclick="setupKeys()">⚙️ Nur 2 IDs hinterlegen: Kalender & Google</a>
 </div>
 
 <div id="results"></div>
@@ -48,50 +48,44 @@
         { name: "Otto Alexander", plz: "30173" },
         { name: "Schrader Harald", plz: "30880" },
         { name: "Aschenbach André", plz: "30989" },
-        { name: "Ohm Lars", plz: "30559" }
+        { name: "Ohm Lars", plz: "30559" },
+        { name: "Neubauer Michael", plz: "30853" }
     ];
 
-    document.getElementById('checkDate').value = "2026-04-24";
-
-    function openKeySetup() {
-        const kId = prompt("Kalender-ID (Nummer aus deinem Admin-Link):", localStorage.getItem('k_id') || "");
-        const kKey = prompt("Kalender API-Key (von der API-Seite):", localStorage.getItem('k_key') || "");
-        const gKey = prompt("Google Maps Key:", localStorage.getItem('g_key') || "");
+    function setupKeys() {
+        const kId = prompt("1. Kalender-ID (aus deinem Admin-Link):", localStorage.getItem('kId') || "");
+        const gId = prompt("2. Google-ID (dein Google API Key):", localStorage.getItem('gId') || "");
         
-        if(kId) localStorage.setItem('k_id', kId);
-        if(kKey) localStorage.setItem('k_key', kKey);
-        if(gKey) localStorage.setItem('g_key', gKey);
+        if(kId) localStorage.setItem('kId', kId);
+        if(gId) localStorage.setItem('gId', gId);
         location.reload();
     }
 
-    // Google Maps Start
-    (function loadGoogle() {
-        const key = localStorage.getItem('g_key');
-        if(key) {
+    // Google Maps Initialisierung
+    (function() {
+        const gId = localStorage.getItem('gId');
+        if(gId) {
             const s = document.createElement('script');
-            s.src = `https://maps.googleapis.com/maps/api/js?key=${key}&libraries=geometry`;
+            s.src = `https://maps.googleapis.com/maps/api/js?key=${gId}&libraries=geometry`;
             document.head.appendChild(s);
         }
     })();
 
-    async function runDispoCheck() {
-        const id = localStorage.getItem('k_id');
-        const key = localStorage.getItem('k_key');
+    async function checkAvailability() {
+        const kId = localStorage.getItem('kId');
         const date = document.getElementById('checkDate').value;
         const dest = document.getElementById('destinationPlz').value;
         const resDiv = document.getElementById('results');
 
-        if(!id || !key) { alert("Bitte erst Schlüssel in den Einstellungen hinterlegen!"); return; }
-        resDiv.innerHTML = "<p style='text-align:center;'>Kalender wird gescannt...</p>";
+        if(!kId) { alert("Bitte erst die Kalender-ID in den Einstellungen eingeben!"); return; }
+        resDiv.innerHTML = "Prüfe Daten...";
 
         try {
-            // Abfrage exakt nach dem Doku-Bild (X-API-KEY Header)
-            const url = `https://corsproxy.io/?${encodeURIComponent(`https://api.kalender.digital/public/event?calendarId=${id}&startDate=${date}&endDate=${date}&includeSubcalendars=1`)}`;
-            const response = await fetch(url, { headers: { 'X-API-KEY': key, 'Accept': 'application/json' } });
+            // Wir nutzen die Kalender-ID direkt für die öffentliche Abfrage
+            const url = `https://corsproxy.io/?${encodeURIComponent(`https://api.kalender.digital/public/event?calendarId=${kId}&startDate=${date}&endDate=${date}`)}`;
+            const response = await fetch(url);
             const data = await response.json();
-            
-            // Alles in einen String werfen, um Namen zu finden
-            const masterString = JSON.stringify(data).toLowerCase();
+            const events = JSON.stringify(data).toLowerCase();
 
             const service = new google.maps.DistanceMatrixService();
             service.getDistanceMatrix({
@@ -99,11 +93,11 @@
                 destinations: [dest],
                 travelMode: 'DRIVING'
             }, (mResp, status) => {
-                if(status !== "OK") { resDiv.innerHTML = "Google Maps Fehler!"; return; }
+                if(status !== "OK") { resDiv.innerHTML = "Fehler: Google-ID ungültig oder keine Antwort."; return; }
 
                 let ranking = drivers.map((d, i) => {
                     const lastName = d.name.split(' ')[0].toLowerCase();
-                    const isBusy = masterString.includes(lastName);
+                    const isBusy = events.includes(lastName);
                     const dist = mResp.rows[i].elements[0].distance.text;
                     const val = mResp.rows[i].elements[0].distance.value;
                     return { ...d, dist, val, isBusy };
@@ -116,14 +110,15 @@
                     resDiv.innerHTML += `
                         <div class="driver-card ${d.isBusy ? 'is-busy' : 'is-free'}">
                             <div>
-                                <strong>${d.name}</strong>
-                                <small>${d.dist} Entfernung</small>
+                                <strong>${d.name}</strong><br>
+                                <small>${d.dist} Entfernung</small><br>
+                                ${!d.isBusy ? '<button class="btn-book" onclick="alert(\'Buchung für ' + d.name + ' gestartet\')">Jetzt buchen</button>' : ''}
                             </div>
                             <span class="status-badge ${d.isBusy ? 'busy' : 'free'}">${d.isBusy ? 'BESETZT' : 'FREI'}</span>
                         </div>`;
                 });
             });
-        } catch(e) { resDiv.innerHTML = "Fehler bei der Abfrage. Schlüssel prüfen."; }
+        } catch(e) { resDiv.innerHTML = "Fehler bei der Verbindung zum Kalender."; }
     }
 </script>
 </body>
