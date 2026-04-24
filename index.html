@@ -2,21 +2,22 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Springer-Dispo-Zentrale 4.5 🚀</title>
+    <title>Springer-Dispo-Zentrale 4.6 🚀</title>
     <style>
         :root { --primary: #007bff; --success: #28a745; --danger: #dc3545; --bg: #f4f7f6; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); padding: 20px; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); padding: 20px; margin: 0; }
         .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 650px; margin: auto; }
-        h2 { color: var(--primary); text-align: center; }
+        h2 { color: var(--primary); text-align: center; margin-top: 0; }
         label { display: block; margin: 12px 0 5px; font-weight: bold; font-size: 0.9rem; }
-        input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; margin-bottom: 10px; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; margin-bottom: 10px; font-size: 1rem; }
         .date-row { display: flex; gap: 10px; }
         .date-row div { flex: 1; }
-        .btn-main { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1.1rem; }
+        .btn-main { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1.1rem; margin-top: 10px; }
         .driver-card { background: white; padding: 15px; border-radius: 10px; margin-top: 10px; display: flex; justify-content: space-between; align-items: center; border-left: 6px solid #ccc; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
         .is-free { border-left-color: var(--success); }
-        .is-busy { border-left-color: var(--danger); background: #fff5f5; }
-        .status-badge { padding: 5px 10px; border-radius: 5px; font-weight: bold; }
+        .is-busy { border-left-color: var(--danger); background: #fff5f5; opacity: 0.8; }
+        .btn-book { background: var(--success); color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 5px; }
+        .status-badge { padding: 5px 10px; border-radius: 5px; font-weight: bold; font-size: 0.85rem; }
         .free { background: #d4edda; color: #155724; }
         .busy { background: #f8d7da; color: #721c24; }
         .settings-link { display: block; text-align: center; margin-top: 20px; color: #888; font-size: 0.8rem; text-decoration: none; cursor: pointer; }
@@ -25,9 +26,9 @@
 <body>
 
 <div class="card">
-    <h2>Springer-Dispo-Zentrale 4.5</h2>
+    <h2>Springer-Dispo-Zentrale 4.6</h2>
     
-    <label>Einrichtung auswählen</label>
+    <label>Einrichtung / Ziel auswählen</label>
     <select id="schoolSelect" onchange="document.getElementById('destinationPlz').value = this.value">
         <option value="">-- Bitte wählen --</option>
         <option value="30655">Albert-Liebmann-Schule (30655)</option>
@@ -46,7 +47,7 @@
     </div>
 
     <button class="btn-main" onclick="runCheck()">Verfügbarkeit prüfen & Ranking</button>
-    <a class="settings-link" onclick="setup()">⚙️ Kalender-ID & Google-ID verwalten</a>
+    <a class="settings-link" onclick="setup()">⚙️ Kalender-ID & Google-Key verwalten</a>
 </div>
 
 <div id="results" style="max-width: 650px; margin: 20px auto;"></div>
@@ -54,11 +55,11 @@
 <script>
     const drivers = [
         { name: "Türkel Tuncer", plz: "30161" },
+        { name: "Von Treskow Albrecht", plz: "30175" },
         { name: "Otto Alexander", plz: "30173" },
         { name: "Ferkau Eckart", plz: "30851" },
         { name: "Ohm Lars", plz: "30559" },
         { name: "Bachmeier Reinhard", plz: "30659" },
-        { name: "Von Treskow Albrecht", plz: "30175" },
         { name: "Isfahan Mozaffaey Hamid", plz: "30519" },
         { name: "Schrader Harald", plz: "30880" },
         { name: "Aschenbach André", plz: "30989" },
@@ -66,15 +67,15 @@
     ];
 
     function setup() {
-        const kId = prompt("1. Kalender-ID (die Zahl aus dem Admin-Link):", localStorage.getItem('kId') || "");
-        const gKey = prompt("2. Google API Key:", localStorage.getItem('gKey') || "");
-        if(kId) localStorage.setItem('kId', kId);
-        if(gKey) localStorage.setItem('gKey', gKey);
+        const kId = prompt("Kalender-ID (die Zahl):", localStorage.getItem('k_id') || "");
+        const gKey = prompt("Google API Key:", localStorage.getItem('g_key') || "");
+        if(kId) localStorage.setItem('k_id', kId);
+        if(gKey) localStorage.setItem('g_key', gKey);
         location.reload();
     }
 
     (function(){
-        const g = localStorage.getItem('gKey');
+        const g = localStorage.getItem('g_key');
         if(g) {
             const s = document.createElement('script');
             s.src = `https://maps.googleapis.com/maps/api/js?key=${g}&libraries=geometry`;
@@ -83,21 +84,23 @@
     })();
 
     async function runCheck() {
-        const kId = localStorage.getItem('kId');
+        const kId = localStorage.getItem('k_id');
         const from = document.getElementById('dateFrom').value;
         const to = document.getElementById('dateTo').value;
         const dest = document.getElementById('destinationPlz').value;
         const resDiv = document.getElementById('results');
 
-        if(!kId) { alert("Bitte Einstellungen prüfen!"); return; }
+        if(!kId) { alert("Bitte Kalender-ID hinterlegen!"); return; }
         resDiv.innerHTML = "<p style='text-align:center;'>Kalender-Scan läuft...</p>";
 
         try {
-            // Wir nutzen die Kalender-ID direkt im URL-Pfad für die öffentliche Abfrage
+            // Abfrage exakt nach Doku mit Zeitraums-Parametern
             const url = `https://corsproxy.io/?${encodeURIComponent(`https://api.kalender.digital/public/event?calendarId=${kId}&startDate=${from}&endDate=${to}&includeSubcalendars=1`)}`;
             const resp = await fetch(url);
             const data = await resp.json();
-            const text = JSON.stringify(data).toLowerCase();
+            
+            // Wir wandeln alles in Text um, um Namen sicher zu finden
+            const calendarText = JSON.stringify(data).toLowerCase();
 
             const service = new google.maps.DistanceMatrixService();
             service.getDistanceMatrix({
@@ -105,25 +108,26 @@
                 destinations: [dest],
                 travelMode: 'DRIVING'
             }, (mResp, status) => {
-                if(status !== "OK") { resDiv.innerHTML = "Google-ID ungültig!"; return; }
+                if(status !== "OK") { resDiv.innerHTML = "Google-Key Fehler!"; return; }
 
                 let ranking = drivers.map((d, i) => {
-                    // Nimmt den Nachnamen für den Vergleich
                     const lastName = d.name.split(' ').pop().toLowerCase();
-                    const isBusy = text.includes(lastName);
-                    const dist = mResp.rows[i].elements[0].distance.text;
-                    const val = mResp.rows[i].elements[0].distance.value;
-                    return { ...d, dist, val, isBusy };
+                    // Wenn der Name irgendwo in der API-Antwort auftaucht = Besetzt
+                    const isBusy = calendarText.includes(lastName);
+                    const distText = mResp.rows[i].elements[0].distance.text;
+                    const distVal = mResp.rows[i].elements[0].distance.value;
+                    return { ...d, distText, distVal, isBusy };
                 });
 
-                ranking.sort((a,b) => a.isBusy - b.isBusy || a.val - b.val);
+                ranking.sort((a,b) => a.isBusy - b.isBusy || a.distVal - b.distVal);
                 resDiv.innerHTML = "";
                 ranking.forEach(d => {
                     resDiv.innerHTML += `
                         <div class="driver-card ${d.isBusy ? 'is-busy' : 'is-free'}">
                             <div>
                                 <strong>${d.name}</strong><br>
-                                <small>${d.dist} von ${d.plz}</small>
+                                <small>${d.distText} von ${d.plz}</small><br>
+                                ${!d.isBusy ? '<button class="btn-book">Jetzt buchen</button>' : ''}
                             </div>
                             <span class="status-badge ${d.isBusy ? 'busy' : 'free'}">${d.isBusy ? 'BESETZT' : 'FREI'}</span>
                         </div>`;
