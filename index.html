@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Springer-Dispo-Zentrale 4.7 🚀</title>
+    <title>Springer-Dispo-Zentrale 4.9 🚀</title>
     <style>
         :root { --primary: #007bff; --success: #28a745; --danger: #dc3545; --bg: #f4f7f6; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); padding: 20px; }
@@ -11,40 +11,42 @@
         input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 10px; }
         .date-row { display: flex; gap: 10px; }
         .date-row div { flex: 1; }
-        .btn-main { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .btn-main { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1.1rem; }
         .driver-card { background: white; padding: 15px; border-radius: 10px; margin-top: 10px; display: flex; justify-content: space-between; align-items: center; border-left: 6px solid #ccc; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
         .is-free { border-left-color: var(--success); }
-        .is-busy { border-left-color: var(--danger); opacity: 0.7; }
-        .btn-book { background: var(--success); color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; margin-top: 5px; }
-        .status-badge { padding: 5px 10px; border-radius: 5px; font-weight: bold; font-size: 0.8rem; }
+        .is-busy { border-left-color: var(--danger); background: #fff5f5; }
+        .status-badge { padding: 5px 10px; border-radius: 5px; font-weight: bold; }
         .free { background: #d4edda; color: #155724; }
         .busy { background: #f8d7da; color: #721c24; }
-        .error-msg { color: var(--danger); background: #fee; padding: 10px; border-radius: 8px; margin-top: 10px; display: none; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2 style="text-align:center; color:var(--primary);">Springer-Dispo-Zentrale 4.7</h2>
+    <h2 style="text-align:center; color:var(--primary);">Springer-Dispo-Zentrale 4.9</h2>
     
-    <label>Ziel-Einrichtung</label>
+    <label>Einrichtung auswählen</label>
     <select id="schoolSelect" onchange="document.getElementById('destinationPlz').value = this.value">
+        <option value="">-- Bitte wählen --</option>
         <option value="30655">Albert-Liebmann-Schule (30655)</option>
         <option value="30165">Lebenshilfe Büttnerstraße (30165)</option>
         <option value="30449">Wilhelm-Schade-Schule (30449)</option>
+        <option value="30900">Kindergarten Domino (30900)</option>
     </select>
 
     <label>Ziel-PLZ</label>
-    <input type="text" id="destinationPlz" value="30655">
+    <input type="text" id="destinationPlz" value="30177">
 
     <div class="date-row">
         <div><label>Von</label><input type="date" id="dateFrom" value="2026-04-24"></div>
         <div><label>Bis</label><input type="date" id="dateTo" value="2026-04-24"></div>
     </div>
 
-    <button class="btn-main" onclick="runCheck()">Verfügbarkeit & Ranking prüfen</button>
-    <div id="errorArea" class="error-msg"></div>
-    <p style="text-align:center;"><small><a href="#" onclick="setup()">⚙️ IDs verwalten</a></small></p>
+    <button class="btn-main" onclick="runCheck()">Anfrage gemäß API-Vorgabe senden</button>
+    
+    <p style="text-align:center; margin-top:15px;">
+        <small><a href="#" onclick="setup()" style="color:#888;">⚙️ IDs & API-Keys verwalten</a></small>
+    </p>
 </div>
 
 <div id="results" style="max-width: 650px; margin: 20px auto;"></div>
@@ -57,40 +59,49 @@
         { name: "Ferkau Eckart", plz: "30851" },
         { name: "Ohm Lars", plz: "30559" },
         { name: "Bachmeier Reinhard", plz: "30659" },
+        { name: "Isfahan Mozaffaey Hamid", plz: "30519" },
+        { name: "Schrader Harald", plz: "30880" },
+        { name: "Aschenbach André", plz: "30989" },
         { name: "Neubauer Michael", plz: "30853" }
     ];
 
     function setup() {
-        const k = prompt("Kalender-ID:", localStorage.getItem('k_id') || "");
-        const g = prompt("Google API Key:", localStorage.getItem('g_key') || "");
-        if(k) localStorage.setItem('k_id', k);
-        if(g) localStorage.setItem('g_key', g);
+        const kId = prompt("1. Kalender-ID (aus deinem Admin-Link):", localStorage.getItem('kId') || "");
+        const kKey = prompt("2. Dein API-KEY (von Kalender Digital):", localStorage.getItem('kKey') || "");
+        const gKey = prompt("3. Google Maps Key:", localStorage.getItem('gKey') || "");
+        
+        if(kId) localStorage.setItem('kId', kId);
+        if(kKey) localStorage.setItem('kKey', kKey);
+        if(gKey) localStorage.setItem('gKey', gKey);
         location.reload();
     }
 
     async function runCheck() {
-        const kId = localStorage.getItem('k_id');
-        const gKey = localStorage.getItem('g_key');
+        const kId = localStorage.getItem('kId');
+        const kKey = localStorage.getItem('kKey');
+        const gKey = localStorage.getItem('gKey');
         const from = document.getElementById('dateFrom').value;
         const to = document.getElementById('dateTo').value;
         const dest = document.getElementById('destinationPlz').value;
-        const err = document.getElementById('errorArea');
-        
-        if(!kId || !gKey) { alert("Bitte IDs in den Einstellungen hinterlegen!"); return; }
-        err.style.display = "none";
+        const resDiv = document.getElementById('results');
+
+        if(!kId || !kKey) { alert("Bitte Kalender-ID und API-Key in den Einstellungen hinterlegen!"); return; }
+        resDiv.innerHTML = "Lade Daten nach Doku-Vorgabe...";
 
         try {
-            // Korrigierte URL-Struktur für Zeiträume laut Doku
-            const calendarUrl = `https://api.kalender.digital/public/event?calendarId=${kId}&startDate=${from}&endDate=${to}`;
-            const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(calendarUrl)}`;
+            // 1. Termine abrufen (Strikt nach deiner curl-Vorgabe)
+            const apiUrl = `https://api.kalender.digital/public/event?calendarId=${kId}&startDate=${from}&endDate=${to}&timeZone=Europe/Berlin`;
+            const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(apiUrl)}`;
             
-            const resp = await fetch(proxyUrl);
-            if(!resp.ok) throw new Error("Fehler beim Kalender-Abruf (400/500)");
-            
-            const data = await resp.json();
-            const eventsText = JSON.stringify(data).toLowerCase();
+            const resp = await fetch(proxyUrl, {
+                method: 'GET',
+                headers: { 'X-API-KEY': kKey } // Das ist der entscheidende Teil aus deiner Doku!
+            });
 
-            // Google Maps Integration
+            const data = await resp.json();
+            const calendarText = JSON.stringify(data).toLowerCase();
+
+            // 2. Google Maps für Entfernungen
             if (typeof google === 'undefined') {
                 const s = document.createElement('script');
                 s.src = `https://maps.googleapis.com/maps/api/js?key=${gKey}&libraries=geometry`;
@@ -104,18 +115,15 @@
                 destinations: [dest],
                 travelMode: 'DRIVING'
             }, (mResp, status) => {
-                if(status !== "OK") { err.innerText = "Google Maps Fehler: " + status; err.style.display="block"; return; }
-
                 let ranking = drivers.map((d, i) => {
                     const lastName = d.name.split(' ').pop().toLowerCase();
-                    const isBusy = eventsText.includes(lastName);
+                    const isBusy = calendarText.includes(lastName);
                     const dist = mResp.rows[i].elements[0].distance;
                     return { ...d, distText: dist.text, distVal: dist.value, isBusy };
                 });
 
                 ranking.sort((a,b) => a.isBusy - b.isBusy || a.distVal - b.distVal);
                 
-                const resDiv = document.getElementById('results');
                 resDiv.innerHTML = "";
                 ranking.forEach(d => {
                     resDiv.innerHTML += `
@@ -123,16 +131,13 @@
                             <div>
                                 <strong>${d.name}</strong><br>
                                 <small>${d.distText} von ${d.plz}</small><br>
-                                ${!d.isBusy ? `<button class="btn-book" onclick="alert('Buchung für ${d.name} wird vorbereitet...')">Jetzt buchen</button>` : ''}
+                                ${!d.isBusy ? `<button class="btn-main" style="padding:5px 10px; width:auto; font-size:0.8rem; margin-top:5px; background:#28a745;">Buchen</button>` : ''}
                             </div>
                             <span class="status-badge ${d.isBusy ? 'busy' : 'free'}">${d.isBusy ? 'BESETZT' : 'FREI'}</span>
                         </div>`;
                 });
             });
-        } catch(e) {
-            err.innerText = "Kritischer Fehler: " + e.message;
-            err.style.display = "block";
-        }
+        } catch(e) { resDiv.innerHTML = "Fehler: " + e.message; }
     }
 </script>
 </body>
