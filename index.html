@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Springer-Dispo 5.3 🚀</title>
+    <title>Springer-Dispo 5.4 🚀</title>
     <style>
         :root { --p: #007bff; --s: #28a745; --d: #dc3545; --bg: #f4f7f6; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); padding: 20px; }
@@ -21,7 +21,7 @@
 <body>
 
 <div class="card">
-    <h2 style="text-align:center; color:var(--p); margin-top:0;">Springer-Dispo 5.3</h2>
+    <h2 style="text-align:center; color:var(--p); margin-top:0;">Springer-Dispo 5.4</h2>
     
     <label>Einrichtung / Ziel</label>
     <select id="schoolSelect" onchange="document.getElementById('destPlz').value = this.value">
@@ -34,12 +34,11 @@
     <input type="text" id="destPlz" value="30177" placeholder="Ziel-PLZ">
 
     <div style="display:flex; gap:10px;">
-        <div style="flex:1;"><label>Von</label><input type="date" id="dateFrom" value="2026-04-24"></div>
-        <div style="flex:1;"><label>Bis</label><input type="date" id="dateTo" value="2026-04-24"></div>
+        <div style="flex:1;"><label>Datum prüfen</label><input type="date" id="dateCheck" value="2026-04-24"></div>
     </div>
 
-    <button class="btn-main" onclick="run()">Prüfen mit Profi-Logik</button>
-    <p style="text-align:center;"><small><a href="#" onclick="setup()" style="color:#888;">⚙️ IDs & API-Keys (Google, X-API, Kalender-ID)</a></small></p>
+    <button id="mainBtn" class="btn-main" onclick="run()">Verfügbarkeit prüfen</button>
+    <p style="text-align:center;"><small><a href="#" onclick="setup()" style="color:#888;">⚙️ API-Keys & Kalender-ID verwalten</a></small></p>
 </div>
 
 <div id="results" style="max-width: 600px; margin: 20px auto;"></div>
@@ -56,40 +55,46 @@
     function setup() {
         localStorage.setItem('gKey', prompt("1. Google API Key:"));
         localStorage.setItem('kKey', prompt("2. Kalender API-KEY (X-API-KEY):"));
-        localStorage.setItem('kId', prompt("3. Kalender-ID (die Nummer):"));
+        localStorage.setItem('kId', prompt("3. Kalender-ID (die Nummer aus der Admin-URL):"));
         location.reload();
     }
 
     async function run() {
         const kId = localStorage.getItem('kId'), kKey = localStorage.getItem('kKey'), gKey = localStorage.getItem('gKey');
-        const from = document.getElementById('dateFrom').value, to = document.getElementById('dateTo').value;
+        const date = document.getElementById('dateCheck').value;
         const resDiv = document.getElementById('results');
         
-        if(!kId || !kKey) { alert("Bitte Keys eingeben!"); return; }
-        resDiv.innerHTML = "Lade Daten...";
+        if(!kId || !kKey || !gKey) { alert("Bitte erst alle Keys unter Einstellungen (Zahnrad) speichern!"); return; }
+        if(typeof google === 'undefined') { alert("Google Maps lädt noch... bitte kurz warten."); return; }
+
+        resDiv.innerHTML = "🔍 Kalender wird abgefragt...";
 
         try {
-            // KORREKTUR: Kalender-ID wird jetzt sauber in die URL eingebaut
-            const url = `https://api.kalender.digital/public/event?calendarId=${kId}&startDate=${from}&endDate=${to}&timeZone=Europe/Berlin`;
+            // URL Aufbau nach Dokumentation
+            const url = `https://api.kalender.digital/public/event?calendarId=${kId}&startDate=${date}&endDate=${date}&timeZone=Europe/Berlin`;
             const proxy = `https://corsproxy.io/?${encodeURIComponent(url)}`;
             
             const resp = await fetch(proxy, {
                 method: 'GET',
-                headers: { 'X-API-KEY': kKey.trim() }
+                headers: { 'X-API-KEY': kKey.trim(), 'Accept': 'application/json' }
             });
 
-            if(!resp.ok) throw new Error("API-Fehler " + resp.status);
-            const events = await resp.json(); // Wir arbeiten jetzt mit dem echten Objekt!
+            if(!resp.ok) throw new Error("Kalender-Fehler: " + resp.status);
+            const data = await resp.json();
+            const events = data.events || [];
 
-            // Google Maps
+            resDiv.innerHTML = "🚗 Entfernungen werden berechnet...";
+
             const service = new google.maps.DistanceMatrixService();
             service.getDistanceMatrix({
                 origins: drivers.map(d => d.plz),
                 destinations: [document.getElementById('destPlz').value],
                 travelMode: 'DRIVING'
             }, (mResp, status) => {
+                if(status !== 'OK') { resDiv.innerHTML = "Google-Fehler: " + status; return; }
+
                 let ranking = drivers.map((d, i) => {
-                    // KORREKTUR: Echte Tiefenprüfung in Titeln UND Unterkalendern
+                    // Check ob Name im Titel oder Unterkalender eines Events vorkommt
                     const isBusy = events.some(ev => {
                         const title = (ev.title || "").toLowerCase();
                         const subs = (ev.subCalendars || []).map(s => s.name || s).join(" ").toLowerCase();
@@ -97,24 +102,41 @@
                         return title.includes(searchName) || subs.includes(searchName);
                     });
 
-                    const dist = mResp.rows[i].elements[0].distance;
-                    return { ...d, distT: dist.text, distV: dist.value, isBusy };
+                    const element = mResp.rows[i].elements[0];
+                    const distT = element.status === "OK" ? element.distance.text : "N/A";
+                    const distV = element.status === "OK" ? element.distance.value : 999999;
+
+                    return { ...d, distT, distV, isBusy };
                 });
 
                 ranking.sort((a,b) => a.isBusy - b.isBusy || a.distV - b.distV);
+                
                 resDiv.innerHTML = "";
                 ranking.forEach(d => {
                     resDiv.innerHTML += `
                         <div class="driver ${d.isBusy ? 'is-busy' : 'is-free'}">
                             <div>
-                                <strong>${d.name}</strong><br><small>${d.distT} entfernt</small>
+                                <strong>${d.name}</strong><br>
+                                <small>${d.distT} von ${d.plz}</small>
                             </div>
                             <span class="status ${d.isBusy ? 'st-busy' : 'st-free'}">${d.isBusy ? 'BESETZT' : 'FREI'}</span>
                         </div>`;
                 });
             });
-        } catch(e) { resDiv.innerHTML = "Fehler: " + e.message; }
+        } catch(e) { 
+            resDiv.innerHTML = `<div style="color:red; padding:10px; background:#fff">❌ Fehler: ${e.message}<br><small>Prüfe Kalender-ID und API-Key.</small></div>`; 
+        }
     }
+
+    // Google Maps Script dynamisch laden
+    (function() {
+        const gKey = localStorage.getItem('gKey');
+        if(gKey) {
+            const script = document.createElement('script');
+            script.src = `https://maps.googleapis.com/maps/api/js?key=${gKey}&libraries=geometry`;
+            document.head.appendChild(script);
+        }
+    })();
 </script>
 </body>
 </html>
