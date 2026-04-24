@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Springer-Dispo 7.8</title>
+    <title>Springer-Dispo 8.0</title>
     <style>
         :root { --p: #007bff; --s: #28a745; --d: #dc3545; --bg: #f4f7f6; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); padding: 20px; color: #333; }
@@ -11,20 +11,20 @@
         input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 15px; box-sizing: border-box; font-size: 1rem; }
         .btn-main { width: 100%; padding: 16px; background: var(--p); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1.1rem; }
         .log-box { background: #000; color: #0f0; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 0.8rem; margin-bottom: 20px; min-height: 50px; white-space: pre-wrap; border: 1px solid #333; }
-        .driver { background: white; padding: 15px; border-radius: 10px; margin-top: 10px; display: flex; justify-content: space-between; align-items: center; border-left: 6px solid #ccc; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .driver { background: white; padding: 12px; border-radius: 10px; margin-top: 8px; display: flex; justify-content: space-between; align-items: center; border-left: 6px solid #ccc; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .is-busy { border-left-color: var(--d); background: #fff5f5; }
         .is-free { border-left-color: var(--s); }
-        .setup-footer { text-align: center; margin-top: 20px; font-size: 0.8rem; border-top: 1px solid #eee; padding-top: 15px; }
-        .setup-footer a { color: #888; text-decoration: none; margin: 0 10px; }
+        .setup-area { text-align: center; margin-top: 20px; font-size: 0.8rem; border-top: 1px solid #eee; padding-top: 15px; }
+        .setup-area a { color: #888; text-decoration: none; margin: 0 10px; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2 style="text-align:center; color:var(--p); margin-top:0;">Springer-Dispo 7.8</h2>
-    <div id="statusLog" class="log-box">Status: Einsatzbereit.</div>
+    <h2 style="text-align:center; color:var(--p); margin-top:0;">Springer-Dispo 8.0</h2>
+    <div id="statusLog" class="log-box">Bereit.</div>
 
-    <label>Einrichtung / Ziel wählen</label>
+    <label>Ziel-Einrichtung wählen</label>
     <select id="schoolSelect" onchange="document.getElementById('destPlz').value = this.value">
         <option value="30655">Albert-Liebmann-Schule (30655)</option>
         <option value="30165">Lebenshilfe Büttnerstraße (30165)</option>
@@ -47,10 +47,12 @@
         </div>
     </div>
 
-    <button class="btn-main" onclick="run()">Abfrage starten</button>
+    <button class="btn-main" onclick="run()">Verfügbarkeit prüfen</button>
 
-    <div class="setup-footer">
-        <a href="#" onclick="setup()">Keys & Kalender-IDs einstellen</a>
+    <div class="setup-area">
+        <a href="https://cors-anywhere.herokuapp.com/corsdemo" target="_blank" style="color:var(--d); font-weight:bold;">1. PROXY AKTIVIEREN</a>
+        |
+        <a href="#" onclick="setup()">2. Keys & IDs</a>
     </div>
 </div>
 
@@ -66,40 +68,30 @@
     ];
 
     function setup() {
-        localStorage.setItem('kKey', prompt("X-API-KEY:"));
-        localStorage.setItem('kId', prompt("Kalender-IDs (kommagetrennt):"));
-        localStorage.setItem('gKey', prompt("Google API Key:"));
+        localStorage.setItem('kKey', prompt("X-API-KEY:", localStorage.getItem('kKey') || ""));
+        localStorage.setItem('kId', prompt("Kalender-ID:", localStorage.getItem('kId') || ""));
+        localStorage.setItem('gKey', prompt("Google API Key:", localStorage.getItem('gKey') || ""));
         location.reload();
     }
 
     async function run() {
-        const kKey = localStorage.getItem('kKey'), kIdRaw = localStorage.getItem('kId');
+        const kKey = localStorage.getItem('kKey'), kId = localStorage.getItem('kId');
         const from = document.getElementById('dateFrom').value, to = document.getElementById('dateTo').value;
         const log = document.getElementById('statusLog');
         const resDiv = document.getElementById('results');
 
-        if(!kKey || !kIdRaw) return alert("Bitte Setup ausfüllen!");
+        if(!kKey || !kId) return alert("Setup fehlt!");
         
-        log.innerHTML = "📡 Kalenderdaten werden geladen...";
-        let allEvents = [];
-        const ids = kIdRaw.split(',').map(s => s.trim());
-
+        log.innerHTML = "📡 Kalender wird geladen...";
         try {
-            for(let id of ids) {
-                // NEU: AllOrigins Proxy - braucht keine manuelle Aktivierung!
-                const targetUrl = `https://api.kalender.digital/public/event?calendarId=${id}&startDate=${from}&endDate=${to}`;
-                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
-                
-                const resp = await fetch(proxyUrl, {
-                    headers: { 'X-API-KEY': kKey.trim() }
-                });
-                const wrapper = await resp.json();
-                const data = JSON.parse(wrapper.contents); // Kalender-Digital Daten liegen hier drin
-                
-                if(data.events) allEvents = allEvents.concat(data.events);
-            }
-
-            log.innerHTML = `✅ ${allEvents.length} Termine geladen.\nRouting wird berechnet...`;
+            const url = `https://api.kalender.digital/public/event?calendarId=${kId}&startDate=${from}&endDate=${to}`;
+            const resp = await fetch(`https://cors-anywhere.herokuapp.com/${url}`, { 
+                headers: { 'X-API-KEY': kKey.trim() } 
+            });
+            
+            const data = await resp.json();
+            const events = data.events || [];
+            log.innerHTML = `✅ ${events.length} Termine gefunden.\nRouting wird berechnet...`;
 
             const service = new google.maps.DistanceMatrixService();
             service.getDistanceMatrix({
@@ -107,32 +99,30 @@
                 destinations: [document.getElementById('destPlz').value],
                 travelMode: 'DRIVING'
             }, (mResp, status) => {
-                if(status !== 'OK') { log.innerHTML = "❌ Google-Fehler: " + status; return; }
+                if(status !== 'OK') return;
 
                 let ranking = drivers.map((d, i) => {
                     const lastName = d.name.split(' ').pop().toLowerCase();
-                    const event = allEvents.find(ev => 
+                    const event = events.find(ev => 
                         ev.subCalendars && ev.subCalendars.some(sc => sc.toLowerCase().includes(lastName))
                     );
                     const dist = mResp.rows[i].elements[0].distance.text;
                     const val = mResp.rows[i].elements[0].distance.value;
-                    return { ...d, distT: dist, distV: val, isBusy: !!event, eTitle: event ? event.title : '' };
+                    return { ...d, distT: dist, distV: val, isBusy: !!event, eName: event ? event.title : '' };
                 });
 
                 ranking.sort((a,b) => a.isBusy - b.isBusy || a.distV - b.distV);
                 resDiv.innerHTML = "";
                 ranking.forEach(d => {
-                    resDiv.innerHTML += `
-                        <div class="driver ${d.isBusy ? 'is-busy' : 'is-free'}">
-                            <div>
-                                <strong>${d.name} (${d.distT})</strong>
-                                ${d.isBusy ? `<br><small style="color:red">Einsatz: ${d.eTitle}</small>` : ''}
-                            </div>
-                            <span style="font-weight:bold">${d.isBusy ? '🔴 BELEGT' : '🟢 FREI'}</span>
-                        </div>`;
+                    resDiv.innerHTML += `<div class="driver ${d.isBusy ? 'is-busy' : 'is-free'}">
+                        <div><strong>${d.name}</strong> (${d.distT})${d.isBusy ? `<br><small style="color:red">${d.eName}</small>` : ''}</div>
+                        <span style="font-weight:bold">${d.isBusy ? '🔴 BELEGT' : '🟢 FREI'}</span>
+                    </div>`;
                 });
             });
-        } catch(e) { log.innerHTML = "❌ Fehler: Der Proxy ist überlastet oder Daten ungültig."; }
+        } catch(e) { 
+            log.innerHTML = "⚠️ Proxy-Zugriff abgelaufen?\nBitte unten auf den roten Link klicken."; 
+        }
     }
 
     (function() {
