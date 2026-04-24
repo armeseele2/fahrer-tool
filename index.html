@@ -2,49 +2,32 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Springer-Dispo 11.0 (Egal welcher Browser)</title>
+    <title>Springer-Dispo 12.0 (Final)</title>
     <style>
         :root { --p: #007bff; --s: #28a745; --d: #dc3545; --bg: #f4f7f6; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); padding: 20px; color: #333; }
+        body { font-family: sans-serif; background: var(--bg); padding: 20px; }
         .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 600px; margin: auto; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.85rem; color: #666; }
-        input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 15px; box-sizing: border-box; font-size: 1rem; }
-        .btn-main { width: 100%; padding: 16px; background: var(--p); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1.1rem; }
-        .log-box { background: #000; color: #0f0; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 0.8rem; margin-bottom: 20px; min-height: 50px; white-space: pre-wrap; border: 1px solid #333; }
-        .driver { background: white; padding: 12px; border-radius: 10px; margin-top: 8px; display: flex; justify-content: space-between; align-items: center; border-left: 6px solid #ccc; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 15px; }
+        .btn-main { width: 100%; padding: 16px; background: var(--p); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .log-box { background: #000; color: #0f0; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 0.8rem; margin-bottom: 20px; min-height: 50px; }
+        .driver { background: white; padding: 12px; border-radius: 10px; margin-top: 8px; display: flex; justify-content: space-between; border-left: 6px solid #ccc; }
         .is-busy { border-left-color: var(--d); background: #fff5f5; }
         .is-free { border-left-color: var(--s); }
-        .setup-area { text-align: center; margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; }
-        .setup-area a { color: #888; text-decoration: none; font-size: 0.8rem; border: 1px solid #ddd; padding: 5px 10px; border-radius: 4px; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2 style="text-align:center; color:var(--p); margin-top:0;">Springer-Dispo 11.0</h2>
-    <div id="statusLog" class="log-box">Status: Bereit für Chrome, Edge & Co.</div>
-
-    <label>Einrichtung wählen</label>
-    <select id="schoolSelect" onchange="document.getElementById('destPlz').value = this.value">
-        <option value="30655">Albert-Liebmann-Schule (30655)</option>
-        <option value="30165">Lebenshilfe Büttnerstraße (30165)</option>
-        <option value="30449">Wilhelm-Schade-Schule (30449)</option>
-        <option value="30853">Pestalozzi-Schule (30853)</option>
-        <option value="30880">Mecklenheide Forst (30880)</option>
-    </select>
+    <h2 style="text-align:center; color:var(--p);">Springer-Dispo 12.0</h2>
+    <div id="statusLog" class="log-box">Bereit für den privaten Tunnel.</div>
 
     <label>Ziel-PLZ</label>
-    <input type="text" id="destPlz" value="30655">
+    <input type="text" id="destPlz" value="30177">
+    <label>Datum</label>
+    <input type="date" id="targetDate" value="2026-04-24">
 
-    <div style="display:flex; gap:10px;">
-        <div style="flex:1;"><label>Datum</label><input type="date" id="targetDate" value="2026-04-24"></div>
-    </div>
-
-    <button class="btn-main" onclick="run()">Verfügbarkeit prüfen</button>
-
-    <div class="setup-area">
-        <a href="#" onclick="setup()">⚙️ Keys & IDs verwalten</a>
-    </div>
+    <button class="btn-main" onclick="run()">Abfrage über eigenen Server starten</button>
+    <p style="text-align:center;"><a href="#" onclick="setup()">⚙️ Keys & Tunnel-URL einstellen</a></p>
 </div>
 
 <div id="results" style="max-width: 600px; margin: 20px auto;"></div>
@@ -54,79 +37,59 @@
         { name: "Türkel Tuncer", plz: "30161" }, { name: "Von Treskow Albrecht", plz: "30175" },
         { name: "Otto Alexander", plz: "30173" }, { name: "Ferkau Eckart", plz: "30851" },
         { name: "Ohm Lars", plz: "30559" }, { name: "Bachmeier Reinhard", plz: "30659" },
-        { name: "Isfahan Mozaffaey Hamid", plz: "30519" }, { name: "Schrader Harald", plz: "30880" },
-        { name: "Aschenbach André", plz: "30989" }, { name: "Neubauer Michael", plz: "30853" }
+        { name: "Isfahan Mozaffaey Hamid", plz: "30519" }, { name: "Schrader Harald", plz: "30880" }
     ];
 
     function setup() {
         localStorage.setItem('kKey', prompt("X-API-KEY:", localStorage.getItem('kKey') || ""));
-        localStorage.setItem('kIds', prompt("Kalender-IDs (kommagetrennt):", localStorage.getItem('kIds') || ""));
+        localStorage.setItem('kIds', prompt("Kalender-IDs:", localStorage.getItem('kIds') || ""));
         localStorage.setItem('gKey', prompt("Google API Key:", localStorage.getItem('gKey') || ""));
+        localStorage.setItem('proxyUrl', prompt("Google Web-App URL (aus Schritt 1):", localStorage.getItem('proxyUrl') || ""));
         location.reload();
     }
 
     async function run() {
-        const kKey = localStorage.getItem('kKey'), kIds = localStorage.getItem('kIds');
+        const kKey = localStorage.getItem('kKey'), kIds = localStorage.getItem('kIds'), proxy = localStorage.getItem('proxyUrl');
         const date = document.getElementById('targetDate').value;
         const log = document.getElementById('statusLog');
-        const resDiv = document.getElementById('results');
+        if(!proxy) return alert("Bitte erst die Google Web-App URL im Setup eintragen!");
 
-        if(!kKey || !kIds) return alert("Setup fehlt!");
-
-        log.innerHTML = "🛰️ Sichere Verbindung wird aufgebaut...";
-        
+        log.innerHTML = "🛰️ Sende Anfrage an privaten Tunnel...";
         try {
-            // Wir nutzen einen Google Script Proxy, der CORS umgeht
-            const proxyBase = "https://script.google.com/macros/s/AKfycbz_9_GZ5W0L2V5p-6qR0k-lWv6m6vX-P_2-zY/exec"; 
             let allEvents = [];
-            const ids = kIds.split(',');
-
-            for(let id of ids) {
-                const url = `https://api.kalender.digital/public/event?calendarId=${id.trim()}&startDate=${date}&endDate=${date}`;
-                // Technischer Trick: Wir senden die Anfrage über Google, um die Sperre zu umgehen
-                const resp = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
-                const json = await resp.json();
-                const data = JSON.parse(json.contents);
+            for(let id of kIds.split(',')) {
+                const target = `https://api.kalender.digital/public/event?calendarId=${id.trim()}&startDate=${date}&endDate=${date}`;
+                const resp = await fetch(`${proxy}?url=${encodeURIComponent(target)}&key=${kKey}`);
+                const data = await resp.json();
                 if(data.events) allEvents = allEvents.concat(data.events);
             }
 
-            log.innerHTML = `✅ ${allEvents.length} Termine geladen.\nBerechne Ranking...`;
-
+            log.innerHTML = `✅ ${allEvents.length} Termine geladen.`;
+            
             const service = new google.maps.DistanceMatrixService();
             service.getDistanceMatrix({
                 origins: drivers.map(d => d.plz),
                 destinations: [document.getElementById('destPlz').value],
                 travelMode: 'DRIVING'
             }, (mResp, status) => {
-                if(status !== 'OK') return log.innerHTML = "❌ Google Fehler";
-                
                 let ranking = drivers.map((d, i) => {
                     const lastName = d.name.split(' ').pop().toLowerCase();
                     const event = allEvents.find(ev => ev.title.toLowerCase().includes(lastName));
-                    const distT = mResp.rows[i].elements[0].distance.text;
-                    const distV = mResp.rows[i].elements[0].distance.value;
-                    return { ...d, distT, distV, isBusy: !!event, eName: event ? event.title : '' };
+                    return { ...d, distT: mResp.rows[i].elements[0].distance.text, distV: mResp.rows[i].elements[0].distance.value, isBusy: !!event, eName: event ? event.title : '' };
                 });
-
                 ranking.sort((a,b) => a.isBusy - b.isBusy || a.distV - b.distV);
-                resDiv.innerHTML = "";
-                ranking.forEach(d => {
-                    resDiv.innerHTML += `<div class="driver ${d.isBusy ? 'is-busy' : 'is-free'}">
-                        <div><strong>${d.name} (${d.distT})</strong>${d.isBusy ? `<br><small style="color:red">${d.eName}</small>` : ''}</div>
-                        <span style="font-weight:bold">${d.isBusy ? '🔴 BELEGT' : '🟢 FREI'}</span>
-                    </div>`;
-                });
+                document.getElementById('results').innerHTML = ranking.map(d => `
+                    <div class="driver ${d.isBusy ? 'is-busy' : 'is-free'}">
+                        <div><strong>${d.name} (${d.distT})</strong>${d.isBusy ? `<br><small>${d.eName}</small>` : ''}</div>
+                        <span>${d.isBusy ? '🔴 BELEGT' : '🟢 FREI'}</span>
+                    </div>`).join('');
             });
-        } catch(e) { log.innerHTML = "❌ Verbindung fehlgeschlagen."; }
+        } catch(e) { log.innerHTML = "❌ Fehler im Tunnel. Web-App URL korrekt?"; }
     }
 
     (function() {
         const key = localStorage.getItem('gKey');
-        if(key) {
-            const s = document.createElement('script');
-            s.src = `https://maps.googleapis.com/maps/api/js?key=${key}`;
-            document.head.appendChild(s);
-        }
+        if(key) { document.write(`<script src="https://maps.googleapis.com/maps/api/js?key=${key}"><\/script>`); }
     })();
 </script>
 </body>
