@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Springer-Dispo 8.0</title>
+    <title>Springer-Dispo 8.5 (Firefox-Direkt)</title>
     <style>
         :root { --p: #007bff; --s: #28a745; --d: #dc3545; --bg: #f4f7f6; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); padding: 20px; color: #333; }
@@ -14,35 +14,36 @@
         .driver { background: white; padding: 12px; border-radius: 10px; margin-top: 8px; display: flex; justify-content: space-between; align-items: center; border-left: 6px solid #ccc; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .is-busy { border-left-color: var(--d); background: #fff5f5; }
         .is-free { border-left-color: var(--s); }
-        .setup-area { text-align: center; margin-top: 20px; font-size: 0.8rem; border-top: 1px solid #eee; padding-top: 15px; }
-        .setup-area a { color: #888; text-decoration: none; margin: 0 10px; }
+        .setup-area { text-align: center; margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; }
+        .setup-area a { color: #888; text-decoration: none; font-size: 0.8rem; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2 style="text-align:center; color:var(--p); margin-top:0;">Springer-Dispo 8.0</h2>
-    <div id="statusLog" class="log-box">Bereit.</div>
+    <h2 style="text-align:center; color:var(--p); margin-top:0;">Springer-Dispo 8.5</h2>
+    <div id="statusLog" class="log-box">Status: Firefox-Direktmodus bereit.</div>
 
-    <label>Ziel-Einrichtung wählen</label>
+    <label>Einrichtung / Ziel auswählen</label>
     <select id="schoolSelect" onchange="document.getElementById('destPlz').value = this.value">
         <option value="30655">Albert-Liebmann-Schule (30655)</option>
         <option value="30165">Lebenshilfe Büttnerstraße (30165)</option>
         <option value="30449">Wilhelm-Schade-Schule (30449)</option>
         <option value="30853">Pestalozzi-Schule (30853)</option>
         <option value="30880">Mecklenheide Forst (30880)</option>
+        <option value="30177">Test-Standort (30177)</option>
     </select>
 
-    <label>Ziel-PLZ</label>
+    <label>Ziel-PLZ (automatisch aus Auswahl)</label>
     <input type="text" id="destPlz" value="30655">
 
     <div style="display:flex; gap:10px;">
         <div style="flex:1;">
-            <label>Von</label>
+            <label>Einsatz von</label>
             <input type="date" id="dateFrom" value="2026-04-24">
         </div>
         <div style="flex:1;">
-            <label>Bis</label>
+            <label>Einsatz bis</label>
             <input type="date" id="dateTo" value="2026-04-24">
         </div>
     </div>
@@ -50,9 +51,8 @@
     <button class="btn-main" onclick="run()">Verfügbarkeit prüfen</button>
 
     <div class="setup-area">
-        <a href="https://cors-anywhere.herokuapp.com/corsdemo" target="_blank" style="color:var(--d); font-weight:bold;">1. PROXY AKTIVIEREN</a>
-        |
-        <a href="#" onclick="setup()">2. Keys & IDs</a>
+        <p style="color:var(--s); font-weight:bold; margin-bottom:10px;">Bitte "CORS Everywhere" in Firefox einschalten!</p>
+        <a href="#" onclick="setup()">Keys & Kalender-IDs konfigurieren</a>
     </div>
 </div>
 
@@ -80,18 +80,19 @@
         const log = document.getElementById('statusLog');
         const resDiv = document.getElementById('results');
 
-        if(!kKey || !kId) return alert("Setup fehlt!");
+        if(!kKey || !kId) return alert("Bitte Setup zuerst ausfüllen!");
         
-        log.innerHTML = "📡 Kalender wird geladen...";
+        log.innerHTML = "🚀 Starte Direkt-Abfrage (Firefox)...";
         try {
+            // DIREKTE ABFRAGE OHNE PROXY!
             const url = `https://api.kalender.digital/public/event?calendarId=${kId}&startDate=${from}&endDate=${to}`;
-            const resp = await fetch(`https://cors-anywhere.herokuapp.com/${url}`, { 
+            const resp = await fetch(url, { 
                 headers: { 'X-API-KEY': kKey.trim() } 
             });
             
             const data = await resp.json();
             const events = data.events || [];
-            log.innerHTML = `✅ ${events.length} Termine gefunden.\nRouting wird berechnet...`;
+            log.innerHTML = `✅ ${events.length} Termine geladen.\nRouting wird berechnet...`;
 
             const service = new google.maps.DistanceMatrixService();
             service.getDistanceMatrix({
@@ -99,29 +100,34 @@
                 destinations: [document.getElementById('destPlz').value],
                 travelMode: 'DRIVING'
             }, (mResp, status) => {
-                if(status !== 'OK') return;
+                if(status !== 'OK') { log.innerHTML = "❌ Google Fehler: " + status; return; }
 
                 let ranking = drivers.map((d, i) => {
                     const lastName = d.name.split(' ').pop().toLowerCase();
+                    // Suche im subCalendars-Feld, wie im Kalender-Screenshot gesehen
                     const event = events.find(ev => 
                         ev.subCalendars && ev.subCalendars.some(sc => sc.toLowerCase().includes(lastName))
                     );
-                    const dist = mResp.rows[i].elements[0].distance.text;
-                    const val = mResp.rows[i].elements[0].distance.value;
-                    return { ...d, distT: dist, distV: val, isBusy: !!event, eName: event ? event.title : '' };
+                    const distText = mResp.rows[i].elements[0].distance.text;
+                    const distVal = mResp.rows[i].elements[0].distance.value;
+                    return { ...d, distT: distText, distV: distVal, isBusy: !!event, eName: event ? event.title : '' };
                 });
 
                 ranking.sort((a,b) => a.isBusy - b.isBusy || a.distV - b.distV);
                 resDiv.innerHTML = "";
                 ranking.forEach(d => {
-                    resDiv.innerHTML += `<div class="driver ${d.isBusy ? 'is-busy' : 'is-free'}">
-                        <div><strong>${d.name}</strong> (${d.distT})${d.isBusy ? `<br><small style="color:red">${d.eName}</small>` : ''}</div>
-                        <span style="font-weight:bold">${d.isBusy ? '🔴 BELEGT' : '🟢 FREI'}</span>
-                    </div>`;
+                    resDiv.innerHTML += `
+                        <div class="driver ${d.isBusy ? 'is-busy' : 'is-free'}">
+                            <div>
+                                <strong>${d.name} (${d.distT})</strong>
+                                ${d.isBusy ? `<br><small style="color:red">Einsatz: ${d.eName}</small>` : ''}
+                            </div>
+                            <span style="font-weight:bold">${d.isBusy ? '🔴 BELEGT' : '🟢 FREI'}</span>
+                        </div>`;
                 });
             });
         } catch(e) { 
-            log.innerHTML = "⚠️ Proxy-Zugriff abgelaufen?\nBitte unten auf den roten Link klicken."; 
+            log.innerHTML = "❌ Fehler!\n\nHast du das Icon 'CORS Everywhere' oben rechts in Firefox auf GRÜN geschaltet?"; 
         }
     }
 
