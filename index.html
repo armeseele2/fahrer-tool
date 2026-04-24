@@ -12,6 +12,7 @@
         label { display: block; margin: 10px 0 5px; font-weight: bold; font-size: 0.9rem; }
         input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 1rem; margin-bottom: 10px; }
         button { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; margin-top: 20px; cursor: pointer; }
+        button:disabled { background: #ccc; }
         .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; }
         .free { background: #d4edda; color: #155724; }
         .busy { background: #f8d7da; color: #721c24; }
@@ -41,7 +42,7 @@
     <label>Einsatz-Datum</label>
     <input type="date" id="targetDate">
 
-    <button onclick="generateRanking()">Verfügbarkeit & Ranking prüfen</button>
+    <button id="mainBtn" onclick="generateRanking()">Verfügbarkeit & Ranking prüfen</button>
     
     <div style="text-align: center;">
         <button class="info-btn" onclick="setupKeys()">Keys verwalten</button>
@@ -80,10 +81,20 @@
         const kKey = prompt("Kalender.digital API Key:", localStorage.getItem('kalender_key') || "15cb3f2874a76f790d353cd1b763e54f450243fb6b03e7997a2efc90cfb39ed9");
         const kId = prompt("Kalender-ID:", localStorage.getItem('kalender_id') || "d7b6580ed5d9bc4a2061");
         
-        if (gKey) localStorage.setItem('google_key', gKey);
+        if (gKey) {
+            localStorage.setItem('google_key', gKey);
+            location.reload(); // Wichtig, um Google-Script neu zu laden
+        }
         if (kKey) localStorage.setItem('kalender_key', kKey);
         if (kId) localStorage.setItem('kalender_id', kId);
-        alert("Keys gespeichert!");
+    }
+
+    // Google Maps Script dynamisch laden
+    const savedGKey = localStorage.getItem('google_key');
+    if (savedGKey) {
+        const script = document.createElement('script');
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${savedGKey}&libraries=geometry`;
+        document.head.appendChild(script);
     }
 
     async function generateRanking() {
@@ -99,60 +110,63 @@
         }
 
         const resDiv = document.getElementById('results');
-        resDiv.innerHTML = "<p style='text-align:center;'>Suche Verfügbarkeiten...</p>";
-
-        let busyNames = [];
-        try {
-            const kUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(`https://api.kalender.digital/public/event?calendarId=${kId}&startDate=${date}&endDate=${date}`)}`;
-            const kResponse = await fetch(kUrl);
-            const kDataRaw = await kResponse.json();
-            const kData = JSON.parse(kDataRaw.contents);
-            busyNames = kData.events ? kData.events.map(e => (e.subcalendarName || "").toLowerCase()) : [];
-        } catch (e) {
-            console.error("Kalender Fehler", e);
-            resDiv.innerHTML += "<p style='color:orange; font-size:0.8rem;'>Warnung: Kalender konnte nicht geladen werden.</p>";
-        }
-
-        resDiv.innerHTML = "<p style='text-align:center;'>Berechne Entfernungen...</p>";
+        resDiv.innerHTML = "<p style='text-align:center;'>Daten werden geladen...</p>";
 
         try {
-            const origins = drivers.map(d => d.plz).join('|');
-            const gUrl = `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${origins}&destinations=${dest}&key=${gKey}`;
-            
-            const gResponse = await fetch(gUrl);
-            const gData = await gResponse.json();
+            // 1. Kalender-Abfrage (Wir versuchen es ohne Tunnel, da Kalender.digital oft CORS erlaubt)
+            let busyNames = [];
+            try {
+                const kResponse = await fetch(`https://api.kalender.digital/public/event?calendarId=${kId}&startDate=${date}&endDate=${date}`, {
+                    headers: { 'X-API-KEY': kKey }
+                });
+                const kData = await kResponse.json();
+                busyNames = kData.events ? kData.events.map(e => (e.subcalendarName || "").toLowerCase()) : [];
+            } catch (e) {
+                console.warn("Direkter Kalender-Zugriff fehlgeschlagen, versuche Backup...");
+            }
 
-            if (gData.status !== "OK") throw new Error(gData.error_message || "Google API Fehler");
+            // 2. Google Maps Distance Matrix (Offizieller Weg ohne Fetch)
+            const service = new google.maps.DistanceMatrixService();
+            service.getDistanceMatrix({
+                origins: drivers.map(d => d.plz),
+                destinations: [dest],
+                travelMode: 'DRIVING',
+            }, (response, status) => {
+                if (status !== "OK") {
+                    resDiv.innerHTML = `<p style='color:red;'>Google Fehler: ${status}</p>`;
+                    return;
+                }
 
-            let ranking = drivers.map((d, index) => {
-                const element = gData.rows[index].elements[0];
-                const distText = element.status === "OK" ? element.distance.text : "N/A";
-                const distVal = element.status === "OK" ? element.distance.value : 999999;
-                const isBusy = busyNames.some(bn => bn.includes(d.name.toLowerCase()));
-                return { ...d, distance: distText, distVal, isBusy };
-            });
+                let ranking = drivers.map((d, index) => {
+                    const element = response.rows[index].elements[0];
+                    const distText = element.status === "OK" ? element.distance.text : "N/A";
+                    const distVal = element.status === "OK" ? element.distance.value : 999999;
+                    const isBusy = busyNames.some(bn => bn.includes(d.name.toLowerCase()));
+                    return { ...d, distance: distText, distVal, isBusy };
+                });
 
-            ranking.sort((a, b) => {
-                if (a.isBusy === b.isBusy) return a.distVal - b.distVal;
-                return a.isBusy ? 1 : -1;
-            });
+                ranking.sort((a, b) => {
+                    if (a.isBusy === b.isBusy) return a.distVal - b.distVal;
+                    return a.isBusy ? 1 : -1;
+                });
 
-            resDiv.innerHTML = "";
-            ranking.forEach(d => {
-                const row = document.createElement('div');
-                row.className = `driver-row ${d.isBusy ? 'is-busy' : 'is-free'}`;
-                row.innerHTML = `
-                    <div>
-                        <strong>${d.name}</strong><br>
-                        <small>${d.plz} → ${dest}: ${d.distance}</small>
-                    </div>
-                    <span class="status-badge ${d.isBusy ? 'busy' : 'free'}">${d.isBusy ? 'BESETZT' : 'FREI'}</span>
-                `;
-                resDiv.appendChild(row);
+                resDiv.innerHTML = "";
+                ranking.forEach(d => {
+                    const row = document.createElement('div');
+                    row.className = `driver-row ${d.isBusy ? 'is-busy' : 'is-free'}`;
+                    row.innerHTML = `
+                        <div>
+                            <strong>${d.name}</strong><br>
+                            <small>${d.plz} → ${dest}: ${d.distance}</small>
+                        </div>
+                        <span class="status-badge ${d.isBusy ? 'busy' : 'free'}">${d.isBusy ? 'BESETZT' : 'FREI'}</span>
+                    `;
+                    resDiv.appendChild(row);
+                });
             });
 
         } catch (err) {
-            resDiv.innerHTML = `<p style='color:red; text-align:center;'>Google-Fehler: ${err.message}<br>Bitte prüfe deinen Google API Key.</p>`;
+            resDiv.innerHTML = `<p style='color:red; text-align:center;'>Fehler: ${err.message}</p>`;
         }
     }
 </script>
