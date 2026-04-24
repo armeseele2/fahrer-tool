@@ -2,38 +2,39 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Springer-Dispo 7.5</title>
+    <title>Springer-Dispo 7.6</title>
     <style>
         :root { --p: #007bff; --s: #28a745; --d: #dc3545; --bg: #f4f7f6; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); padding: 20px; color: #333; }
         .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 600px; margin: auto; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.9rem; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.85rem; color: #666; }
         input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 15px; box-sizing: border-box; font-size: 1rem; }
         .btn-main { width: 100%; padding: 16px; background: var(--p); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1.1rem; }
-        .log-box { background: #000; color: #0f0; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 0.8rem; margin-bottom: 20px; min-height: 50px; white-space: pre-wrap; }
+        .log-box { background: #000; color: #0f0; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 0.8rem; margin-bottom: 20px; min-height: 50px; white-space: pre-wrap; border: 1px solid #333; }
         .driver { background: white; padding: 15px; border-radius: 10px; margin-top: 10px; display: flex; justify-content: space-between; align-items: center; border-left: 6px solid #ccc; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .is-busy { border-left-color: var(--d); background: #fff5f5; }
         .is-free { border-left-color: var(--s); }
-        .setup-area { text-align: center; margin-top: 15px; font-size: 0.8rem; border-top: 1px solid #eee; padding-top: 15px; }
-        .setup-area a { color: #666; margin: 0 10px; text-decoration: none; }
+        .setup-footer { text-align: center; margin-top: 20px; font-size: 0.8rem; border-top: 1px solid #eee; padding-top: 15px; }
+        .setup-footer a { color: #888; text-decoration: none; margin: 0 10px; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2 style="text-align:center; color:var(--p); margin-top:0;">Springer-Dispo 7.5</h2>
+    <h2 style="text-align:center; color:var(--p); margin-top:0;">Springer-Dispo 7.6</h2>
     <div id="statusLog" class="log-box">Bereit für Abfrage.</div>
 
-    <label>Einrichtung auswählen</label>
+    <label>Einrichtung / Ziel wählen</label>
     <select id="schoolSelect" onchange="document.getElementById('destPlz').value = this.value">
         <option value="30655">Albert-Liebmann-Schule (30655)</option>
         <option value="30165">Lebenshilfe Büttnerstraße (30165)</option>
         <option value="30449">Wilhelm-Schade-Schule (30449)</option>
         <option value="30853">Pestalozzi-Schule (30853)</option>
+        <option value="30880">Mecklenheide Forst (30880)</option>
         <option value="30177">Test-Standort (30177)</option>
     </select>
 
-    <label>Ziel-PLZ (automatisch)</label>
+    <label>Ziel-PLZ (Manuelle Korrektur möglich)</label>
     <input type="text" id="destPlz" value="30655">
 
     <div style="display:flex; gap:10px;">
@@ -47,11 +48,12 @@
         </div>
     </div>
 
-    <button class="btn-main" onclick="run()">Verfügbarkeit prüfen</button>
+    <button class="btn-main" onclick="run()">Abfrage starten</button>
 
-    <div class="setup-area">
-        <a href="https://cors-anywhere.herokuapp.com/corsdemo" target="_blank" style="color:var(--d); font-weight:bold;">1. PROXY AKTIVIEREN (WICHTIG!)</a>
-        <a href="#" onclick="setup()">2. Keys & IDs einstellen</a>
+    <div class="setup-footer">
+        <a href="https://cors-anywhere.herokuapp.com/corsdemo" target="_blank" style="color:var(--d); font-weight:bold;">1. ZUGRIFF AKTIVIEREN</a>
+        |
+        <a href="#" onclick="setup()">2. Keys einstellen</a>
     </div>
 </div>
 
@@ -67,9 +69,9 @@
     ];
 
     function setup() {
-        localStorage.setItem('kKey', prompt("X-API-KEY:", localStorage.getItem('kKey') || ""));
-        localStorage.setItem('kId', prompt("ID-Liste:", localStorage.getItem('kId') || ""));
-        localStorage.setItem('gKey', prompt("Google Key:", localStorage.getItem('gKey') || ""));
+        localStorage.setItem('kKey', prompt("X-API-KEY:"));
+        localStorage.setItem('kId', prompt("ID-Liste (kommagetrennt):"));
+        localStorage.setItem('gKey', prompt("Google API Key:"));
         location.reload();
     }
 
@@ -79,28 +81,29 @@
         const log = document.getElementById('statusLog');
         const resDiv = document.getElementById('results');
 
-        if(!kKey || !kIdRaw) return alert("Bitte Setup ausführen!");
+        if(!kKey || !kIdRaw) return alert("Bitte Setup ausfüllen!");
         
-        log.innerHTML = "📡 Kalender werden gelesen...";
+        log.innerHTML = "📡 Lade Daten vom Kalender...";
         let allEvents = [];
         const ids = kIdRaw.split(',').map(s => s.trim());
 
         try {
             for(let id of ids) {
                 const url = `https://api.kalender.digital/public/event?calendarId=${id}&startDate=${from}&endDate=${to}`;
-                const resp = await fetch(`https://cors-anywhere.herokuapp.com/${url}`, { headers: { 'X-API-KEY': kKey.trim() } });
-                const text = await resp.text();
+                const resp = await fetch(`https://cors-anywhere.herokuapp.com/${url}`, { 
+                    headers: { 'X-API-KEY': kKey.trim() } 
+                });
                 
-                if(text.includes("Request temporary access")) {
-                    log.innerHTML = "❌ PROXY GESPERRT!\nBitte klicke unten auf den roten Link und dort auf den Button.";
+                if (resp.status === 429) {
+                    log.innerHTML = "⚠️ FEHLER: Zu viele Anfragen!\nBitte warte 1-2 Minuten, bevor du es erneut versuchst.";
                     return;
                 }
-                
-                const data = JSON.parse(text);
+
+                const data = await resp.json();
                 if(data.events) allEvents = allEvents.concat(data.events);
             }
 
-            log.innerHTML = `✅ ${allEvents.length} Termine gefunden.\nBerechne Google-Wegzeiten...`;
+            log.innerHTML = `✅ ${allEvents.length} Einträge analysiert.\nGoogle-Routing läuft...`;
 
             const service = new google.maps.DistanceMatrixService();
             service.getDistanceMatrix({
@@ -108,10 +111,9 @@
                 destinations: [document.getElementById('destPlz').value],
                 travelMode: 'DRIVING'
             }, (mResp, status) => {
-                if(status !== 'OK') return alert("Google Maps Fehler: " + status);
-
                 let ranking = drivers.map((d, i) => {
                     const lastName = d.name.split(' ').pop().toLowerCase();
+                    // Suche in den SubCalendars, wie in deinen Rohdaten
                     const event = allEvents.find(ev => 
                         ev.subCalendars && ev.subCalendars.some(sc => sc.toLowerCase().includes(lastName))
                     );
@@ -123,16 +125,17 @@
                 ranking.sort((a,b) => a.isBusy - b.isBusy || a.distV - b.distV);
                 resDiv.innerHTML = "";
                 ranking.forEach(d => {
-                    resDiv.innerHTML += `<div class="driver ${d.isBusy ? 'is-busy' : 'is-free'}">
-                        <div>
-                            <strong>${d.name} (${d.distT})</strong>
-                            ${d.isBusy ? `<br><small style="color:red">Einsatz: ${d.eName}</small>` : ''}
-                        </div>
-                        <span style="font-weight:bold">${d.isBusy ? '🔴 BELEGT' : '🟢 FREI'}</span>
-                    </div>`;
+                    resDiv.innerHTML += `
+                        <div class="driver ${d.isBusy ? 'is-busy' : 'is-free'}">
+                            <div>
+                                <strong>${d.name} (${d.distT})</strong>
+                                ${d.isBusy ? `<br><small style="color:red">Einsatz: ${d.eName}</small>` : ''}
+                            </div>
+                            <span style="font-weight:bold">${d.isBusy ? '🔴 BELEGT' : '🟢 FREI'}</span>
+                        </div>`;
                 });
             });
-        } catch(e) { log.innerHTML = "❌ Fehler beim Laden der Daten."; }
+        } catch(e) { log.innerHTML = "❌ Fehler: Verbindung unterbrochen."; }
     }
 
     (function() {
