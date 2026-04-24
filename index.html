@@ -107,10 +107,9 @@
             const kResponse = await fetch(kUrl);
             const kDataRaw = await kResponse.json();
             const kData = JSON.parse(kDataRaw.contents);
-            busyNames = kData.events ? kData.events.map(e => e.subcalendarName.toLowerCase()) : [];
+            busyNames = kData.events ? kData.events.map(e => (e.subcalendarName || "").toLowerCase()) : [];
         } catch (e) {
             console.error("Kalender Fehler", e);
-            // Wir machen trotzdem weiter, zeigen aber eine Warnung
             resDiv.innerHTML += "<p style='color:orange; font-size:0.8rem;'>Warnung: Kalender konnte nicht geladen werden.</p>";
         }
 
@@ -147,12 +146,8 @@
                         <strong>${d.name}</strong><br>
                         <small>${d.plz} → ${dest}: ${d.distance}</small>
                     </div>
-                    <span class="status-badge ${d.isBusy ? 'busy' : 'free'}">
-                        ${d.isBusy ? '${d.isBusy ? "BESETZT" : "FREI"}'}
-                    </span>
+                    <span class="status-badge ${d.isBusy ? 'busy' : 'free'}">${d.isBusy ? 'BESETZT' : 'FREI'}</span>
                 `;
-                // Fix für den Badge-Text:
-                row.querySelector('.status-badge').innerText = d.isBusy ? "BESETZT" : "FREI";
                 resDiv.appendChild(row);
             });
 
