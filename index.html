@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Springer-Dispo 14.0 QUERY FINAL</title>
+<title>Springer-Dispo 14.1 FINAL</title>
 
 <style>
 :root{
@@ -25,7 +25,7 @@ background:#fff;
 padding:25px;
 border-radius:12px;
 box-shadow:0 4px 15px rgba(0,0,0,.1);
-max-width:700px;
+max-width:720px;
 margin:auto;
 }
 
@@ -115,7 +115,7 @@ color:var(--p);
 <div class="card">
 
 <h2 style="text-align:center;color:var(--p);margin-top:0;">
-Springer-Dispo 14.0 QUERY FINAL
+Springer-Dispo 14.1 FINAL
 </h2>
 
 <div id="statusLog" class="log-box">Status: Bereit.</div>
@@ -149,12 +149,11 @@ Springer-Dispo 14.0 QUERY FINAL
 
 <div class="links">
 <a href="#" onclick="setup()">⚙️ Setup</a>
-<a href="https://cors-anywhere.herokuapp.com/corsdemo" target="_blank">🔓 Proxy</a>
 </div>
 
 </div>
 
-<div id="results" style="max-width:700px;margin:20px auto;"></div>
+<div id="results" style="max-width:720px;margin:20px auto;"></div>
 
 <script>
 const drivers = [
@@ -177,56 +176,52 @@ localStorage.setItem("gKey",prompt("Google API Key",localStorage.getItem("gKey")
 location.reload();
 }
 
-function log(t){
-document.getElementById("statusLog").textContent=t;
+function log(txt){
+document.getElementById("statusLog").textContent=txt;
 }
 
 async function run(){
 
-const kKey=localStorage.getItem("kKey");
-const kIds=localStorage.getItem("kIds");
-const gKey=localStorage.getItem("gKey");
+const kKey = localStorage.getItem("kKey");
+const kIds = localStorage.getItem("kIds");
+const gKey = localStorage.getItem("gKey");
 
 if(!kKey || !kIds || !gKey){
 alert("Bitte Setup ausfüllen.");
 return;
 }
 
-const from=document.getElementById("dateFrom").value;
-const to=document.getElementById("dateTo").value;
-const dest=document.getElementById("destPlz").value;
+const from = document.getElementById("dateFrom").value;
+const to   = document.getElementById("dateTo").value;
+const dest = document.getElementById("destPlz").value;
 
 try{
 
-log("🛰️ Lade Google Maps...");
+log("📅 Lade Kalenderdaten...");
+const events = await loadAllEvents(from,to,kIds,kKey);
+
+log("🗺️ Lade Google Maps...");
 await ensureGoogle(gKey);
 
-log("🗺️ Berechne Entfernungen...");
-const matrix=await getMatrix(dest);
+const matrix = await getMatrix(dest);
 
-log("📅 Prüfe Fahrer einzeln über Query...");
-let ranking=[];
+log("🔎 Prüfe Fahrer...");
+let ranking = drivers.map((driver,i)=>{
 
-for(let i=0;i<drivers.length;i++){
+const hit = findDriverEvent(driver,events);
 
-const d=drivers[i];
+return {
+...driver,
+isBusy: !!hit,
+eventTitle: hit ? (hit.title || "Termin") : "",
+distText: matrix.rows[i].elements[0].distance.text,
+distValue: matrix.rows[i].elements[0].distance.value
+};
 
-const busy=await checkBusyByQuery(d.name,from,to,kIds,kKey);
-
-ranking.push({
-...d,
-isBusy:busy.found,
-eventTitle:busy.title,
-distText:matrix.rows[i].elements[0].distance.text,
-distValue:matrix.rows[i].elements[0].distance.value
 });
 
-log("Prüfe: " + d.name);
-
-}
-
 ranking.sort((a,b)=>
-(a.isBusy-b.isBusy) || (a.distValue-b.distValue)
+(a.isBusy - b.isBusy) || (a.distValue - b.distValue)
 );
 
 render(ranking);
@@ -241,29 +236,24 @@ log("❌ Fehler:\n"+e.message);
 }
 
 /* ==========================
-QUERY PRÜFUNG
+1 API REQUEST PRO ID
 ========================== */
-async function checkBusyByQuery(driverName,from,to,kIds,kKey){
+async function loadAllEvents(from,to,kIds,kKey){
 
-const ids=kIds.split(",");
-const searchTerms=[
-driverName,
-driverName.split(" ").pop()
-];
+let allEvents = [];
+const ids = kIds.split(",");
 
-for(const rawId of ids){
+for(const raw of ids){
 
-const id=rawId.trim();
+const id = raw.trim();
 
-for(const term of searchTerms){
+const url =
+`https://api.kalender.digital/public/event?calendarId=${encodeURIComponent(id)}&startDate=${from}&endDate=${to}T23:59:59&timeZone=Europe/Berlin`;
 
-const url=
-`https://api.kalender.digital/public/event?calendarId=${encodeURIComponent(id)}&startDate=${from}&endDate=${to}T23:59:59&timeZone=Europe/Berlin&query=${encodeURIComponent(term)}`;
-
-const proxy=
+const proxy =
 "https://corsproxy.io/?"+encodeURIComponent(url);
 
-const resp=await fetch(proxy,{
+const resp = await fetch(proxy,{
 headers:{
 "X-API-KEY":kKey.trim()
 }
@@ -271,30 +261,81 @@ headers:{
 
 if(!resp.ok) continue;
 
-const data=await resp.json();
+const data = await resp.json();
 
-let events=[];
+console.log("Kalender Response:",data);
 
-if(Array.isArray(data)) events=data;
-else if(Array.isArray(data.events)) events=data.events;
-
-if(events.length>0){
-
-return {
-found:true,
-title:events[0].title || "Termin"
-};
-
+if(Array.isArray(data)){
+allEvents = allEvents.concat(data);
+}
+else if(Array.isArray(data.events)){
+allEvents = allEvents.concat(data.events);
 }
 
 }
 
+return allEvents;
 }
 
-return {
-found:false,
-title:""
-};
+/* ==========================
+LOKALE SUCHLOGIK
+========================== */
+function findDriverEvent(driver,events){
+
+const full = driver.name.toLowerCase();
+const last = driver.name.split(" ").pop().toLowerCase();
+const first = driver.name.split(" ")[0].toLowerCase();
+
+return events.find(ev=>{
+
+const text = buildEventText(ev);
+
+/* Name komplett */
+if(text.includes(full)) return true;
+
+/* Nachname */
+if(text.includes(last)) return true;
+
+/* Vorname */
+if(text.includes(first)) return true;
+
+/* createdName prüfen */
+if(ev.createdName && ev.createdName.toLowerCase().includes(last)) return true;
+
+/* Krank / Urlaub / Abwesend über Unterkalender */
+if(text.includes(last) && (
+text.includes("krank") ||
+text.includes("urlaub") ||
+text.includes("frei")
+)) return true;
+
+return false;
+
+});
+
+}
+
+function buildEventText(ev){
+
+let sub = "";
+
+if(Array.isArray(ev.subCalendars)){
+sub = ev.subCalendars.map(x=>{
+if(typeof x==="string") return x;
+if(typeof x==="object") return JSON.stringify(x);
+return "";
+}).join(" ");
+}
+
+return (
+(ev.title || "") + " " +
+(ev.description || "") + " " +
+(ev.where || "") + " " +
+(ev.who || "") + " " +
+(ev.createdName || "") + " " +
+sub + " " +
+JSON.stringify(ev)
+).toLowerCase();
 
 }
 
@@ -323,10 +364,10 @@ function getMatrix(dest){
 
 return new Promise((resolve,reject)=>{
 
-const service=new google.maps.DistanceMatrixService();
+const service = new google.maps.DistanceMatrixService();
 
 service.getDistanceMatrix({
-origins:drivers.map(d=>d.plz),
+origins: drivers.map(d=>d.plz),
 destinations:[dest],
 travelMode:"DRIVING"
 },(response,status)=>{
@@ -349,7 +390,7 @@ RENDER
 ========================== */
 function render(list){
 
-document.getElementById("results").innerHTML=
+document.getElementById("results").innerHTML =
 list.map(d=>`
 
 <div class="driver ${d.isBusy?'is-busy':'is-free'}">
