@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Springer-Dispo 8.5 (Firefox-Direkt)</title>
+    <title>Springer-Dispo 8.7 (Firefox-Direkt)</title>
     <style>
         :root { --p: #007bff; --s: #28a745; --d: #dc3545; --bg: #f4f7f6; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); padding: 20px; color: #333; }
@@ -21,38 +21,31 @@
 <body>
 
 <div class="card">
-    <h2 style="text-align:center; color:var(--p); margin-top:0;">Springer-Dispo 8.5</h2>
-    <div id="statusLog" class="log-box">Status: Firefox-Direktmodus bereit.</div>
+    <h2 style="text-align:center; color:var(--p); margin-top:0;">Springer-Dispo 8.7</h2>
+    <div id="statusLog" class="log-box">Status: Bereit für Firefox-Scan.</div>
 
-    <label>Einrichtung / Ziel auswählen</label>
+    <label>Einrichtung wählen</label>
     <select id="schoolSelect" onchange="document.getElementById('destPlz').value = this.value">
         <option value="30655">Albert-Liebmann-Schule (30655)</option>
         <option value="30165">Lebenshilfe Büttnerstraße (30165)</option>
         <option value="30449">Wilhelm-Schade-Schule (30449)</option>
         <option value="30853">Pestalozzi-Schule (30853)</option>
         <option value="30880">Mecklenheide Forst (30880)</option>
-        <option value="30177">Test-Standort (30177)</option>
     </select>
 
-    <label>Ziel-PLZ (automatisch aus Auswahl)</label>
+    <label>Ziel-PLZ</label>
     <input type="text" id="destPlz" value="30655">
 
     <div style="display:flex; gap:10px;">
-        <div style="flex:1;">
-            <label>Einsatz von</label>
-            <input type="date" id="dateFrom" value="2026-04-24">
-        </div>
-        <div style="flex:1;">
-            <label>Einsatz bis</label>
-            <input type="date" id="dateTo" value="2026-04-24">
-        </div>
+        <div style="flex:1;"><label>Von</label><input type="date" id="dateFrom" value="2026-04-24"></div>
+        <div style="flex:1;"><label>Bis</label><input type="date" id="dateTo" value="2026-04-24"></div>
     </div>
 
     <button class="btn-main" onclick="run()">Verfügbarkeit prüfen</button>
 
     <div class="setup-area">
-        <p style="color:var(--s); font-weight:bold; margin-bottom:10px;">Bitte "CORS Everywhere" in Firefox einschalten!</p>
-        <a href="#" onclick="setup()">Keys & Kalender-IDs konfigurieren</a>
+        <p style="color:var(--s); font-weight:bold; margin-bottom:10px;">CORS Everywhere in Firefox muss AN sein!</p>
+        <a href="#" onclick="setup()">Keys & IDs konfigurieren</a>
     </div>
 </div>
 
@@ -80,19 +73,16 @@
         const log = document.getElementById('statusLog');
         const resDiv = document.getElementById('results');
 
-        if(!kKey || !kId) return alert("Bitte Setup zuerst ausfüllen!");
+        if(!kKey || !kId) return alert("Setup fehlt!");
         
-        log.innerHTML = "🚀 Starte Direkt-Abfrage (Firefox)...";
+        log.innerHTML = "🚀 Suche Termine...";
         try {
-            // DIREKTE ABFRAGE OHNE PROXY!
             const url = `https://api.kalender.digital/public/event?calendarId=${kId}&startDate=${from}&endDate=${to}`;
-            const resp = await fetch(url, { 
-                headers: { 'X-API-KEY': kKey.trim() } 
-            });
-            
+            const resp = await fetch(url, { headers: { 'X-API-KEY': kKey.trim() } });
             const data = await resp.json();
             const events = data.events || [];
-            log.innerHTML = `✅ ${events.length} Termine geladen.\nRouting wird berechnet...`;
+            
+            log.innerHTML = `✅ ${events.length} Kalender-Einträge geladen.\nBerechne Entfernungen...`;
 
             const service = new google.maps.DistanceMatrixService();
             service.getDistanceMatrix({
@@ -100,17 +90,20 @@
                 destinations: [document.getElementById('destPlz').value],
                 travelMode: 'DRIVING'
             }, (mResp, status) => {
-                if(status !== 'OK') { log.innerHTML = "❌ Google Fehler: " + status; return; }
+                if(status !== 'OK') return;
 
                 let ranking = drivers.map((d, i) => {
                     const lastName = d.name.split(' ').pop().toLowerCase();
-                    // Suche im subCalendars-Feld, wie im Kalender-Screenshot gesehen
-                    const event = events.find(ev => 
-                        ev.subCalendars && ev.subCalendars.some(sc => sc.toLowerCase().includes(lastName))
-                    );
-                    const distText = mResp.rows[i].elements[0].distance.text;
-                    const distVal = mResp.rows[i].elements[0].distance.value;
-                    return { ...d, distT: distText, distV: distVal, isBusy: !!event, eName: event ? event.title : '' };
+                    // Sucht jetzt im Titel UND in den Unterkalendern
+                    const event = events.find(ev => {
+                        const inTitle = ev.title.toLowerCase().includes(lastName);
+                        const inSub = ev.subCalendars && ev.subCalendars.some(sc => sc.toLowerCase().includes(lastName));
+                        return inTitle || inSub;
+                    });
+
+                    const distT = mResp.rows[i].elements[0].distance.text;
+                    const distV = mResp.rows[i].elements[0].distance.value;
+                    return { ...d, distT, distV, isBusy: !!event, eName: event ? event.title : '' };
                 });
 
                 ranking.sort((a,b) => a.isBusy - b.isBusy || a.distV - b.distV);
@@ -118,17 +111,12 @@
                 ranking.forEach(d => {
                     resDiv.innerHTML += `
                         <div class="driver ${d.isBusy ? 'is-busy' : 'is-free'}">
-                            <div>
-                                <strong>${d.name} (${d.distT})</strong>
-                                ${d.isBusy ? `<br><small style="color:red">Einsatz: ${d.eName}</small>` : ''}
-                            </div>
+                            <div><strong>${d.name} (${d.distT})</strong>${d.isBusy ? `<br><small style="color:red">${d.eName}</small>` : ''}</div>
                             <span style="font-weight:bold">${d.isBusy ? '🔴 BELEGT' : '🟢 FREI'}</span>
                         </div>`;
                 });
             });
-        } catch(e) { 
-            log.innerHTML = "❌ Fehler!\n\nHast du das Icon 'CORS Everywhere' oben rechts in Firefox auf GRÜN geschaltet?"; 
-        }
+        } catch(e) { log.innerHTML = "❌ Fehler beim Laden. CORS Everywhere aktiv?"; }
     }
 
     (function() {
