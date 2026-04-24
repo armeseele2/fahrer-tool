@@ -3,23 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Springer-Dispo-Tool</title>
+    <title>Springer-Dispo-Zentrale</title>
     <style>
         :root { --primary: #007bff; --success: #28a745; --danger: #dc3545; --bg: #f4f7f6; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 20px; color: #333; }
-        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 500px; margin: auto; }
-        h2 { margin-top: 0; color: var(--primary); font-size: 1.2rem; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 550px; margin: auto; }
+        h2 { margin-top: 0; color: var(--primary); font-size: 1.2rem; text-align: center; }
         label { display: block; margin: 10px 0 5px; font-weight: bold; font-size: 0.9rem; }
         input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 1rem; margin-bottom: 10px; }
         button { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; margin-top: 20px; cursor: pointer; }
-        button:disabled { background: #ccc; }
         .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; }
         .free { background: #d4edda; color: #155724; }
         .busy { background: #f8d7da; color: #721c24; }
-        #results { margin-top: 20px; max-width: 500px; margin-left: auto; margin-right: auto; }
+        #results { margin-top: 20px; max-width: 550px; margin-left: auto; margin-right: auto; }
         .driver-row { background: white; padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 5px solid #ddd; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .driver-row.is-free { border-left-color: var(--success); }
-        .driver-row.is-busy { border-left-color: var(--danger); opacity: 0.8; }
+        .driver-row.is-busy { border-left-color: var(--danger); opacity: 0.75; }
         .info-btn { background: none; border: none; color: var(--primary); cursor: pointer; font-size: 0.8rem; text-decoration: underline; margin-top: 10px; }
     </style>
 </head>
@@ -28,7 +27,7 @@
 <div class="card">
     <h2>Springer-Dispo-Zentrale</h2>
     
-    <label>Ziel auswählen (Schule)</label>
+    <label>Ziel auswählen (Schule/Einrichtung)</label>
     <select id="schoolSelect" onchange="updatePlz()">
         <option value="">-- Bitte wählen --</option>
         <option value="30655">Albert-Liebmann-Schule (30655)</option>
@@ -45,26 +44,33 @@
     <button id="mainBtn" onclick="generateRanking()">Verfügbarkeit & Ranking prüfen</button>
     
     <div style="text-align: center;">
-        <button class="info-btn" onclick="setupKeys()">Keys verwalten</button>
+        <button class="info-btn" onclick="setupKeys()">Schlüssel & APIs verwalten</button>
     </div>
 </div>
 
 <div id="results"></div>
 
 <script>
+    // Alle 18 Springer mit korrekten Daten laut deiner Liste
     const drivers = [
-        { name: "Aschenbach André", plz: "30629" },
-        { name: "Ohm Lars", plz: "30823" },
-        { name: "Bachmeier Reinhard", plz: "30853" },
-        { name: "Isfahan Mozaffaey Hamid", plz: "30419" },
-        { name: "Otto Alexander", plz: "30627" },
-        { name: "Türkel Tuncer", plz: "30419" },
-        { name: "Schrader Harald", plz: "30655" },
-        { name: "Neubauer Michael", plz: "30827" },
-        { name: "Ferkau Eckart", plz: "30519" },
-        { name: "Bethmann Ekkehard", plz: "30559" },
-        { name: "Hauer Frank", plz: "30453" },
-        { name: "Kruse Jens Roland", plz: "30659" }
+        { name: "Aschenbach André", plz: "30989" },
+        { name: "Ohm Lars", plz: "30559" },
+        { name: "Bachmeier Reinhard", plz: "30659" },
+        { name: "Isfahan Mozaffaey Hamid", plz: "30519" },
+        { name: "Otto Alexander", plz: "30173" },
+        { name: "Türkel Tuncer", plz: "30161" },
+        { name: "Schrader Harald", plz: "30880" },
+        { name: "Neubauer Michael", plz: "30853" },
+        { name: "Ferkau Eckart", plz: "30851" },
+        { name: "Bethmann Ekkehard", plz: "31535" },
+        { name: "Hauer Frank", plz: "30900" },
+        { name: "Kruse Jens Roland", plz: "31275" },
+        { name: "Grimpe Dirk", plz: "30827" },
+        { name: "Häge Klaus Dieter", plz: "30519" },
+        { name: "Von Treskow Albrecht", plz: "30659" },
+        { name: "Caruso Guiseppe", plz: "30880" },
+        { name: "Popescu Viorel", plz: "30827" },
+        { name: "Beka Jonel", plz: "31275" }
     ];
 
     document.getElementById('targetDate').valueAsDate = new Date();
@@ -81,15 +87,13 @@
         const kKey = prompt("Kalender.digital API Key:", localStorage.getItem('kalender_key') || "15cb3f2874a76f790d353cd1b763e54f450243fb6b03e7997a2efc90cfb39ed9");
         const kId = prompt("Kalender-ID:", localStorage.getItem('kalender_id') || "d7b6580ed5d9bc4a2061");
         
-        if (gKey) {
-            localStorage.setItem('google_key', gKey);
-            location.reload(); // Wichtig, um Google-Script neu zu laden
-        }
+        if (gKey) localStorage.setItem('google_key', gKey);
         if (kKey) localStorage.setItem('kalender_key', kKey);
         if (kId) localStorage.setItem('kalender_id', kId);
+        location.reload();
     }
 
-    // Google Maps Script dynamisch laden
+    // Google Maps Script laden
     const savedGKey = localStorage.getItem('google_key');
     if (savedGKey) {
         const script = document.createElement('script');
@@ -105,27 +109,25 @@
         const kId = localStorage.getItem('kalender_id') || "d7b6580ed5d9bc4a2061";
 
         if (!dest || !gKey) {
-            alert("Bitte Ziel-PLZ eingeben und Google Key unter 'Keys verwalten' hinterlegen.");
+            alert("Bitte Ziel-PLZ und Google Key prüfen!");
             return;
         }
 
         const resDiv = document.getElementById('results');
-        resDiv.innerHTML = "<p style='text-align:center;'>Daten werden geladen...</p>";
+        resDiv.innerHTML = "<p style='text-align:center;'>Verfügbarkeit und Wege werden geprüft...</p>";
 
         try {
-            // 1. Kalender-Abfrage (Wir versuchen es ohne Tunnel, da Kalender.digital oft CORS erlaubt)
+            // 1. Kalender-Check
             let busyNames = [];
             try {
-                const kResponse = await fetch(`https://api.kalender.digital/public/event?calendarId=${kId}&startDate=${date}&endDate=${date}`, {
-                    headers: { 'X-API-KEY': kKey }
-                });
-                const kData = await kResponse.json();
+                const kUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(`https://api.kalender.digital/public/event?calendarId=${kId}&startDate=${date}&endDate=${date}`)}`;
+                const kResponse = await fetch(kUrl);
+                const kDataRaw = await kResponse.json();
+                const kData = JSON.parse(kDataRaw.contents);
                 busyNames = kData.events ? kData.events.map(e => (e.subcalendarName || "").toLowerCase()) : [];
-            } catch (e) {
-                console.warn("Direkter Kalender-Zugriff fehlgeschlagen, versuche Backup...");
-            }
+            } catch (e) { console.warn("Kalender-Check verzögert oder fehlgeschlagen."); }
 
-            // 2. Google Maps Distance Matrix (Offizieller Weg ohne Fetch)
+            // 2. Google Distance Matrix
             const service = new google.maps.DistanceMatrixService();
             service.getDistanceMatrix({
                 origins: drivers.map(d => d.plz),
@@ -141,10 +143,17 @@
                     const element = response.rows[index].elements[0];
                     const distText = element.status === "OK" ? element.distance.text : "N/A";
                     const distVal = element.status === "OK" ? element.distance.value : 999999;
-                    const isBusy = busyNames.some(bn => bn.includes(d.name.toLowerCase()));
+                    
+                    // Namens-Abgleich (Vorname Nachname vs Nachname Vorname)
+                    const isBusy = busyNames.some(bn => {
+                        const nameParts = d.name.toLowerCase().split(' ');
+                        return nameParts.every(part => bn.includes(part));
+                    });
+
                     return { ...d, distance: distText, distVal, isBusy };
                 });
 
+                // Sortierung: 1. Frei (nach km), 2. Besetzt (nach km)
                 ranking.sort((a, b) => {
                     if (a.isBusy === b.isBusy) return a.distVal - b.distVal;
                     return a.isBusy ? 1 : -1;
