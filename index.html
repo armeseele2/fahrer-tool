@@ -2,46 +2,36 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Springer-Dispo 5.8</title>
+    <title>Springer-Dispo 5.9</title>
     <style>
         :root { --p: #007bff; --s: #28a745; --d: #dc3545; --bg: #f4f7f6; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); padding: 20px; }
         .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 600px; margin: auto; }
-        label { display: block; margin: 12px 0 5px; font-weight: bold; }
         input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 10px; box-sizing: border-box; }
-        .btn-main { width: 100%; padding: 16px; background: var(--p); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1.1rem; }
-        .driver { background: white; padding: 15px; border-radius: 10px; margin-top: 10px; display: flex; justify-content: space-between; align-items: center; border-left: 6px solid #ccc; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .btn-main { width: 100%; padding: 16px; background: var(--p); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .driver { background: white; padding: 15px; border-radius: 10px; margin-top: 10px; display: flex; justify-content: space-between; border-left: 6px solid #ccc; }
         .is-busy { border-left-color: var(--d); background: #fff5f5; }
-        .is-free { border-left-color: var(--s); }
-        .status-box { background: #eee; padding: 10px; border-radius: 8px; margin-bottom: 15px; font-size: 0.9rem; border-left: 4px solid var(--p); }
+        .diag-box { background: #333; color: #0f0; padding: 15px; border-radius: 8px; margin-top: 20px; font-family: monospace; font-size: 0.8rem; white-space: pre-wrap; overflow-x: auto; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2 style="text-align:center; color:var(--p); margin-top:0;">Springer-Dispo 5.8</h2>
+    <h2 style="text-align:center; color:var(--p);">Springer-Dispo 5.9</h2>
     
-    <div id="statusInfo" class="status-box">Bereit für Abfrage...</div>
-
-    <label>Einrichtung / Ziel</label>
-    <select id="schoolSelect" onchange="document.getElementById('destPlz').value = this.value">
-        <option value="">-- Bitte wählen --</option>
-        <option value="30655">Albert-Liebmann-Schule (30655)</option>
-        <option value="30165">Lebenshilfe Büttnerstraße (30165)</option>
-        <option value="30449">Wilhelm-Schade-Schule (30449)</option>
-        <option value="30900">Kindergarten Domino (30900)</option>
-    </select>
-    <input type="text" id="destPlz" value="30177" placeholder="Ziel-PLZ">
+    <label>Ziel-PLZ</label>
+    <input type="text" id="destPlz" value="30177">
 
     <div style="display:flex; gap:10px;">
         <div style="flex:1;"><label>Von</label><input type="date" id="dateFrom" value="2026-04-24"></div>
         <div style="flex:1;"><label>Bis</label><input type="date" id="dateTo" value="2026-04-24"></div>
     </div>
 
-    <button class="btn-main" onclick="run()">Abfrage starten</button>
-    <p style="text-align:center;"><small><a href="#" onclick="setup()" style="color:#888;">⚙️ IDs & API-Keys verwalten</a></small></p>
+    <button class="btn-main" onclick="run()">Abfrage & Diagnose starten</button>
+    <p style="text-align:center;"><small><a href="#" onclick="setup()">⚙️ Keys & ID-Liste verwalten</a></small></p>
 </div>
 
+<div id="diag" class="diag-box">Diagnose-Log: Bereit.</div>
 <div id="results" style="max-width: 600px; margin: 20px auto;"></div>
 
 <script>
@@ -54,62 +44,70 @@
     ];
 
     function setup() {
-        localStorage.setItem('kKey', prompt("1. Kalender API-KEY (X-API-KEY):", localStorage.getItem('kKey') || ""));
-        localStorage.setItem('kId', prompt("2. Kalender-ID (Mehrere mit Komma trennen):", localStorage.getItem('kId') || ""));
-        localStorage.setItem('gKey', prompt("3. Google API Key:", localStorage.getItem('gKey') || ""));
+        localStorage.setItem('kKey', prompt("X-API-KEY:"));
+        localStorage.setItem('kId', prompt("ID-Liste (mit Komma):"));
+        localStorage.setItem('gKey', prompt("Google API Key:"));
         location.reload();
     }
 
     async function run() {
         const kIdRaw = localStorage.getItem('kId'), kKey = localStorage.getItem('kKey'), gKey = localStorage.getItem('gKey');
         const from = document.getElementById('dateFrom').value, to = document.getElementById('dateTo').value;
-        const statusBox = document.getElementById('statusInfo');
+        const diag = document.getElementById('diag');
         const resDiv = document.getElementById('results');
 
         if(!kIdRaw || !kKey) { alert("Bitte Setup ausfüllen!"); return; }
         
-        statusBox.innerHTML = "📡 Verbinde mit Kalender...";
-        resDiv.innerHTML = "";
+        diag.innerHTML = "--- Diagnose gestartet ---\n";
+        resDiv.innerHTML = "Abfrage läuft...";
 
         const ids = kIdRaw.split(',').map(s => s.trim());
         let allEvents = [];
 
-        try {
-            for(let id of ids) {
+        for(let id of ids) {
+            if(!id) continue;
+            try {
                 const url = `https://api.kalender.digital/public/event?calendarId=${id}&startDate=${from}&endDate=${to}&includeSubcalendars=1`;
                 const proxy = `https://corsproxy.io/?${encodeURIComponent(url)}`;
                 
                 const resp = await fetch(proxy, { headers: { 'X-API-KEY': kKey.trim() } });
                 const data = await resp.json();
+                
+                const count = (data.events || []).length;
+                diag.innerHTML += `ID ${id}: ${count} Termine gefunden.\n`;
+                
                 if(data.events) allEvents = allEvents.concat(data.events);
+            } catch(e) {
+                diag.innerHTML += `ID ${id}: FEHLER (${e.message})\n`;
             }
+        }
 
-            statusBox.innerHTML = `✅ ${allEvents.length} Termine gefunden. Analysiere Belegung...`;
+        diag.innerHTML += `--- Gesamt: ${allEvents.length} Termine ---\n`;
 
-            const service = new google.maps.DistanceMatrixService();
-            service.getDistanceMatrix({
-                origins: drivers.map(d => d.plz),
-                destinations: [document.getElementById('destPlz').value],
-                travelMode: 'DRIVING'
-            }, (mResp, status) => {
-                let ranking = drivers.map((d, i) => {
-                    const lastName = d.name.split(' ').pop().toLowerCase();
-                    // DEEP SCAN: Prüft, ob der Nachname irgendwo in den Daten vorkommt
-                    const isBusy = allEvents.some(ev => JSON.stringify(ev).toLowerCase().includes(lastName));
-                    const dist = mResp.rows[i].elements[0].distance;
-                    return { ...d, distT: dist.text, distV: dist.value, isBusy };
-                });
-
-                ranking.sort((a,b) => a.isBusy - b.isBusy || a.distV - b.distV);
-                ranking.forEach(d => {
-                    resDiv.innerHTML += `
-                        <div class="driver ${d.isBusy ? 'is-busy' : 'is-free'}">
-                            <div><strong>${d.name}</strong><br><small>${d.distT} entfernt</small></div>
-                            <span style="font-weight:bold">${d.isBusy ? '🔴 BESETZT' : '🟢 FREI'}</span>
-                        </div>`;
-                });
+        // Ranking Logik bleibt gleich
+        const service = new google.maps.DistanceMatrixService();
+        service.getDistanceMatrix({
+            origins: drivers.map(d => d.plz),
+            destinations: [document.getElementById('destPlz').value],
+            travelMode: 'DRIVING'
+        }, (mResp, status) => {
+            let ranking = drivers.map((d, i) => {
+                const lastName = d.name.split(' ').pop().toLowerCase();
+                const isBusy = allEvents.some(ev => JSON.stringify(ev).toLowerCase().includes(lastName));
+                const dist = mResp.rows[i].elements[0].distance;
+                return { ...d, distT: dist.text, distV: dist.value, isBusy };
             });
-        } catch(e) { statusBox.innerHTML = "❌ Fehler: " + e.message; }
+
+            ranking.sort((a,b) => a.isBusy - b.isBusy || a.distV - b.distV);
+            resDiv.innerHTML = "";
+            ranking.forEach(d => {
+                resDiv.innerHTML += `
+                    <div class="driver ${d.isBusy ? 'is-busy' : 'is-free'}">
+                        <strong>${d.name}</strong>
+                        <span>${d.isBusy ? '🔴 BESETZT' : '🟢 FREI'} (${d.distT})</span>
+                    </div>`;
+            });
+        });
     }
 
     (function() {
