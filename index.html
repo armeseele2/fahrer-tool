@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Springer-Dispo 7.6</title>
+    <title>Springer-Dispo 7.8</title>
     <style>
         :root { --p: #007bff; --s: #28a745; --d: #dc3545; --bg: #f4f7f6; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); padding: 20px; color: #333; }
@@ -21,8 +21,8 @@
 <body>
 
 <div class="card">
-    <h2 style="text-align:center; color:var(--p); margin-top:0;">Springer-Dispo 7.6</h2>
-    <div id="statusLog" class="log-box">Bereit für Abfrage.</div>
+    <h2 style="text-align:center; color:var(--p); margin-top:0;">Springer-Dispo 7.8</h2>
+    <div id="statusLog" class="log-box">Status: Einsatzbereit.</div>
 
     <label>Einrichtung / Ziel wählen</label>
     <select id="schoolSelect" onchange="document.getElementById('destPlz').value = this.value">
@@ -31,10 +31,9 @@
         <option value="30449">Wilhelm-Schade-Schule (30449)</option>
         <option value="30853">Pestalozzi-Schule (30853)</option>
         <option value="30880">Mecklenheide Forst (30880)</option>
-        <option value="30177">Test-Standort (30177)</option>
     </select>
 
-    <label>Ziel-PLZ (Manuelle Korrektur möglich)</label>
+    <label>Ziel-PLZ</label>
     <input type="text" id="destPlz" value="30655">
 
     <div style="display:flex; gap:10px;">
@@ -51,9 +50,7 @@
     <button class="btn-main" onclick="run()">Abfrage starten</button>
 
     <div class="setup-footer">
-        <a href="https://cors-anywhere.herokuapp.com/corsdemo" target="_blank" style="color:var(--d); font-weight:bold;">1. ZUGRIFF AKTIVIEREN</a>
-        |
-        <a href="#" onclick="setup()">2. Keys einstellen</a>
+        <a href="#" onclick="setup()">Keys & Kalender-IDs einstellen</a>
     </div>
 </div>
 
@@ -70,7 +67,7 @@
 
     function setup() {
         localStorage.setItem('kKey', prompt("X-API-KEY:"));
-        localStorage.setItem('kId', prompt("ID-Liste (kommagetrennt):"));
+        localStorage.setItem('kId', prompt("Kalender-IDs (kommagetrennt):"));
         localStorage.setItem('gKey', prompt("Google API Key:"));
         location.reload();
     }
@@ -83,27 +80,26 @@
 
         if(!kKey || !kIdRaw) return alert("Bitte Setup ausfüllen!");
         
-        log.innerHTML = "📡 Lade Daten vom Kalender...";
+        log.innerHTML = "📡 Kalenderdaten werden geladen...";
         let allEvents = [];
         const ids = kIdRaw.split(',').map(s => s.trim());
 
         try {
             for(let id of ids) {
-                const url = `https://api.kalender.digital/public/event?calendarId=${id}&startDate=${from}&endDate=${to}`;
-                const resp = await fetch(`https://cors-anywhere.herokuapp.com/${url}`, { 
-                    headers: { 'X-API-KEY': kKey.trim() } 
-                });
+                // NEU: AllOrigins Proxy - braucht keine manuelle Aktivierung!
+                const targetUrl = `https://api.kalender.digital/public/event?calendarId=${id}&startDate=${from}&endDate=${to}`;
+                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
                 
-                if (resp.status === 429) {
-                    log.innerHTML = "⚠️ FEHLER: Zu viele Anfragen!\nBitte warte 1-2 Minuten, bevor du es erneut versuchst.";
-                    return;
-                }
-
-                const data = await resp.json();
+                const resp = await fetch(proxyUrl, {
+                    headers: { 'X-API-KEY': kKey.trim() }
+                });
+                const wrapper = await resp.json();
+                const data = JSON.parse(wrapper.contents); // Kalender-Digital Daten liegen hier drin
+                
                 if(data.events) allEvents = allEvents.concat(data.events);
             }
 
-            log.innerHTML = `✅ ${allEvents.length} Einträge analysiert.\nGoogle-Routing läuft...`;
+            log.innerHTML = `✅ ${allEvents.length} Termine geladen.\nRouting wird berechnet...`;
 
             const service = new google.maps.DistanceMatrixService();
             service.getDistanceMatrix({
@@ -111,15 +107,16 @@
                 destinations: [document.getElementById('destPlz').value],
                 travelMode: 'DRIVING'
             }, (mResp, status) => {
+                if(status !== 'OK') { log.innerHTML = "❌ Google-Fehler: " + status; return; }
+
                 let ranking = drivers.map((d, i) => {
                     const lastName = d.name.split(' ').pop().toLowerCase();
-                    // Suche in den SubCalendars, wie in deinen Rohdaten
                     const event = allEvents.find(ev => 
                         ev.subCalendars && ev.subCalendars.some(sc => sc.toLowerCase().includes(lastName))
                     );
                     const dist = mResp.rows[i].elements[0].distance.text;
                     const val = mResp.rows[i].elements[0].distance.value;
-                    return { ...d, distT: dist, distV: val, isBusy: !!event, eName: event ? event.title : '' };
+                    return { ...d, distT: dist, distV: val, isBusy: !!event, eTitle: event ? event.title : '' };
                 });
 
                 ranking.sort((a,b) => a.isBusy - b.isBusy || a.distV - b.distV);
@@ -129,13 +126,13 @@
                         <div class="driver ${d.isBusy ? 'is-busy' : 'is-free'}">
                             <div>
                                 <strong>${d.name} (${d.distT})</strong>
-                                ${d.isBusy ? `<br><small style="color:red">Einsatz: ${d.eName}</small>` : ''}
+                                ${d.isBusy ? `<br><small style="color:red">Einsatz: ${d.eTitle}</small>` : ''}
                             </div>
                             <span style="font-weight:bold">${d.isBusy ? '🔴 BELEGT' : '🟢 FREI'}</span>
                         </div>`;
                 });
             });
-        } catch(e) { log.innerHTML = "❌ Fehler: Verbindung unterbrochen."; }
+        } catch(e) { log.innerHTML = "❌ Fehler: Der Proxy ist überlastet oder Daten ungültig."; }
     }
 
     (function() {
