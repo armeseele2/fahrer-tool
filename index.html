@@ -2,42 +2,34 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Springer-Dispo 7.0</title>
+    <title>Springer-Dispo 7.1</title>
     <style>
         :root { --p: #007bff; --s: #28a745; --d: #dc3545; --bg: #f4f7f6; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); padding: 20px; }
         .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 600px; margin: auto; }
-        input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 10px; box-sizing: border-box; }
-        .btn-main { width: 100%; padding: 16px; background: var(--p); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
-        .log-box { background: #000; color: #0f0; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 0.75rem; margin-bottom: 15px; white-space: pre-wrap; max-height: 200px; overflow-y: auto; }
-        .driver { background: white; padding: 12px; border-radius: 10px; margin-top: 8px; display: flex; justify-content: space-between; border-left: 6px solid #ccc; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 10px; box-sizing: border-box; }
+        .btn-main { width: 100%; padding: 16px; background: var(--p); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1.1rem; }
+        .log-box { background: #000; color: #0f0; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 0.8rem; margin-bottom: 15px; white-space: pre-wrap; }
+        .driver { background: white; padding: 15px; border-radius: 10px; margin-top: 8px; display: flex; justify-content: space-between; align-items: center; border-left: 6px solid #ccc; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .is-busy { border-left-color: var(--d); background: #fff5f5; }
         .is-free { border-left-color: var(--s); }
+        .info { font-size: 0.75rem; color: #666; margin-top: 4px; display: block; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2 style="text-align:center; color:var(--p); margin-top:0;">Springer-Dispo 7.0</h2>
-    
-    <div id="statusLog" class="log-box">Diagnose-Bereit.</div>
+    <h2 style="text-align:center; color:var(--p); margin-top:0;">Springer-Dispo 7.1</h2>
+    <div id="statusLog" class="log-box">Status: Daten bereit zur Analyse.</div>
 
     <label>Ziel-PLZ</label>
     <input type="text" id="destPlz" value="30655">
 
-    <div style="display:flex; gap:10px;">
-        <input type="date" id="dateFrom" value="2026-04-24">
-        <input type="date" id="dateTo" value="2026-04-24">
-    </div>
+    <label>Datum prüfen</label>
+    <input type="date" id="targetDate" value="2026-04-24">
 
-    <button class="btn-main" onclick="run()">API-Antwort erzwingen</button>
-    
-    <p style="text-align:center; margin-top:15px;">
-        <small>
-            <a href="https://cors-anywhere.herokuapp.com/corsdemo" target="_blank" style="color:red;">1. ZUGRIFF AKTIVIEREN</a> 
-            | <a href="#" onclick="setup()">2. Setup</a>
-        </small>
-    </p>
+    <button class="btn-main" onclick="run()">Verfügbarkeit prüfen</button>
+    <p style="text-align:center;"><small><a href="https://cors-anywhere.herokuapp.com/corsdemo" target="_blank" style="color:red;">CORS Zugriff erneuern</a> | <a href="#" onclick="setup()">Setup</a></small></p>
 </div>
 
 <div id="results" style="max-width: 600px; margin: 20px auto;"></div>
@@ -54,35 +46,32 @@
     function setup() {
         localStorage.setItem('kKey', prompt("X-API-KEY:"));
         localStorage.setItem('kId', prompt("ID-Liste:"));
-        localStorage.setItem('gKey', prompt("Google Key:"));
+        localStorage.setItem('gKey', prompt("Google API Key:"));
         location.reload();
     }
 
     async function run() {
         const kKey = localStorage.getItem('kKey'), kIdRaw = localStorage.getItem('kId');
-        const from = document.getElementById('dateFrom').value, to = document.getElementById('dateTo').value;
+        const date = document.getElementById('targetDate').value;
         const log = document.getElementById('statusLog');
-        if(!kKey || !kIdRaw) return alert("Setup!");
+        const resDiv = document.getElementById('results');
 
-        log.innerHTML = "🔍 Sende Request an API...";
+        if(!kKey || !kIdRaw) return alert("Bitte Setup ausfüllen!");
+        
+        log.innerHTML = "📡 Lade Termine...";
         let allEvents = [];
         const ids = kIdRaw.split(',').map(s => s.trim());
 
         try {
-            // Wir testen hier nur die ERSTE ID aus deiner Liste, um zu sehen, was da rauskommt
-            const testId = ids[0];
-            const url = `https://api.kalender.digital/public/event?calendarId=${testId}&startDate=${from}&endDate=${to}`;
-            const proxyUrl = `https://cors-anywhere.herokuapp.com/${url}`;
-            
-            const resp = await fetch(proxyUrl, { headers: { 'X-API-KEY': kKey.trim() } });
-            const data = await resp.json();
-            
-            // DIAGNOSE: Wir geben die rohen Daten der API im schwarzen Feld aus
-            log.innerHTML = "ROHDATEN VON ID " + testId + ":\n" + JSON.stringify(data, null, 2);
+            for(let id of ids) {
+                const url = `https://api.kalender.digital/public/event?calendarId=${id}&startDate=${date}&endDate=${date}`;
+                const resp = await fetch(`https://cors-anywhere.herokuapp.com/${url}`, { headers: { 'X-API-KEY': kKey.trim() } });
+                const data = await resp.json();
+                if(data.events) allEvents = allEvents.concat(data.events);
+            }
 
-            if(data.events) allEvents = data.events;
+            log.innerHTML = `✅ ${allEvents.length} Termine gefunden.\nBerechne Google-Ranking...`;
 
-            // Google Matrix (nur falls Events da sind, sonst bleibt alles grün)
             const service = new google.maps.DistanceMatrixService();
             service.getDistanceMatrix({
                 origins: drivers.map(d => d.plz),
@@ -91,18 +80,26 @@
             }, (mResp, status) => {
                 let ranking = drivers.map((d, i) => {
                     const lastName = d.name.split(' ').pop().toLowerCase();
-                    const event = allEvents.find(ev => JSON.stringify(ev).toLowerCase().includes(lastName));
+                    // NEU: Suche gezielt im Feld subCalendars nach dem Namen
+                    const event = allEvents.find(ev => 
+                        ev.subCalendars && ev.subCalendars.some(sc => sc.toLowerCase().includes(lastName))
+                    );
                     const dist = mResp.rows[i].elements[0].distance.text;
-                    return { ...d, distT: dist, isBusy: !!event };
+                    const val = mResp.rows[i].elements[0].distance.value;
+                    return { ...d, distT: dist, distV: val, isBusy: !!event, eTitle: event ? event.title : '' };
                 });
-                ranking.sort((a,b) => a.isBusy - b.isBusy);
-                const resDiv = document.getElementById('results');
+
+                ranking.sort((a,b) => a.isBusy - b.isBusy || a.distV - b.distV);
                 resDiv.innerHTML = "";
                 ranking.forEach(d => {
-                    resDiv.innerHTML += `<div class="driver ${d.isBusy ? 'is-busy' : 'is-free'}">
-                        <strong>${d.name} (${d.distT})</strong>
-                        <span>${d.isBusy ? '🔴 BELEGT' : '🟢 FREI'}</span>
-                    </div>`;
+                    resDiv.innerHTML += `
+                        <div class="driver ${d.isBusy ? 'is-busy' : 'is-free'}">
+                            <div>
+                                <strong>${d.name} (${d.distT})</strong>
+                                ${d.isBusy ? `<span class="info">⚠️ ${d.eTitle}</span>` : ''}
+                            </div>
+                            <span style="font-weight:bold">${d.isBusy ? '🔴 BELEGT' : '🟢 FREI'}</span>
+                        </div>`;
                 });
             });
         } catch(e) { log.innerHTML = "❌ Fehler: " + e.message; }
