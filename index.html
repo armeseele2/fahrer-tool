@@ -2,83 +2,100 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Springer-Dispo 12.8 (Chrome-Fix)</title>
+    <title>Springer-Dispo 13.0 (Kalender-Fix)</title>
     <style>
         :root { --p: #007bff; --s: #28a745; --d: #dc3545; --bg: #f4f7f6; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); padding: 20px; }
-        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 600px; margin: auto; }
-        input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 15px; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); padding: 20px; color: #333; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 650px; margin: auto; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.85rem; color: #666; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 15px; box-sizing: border-box; font-size: 1rem; }
         .btn-main { width: 100%; padding: 16px; background: var(--p); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1.1rem; }
-        .log-box { background: #000; color: #0f0; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 0.8rem; margin-bottom: 20px; min-height: 40px; }
-        .driver { background: white; padding: 12px; border-radius: 10px; margin-top: 8px; display: flex; justify-content: space-between; align-items: center; border-left: 6px solid #ccc; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .is-busy { border-left-color: var(--d); background: #fff5f5; }
-        .is-free { border-left-color: var(--s); }
+        .log-box { background: #000; color: #0f0; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 0.8rem; margin-bottom: 20px; min-height: 60px; white-space: pre-wrap; }
+        .driver { background: white; padding: 15px; border-radius: 10px; margin-top: 10px; display: flex; justify-content: space-between; align-items: center; border-left: 8px solid #ccc; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .is-busy { border-left-color: var(--d) !important; background: #fff5f5; }
+        .is-free { border-left-color: var(--s) !important; background: #fafffa; }
+        .setup-links { text-align: center; margin-top: 20px; font-size: 0.85rem; }
+        .setup-links a { color: var(--p); text-decoration: none; margin: 0 10px; border: 1px solid #ddd; padding: 5px 10px; border-radius: 5px; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2 style="text-align:center; color:var(--p); margin-top:0;">Springer-Dispo 12.8</h2>
-    <div id="statusLog" class="log-box">Status: Bereit.</div>
+    <h2 style="text-align:center; color:var(--p); margin-top:0;">Springer-Dispo 13.0</h2>
+    <div id="statusLog" class="log-box">Status: Bereit für Abfrage.</div>
+
+    <label>Einrichtung wählen (PLZ wird angepasst)</label>
+    <select id="schoolSelect" onchange="document.getElementById('destPlz').value = this.value">
+        <option value="30655">Albert-Liebmann-Schule (30655)</option>
+        <option value="30165">Lebenshilfe Büttnerstraße (30165)</option>
+        <option value="30449">Wilhelm-Schade-Schule (30449)</option>
+        <option value="30853">Pestalozzi-Schule (30853)</option>
+        <option value="30880">Mecklenheide Forst (30880)</option>
+        <option value="30177">Test-Standort (30177)</option>
+    </select>
 
     <label>Ziel-PLZ</label>
-    <input type="text" id="destPlz" value="30177">
-    <label>Datum</label>
-    <input type="date" id="targetDate" value="2026-04-24">
+    <input type="text" id="destPlz" value="30655">
 
-    <button class="btn-main" onclick="run()">Verfügbarkeit prüfen</button>
-    <p style="text-align:center; font-size:0.8rem;">
-        <a href="#" onclick="setup()">⚙️ Keys einstellen</a> | 
+    <div style="display:flex; gap:10px;">
+        <div style="flex:1;">
+            <label>Von Datum</label>
+            <input type="date" id="dateFrom" value="2026-04-24">
+        </div>
+        <div style="flex:1;">
+            <label>Bis Datum</label>
+            <input type="date" id="dateTo" value="2026-04-24">
+        </div>
+    </div>
+
+    <button class="btn-main" onclick="run()">Verfügbarkeit & Ranking prüfen</button>
+
+    <div class="setup-links">
+        <a href="#" onclick="setup()">⚙️ Setup (Keys/IDs)</a>
         <a href="https://cors-anywhere.herokuapp.com/corsdemo" target="_blank">🔓 Proxy freischalten</a>
-    </p>
+    </div>
 </div>
 
-<div id="results" style="max-width: 600px; margin: 20px auto;"></div>
+<div id="results" style="max-width: 650px; margin: 20px auto;"></div>
 
 <script>
     const drivers = [
         { name: "Türkel Tuncer", plz: "30161" }, { name: "Von Treskow Albrecht", plz: "30175" },
         { name: "Otto Alexander", plz: "30173" }, { name: "Ferkau Eckart", plz: "30851" },
         { name: "Ohm Lars", plz: "30559" }, { name: "Bachmeier Reinhard", plz: "30659" },
-        { name: "Isfahan Mozaffaey Hamid", plz: "30519" }, { name: "Schrader Harald", plz: "30880" }
+        { name: "Isfahan Mozaffaey Hamid", plz: "30519" }, { name: "Schrader Harald", plz: "30880" },
+        { name: "Aschenbach André", plz: "30989" }, { name: "Neubauer Michael", plz: "30853" }
     ];
 
     function setup() {
         localStorage.setItem('kKey', prompt("X-API-KEY:", localStorage.getItem('kKey') || ""));
-        localStorage.setItem('kIds', prompt("Kalender-IDs (mit Komma):", localStorage.getItem('kIds') || ""));
+        localStorage.setItem('kIds', prompt("Kalender-IDs (kommagetrennt):", localStorage.getItem('kIds') || ""));
         localStorage.setItem('gKey', prompt("Google API Key:", localStorage.getItem('gKey') || ""));
         location.reload();
     }
 
     async function run() {
         const kKey = localStorage.getItem('kKey'), kIds = localStorage.getItem('kIds');
-        const date = document.getElementById('targetDate').value;
+        const from = document.getElementById('dateFrom').value, to = document.getElementById('dateTo').value;
         const log = document.getElementById('statusLog');
         const resDiv = document.getElementById('results');
 
-        if(!kKey || !kIds) return alert("Bitte erst Keys unter 'Setup' eintragen!");
+        if(!kKey || !kIds) return alert("Setup unvollständig!");
 
-        log.innerHTML = "🛰️ Lade Kalenderdaten...";
+        log.innerHTML = "🛰️ Lade Kalender-Daten über Proxy...";
         try {
             let allEvents = [];
             const ids = kIds.split(',');
-            // Wir nutzen den öffentlichen Proxy, den du oben freigeschaltet hast
             const proxy = "https://cors-anywhere.herokuapp.com/";
 
             for(let id of ids) {
-                const url = `https://api.kalender.digital/public/event?calendarId=${id.trim()}&startDate=${date}&endDate=${date}`;
+                const url = `https://api.kalender.digital/public/event?calendarId=${id.trim()}&startDate=${from}&endDate=${to}`;
                 const resp = await fetch(proxy + url, { headers: { 'X-API-KEY': kKey } });
-                
-                if (resp.status === 403) {
-                    log.innerHTML = "⚠️ Proxy nicht freigeschaltet! Klicke auf den Link unten.";
-                    return;
-                }
-                
                 const data = await resp.json();
                 if(data.events) allEvents = allEvents.concat(data.events);
             }
 
-            log.innerHTML = "✅ Daten da. Berechne Google Maps...";
+            log.innerHTML = `✅ ${allEvents.length} Termine gefunden.\n🗺️ Berechne Entfernungen...`;
 
             const service = new google.maps.DistanceMatrixService();
             service.getDistanceMatrix({
@@ -87,25 +104,44 @@
                 travelMode: 'DRIVING'
             }, (mResp, status) => {
                 if(status !== 'OK') return log.innerHTML = "❌ Google Maps Fehler.";
-                
+
                 let ranking = drivers.map((d, i) => {
                     const lastName = d.name.split(' ').pop().toLowerCase();
-                    const event = allEvents.find(ev => ev.title.toLowerCase().includes(lastName));
-                    const distT = mResp.rows[i].elements[0].distance.text;
-                    const distV = mResp.rows[i].elements[0].distance.value;
-                    return { ...d, distT, distV, isBusy: !!event, eName: event ? event.title : '' };
+                    
+                    // KRITISCHER FIX: Wir suchen gründlicher nach dem Namen im Kalender
+                    const event = allEvents.find(ev => {
+                        const titleMatch = ev.title.toLowerCase().includes(lastName);
+                        const subMatch = ev.subCalendars && ev.subCalendars.some(sc => sc.toLowerCase().includes(lastName));
+                        return titleMatch || subMatch;
+                    });
+
+                    const distText = mResp.rows[i].elements[0].distance.text;
+                    const distValue = mResp.rows[i].elements[0].distance.value;
+
+                    return { ...d, distText, distValue, isBusy: !!event, eventTitle: event ? event.title : '' };
                 });
 
-                ranking.sort((a,b) => a.isBusy - b.isBusy || a.distV - b.distV);
+                // Sortierung: Erst alle FREIEN, dann nach Entfernung
+                ranking.sort((a, b) => a.isBusy - b.isBusy || a.distValue - b.distValue);
+
                 resDiv.innerHTML = ranking.map(d => `
                     <div class="driver ${d.isBusy ? 'is-busy' : 'is-free'}">
-                        <div><strong>${d.name} (${d.distT})</strong>${d.isBusy ? `<br><small style="color:red">${d.eName}</small>` : ''}</div>
-                        <span style="font-weight:bold">${d.isBusy ? '🔴 BELEGT' : '🟢 FREI'}</span>
-                    </div>`).join('');
-                log.innerHTML = "📊 Analyse abgeschlossen.";
+                        <div>
+                            <strong style="font-size:1.1rem;">${d.name}</strong><br>
+                            <span style="color:#666;">Entfernung: ${d.distText}</span>
+                            ${d.isBusy ? `<br><small style="color:var(--d); font-weight:bold;">Eingeteilt: ${d.eventTitle}</small>` : ''}
+                        </div>
+                        <div style="text-align:right;">
+                            <span style="padding: 5px 10px; border-radius: 5px; color:white; font-weight:bold; background:${d.isBusy ? 'var(--d)' : 'var(--s)'}">
+                                ${d.isBusy ? 'BESETZT' : 'FREI'}
+                            </span>
+                        </div>
+                    </div>
+                `).join('');
+                log.innerHTML = `Analyse für ${from} bis ${to} abgeschlossen.`;
             });
-        } catch(e) { 
-            log.innerHTML = "❌ Verbindung blockiert. Hast du den Proxy freigeschaltet?";
+        } catch(e) {
+            log.innerHTML = "❌ Fehler. Proxy freigeschaltet?";
         }
     }
 
