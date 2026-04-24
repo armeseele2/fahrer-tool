@@ -2,21 +2,21 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Springer-Dispo-Zentrale 4.4 🚀</title>
+    <title>Springer-Dispo-Zentrale 4.5 🚀</title>
     <style>
         :root { --primary: #007bff; --success: #28a745; --danger: #dc3545; --bg: #f4f7f6; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); padding: 20px; }
         .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 650px; margin: auto; }
-        h2 { color: var(--primary); text-align: center; margin-bottom: 20px; }
+        h2 { color: var(--primary); text-align: center; }
         label { display: block; margin: 12px 0 5px; font-weight: bold; font-size: 0.9rem; }
-        input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 1rem; margin-bottom: 10px; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; margin-bottom: 10px; }
         .date-row { display: flex; gap: 10px; }
         .date-row div { flex: 1; }
-        .btn-main { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1.1rem; margin-top: 10px; }
+        .btn-main { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1.1rem; }
         .driver-card { background: white; padding: 15px; border-radius: 10px; margin-top: 10px; display: flex; justify-content: space-between; align-items: center; border-left: 6px solid #ccc; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
         .is-free { border-left-color: var(--success); }
-        .is-busy { border-left-color: var(--danger); background: #fff5f5; opacity: 0.8; }
-        .status-badge { padding: 5px 10px; border-radius: 5px; font-weight: bold; font-size: 0.85rem; }
+        .is-busy { border-left-color: var(--danger); background: #fff5f5; }
+        .status-badge { padding: 5px 10px; border-radius: 5px; font-weight: bold; }
         .free { background: #d4edda; color: #155724; }
         .busy { background: #f8d7da; color: #721c24; }
         .settings-link { display: block; text-align: center; margin-top: 20px; color: #888; font-size: 0.8rem; text-decoration: none; cursor: pointer; }
@@ -25,9 +25,9 @@
 <body>
 
 <div class="card">
-    <h2>Springer-Dispo-Zentrale 4.4</h2>
+    <h2>Springer-Dispo-Zentrale 4.5</h2>
     
-    <label>Einrichtung / Ziel auswählen</label>
+    <label>Einrichtung auswählen</label>
     <select id="schoolSelect" onchange="document.getElementById('destinationPlz').value = this.value">
         <option value="">-- Bitte wählen --</option>
         <option value="30655">Albert-Liebmann-Schule (30655)</option>
@@ -66,15 +66,15 @@
     ];
 
     function setup() {
-        const k = prompt("Kalender-ID (die Zahl):", localStorage.getItem('k_id') || "");
-        const g = prompt("Google-ID (dein Key):", localStorage.getItem('g_id') || "");
-        if(k) localStorage.setItem('k_id', k);
-        if(g) localStorage.setItem('g_id', g);
+        const kId = prompt("1. Kalender-ID (die Zahl aus dem Admin-Link):", localStorage.getItem('kId') || "");
+        const gKey = prompt("2. Google API Key:", localStorage.getItem('gKey') || "");
+        if(kId) localStorage.setItem('kId', kId);
+        if(gKey) localStorage.setItem('gKey', gKey);
         location.reload();
     }
 
     (function(){
-        const g = localStorage.getItem('g_id');
+        const g = localStorage.getItem('gKey');
         if(g) {
             const s = document.createElement('script');
             s.src = `https://maps.googleapis.com/maps/api/js?key=${g}&libraries=geometry`;
@@ -83,17 +83,17 @@
     })();
 
     async function runCheck() {
-        const kId = localStorage.getItem('k_id');
+        const kId = localStorage.getItem('kId');
         const from = document.getElementById('dateFrom').value;
         const to = document.getElementById('dateTo').value;
         const dest = document.getElementById('destinationPlz').value;
         const resDiv = document.getElementById('results');
 
-        if(!kId) { alert("Bitte Kalender-ID eintragen!"); return; }
-        resDiv.innerHTML = "<p style='text-align:center;'>Zeitraum wird gescannt...</p>";
+        if(!kId) { alert("Bitte Einstellungen prüfen!"); return; }
+        resDiv.innerHTML = "<p style='text-align:center;'>Kalender-Scan läuft...</p>";
 
         try {
-            // Abfrage über den gesamten Zeitraum inkl. Unterkalender
+            // Wir nutzen die Kalender-ID direkt im URL-Pfad für die öffentliche Abfrage
             const url = `https://corsproxy.io/?${encodeURIComponent(`https://api.kalender.digital/public/event?calendarId=${kId}&startDate=${from}&endDate=${to}&includeSubcalendars=1`)}`;
             const resp = await fetch(url);
             const data = await resp.json();
@@ -105,24 +105,25 @@
                 destinations: [dest],
                 travelMode: 'DRIVING'
             }, (mResp, status) => {
-                if(status !== "OK") { resDiv.innerHTML = "Google-ID prüfen!"; return; }
+                if(status !== "OK") { resDiv.innerHTML = "Google-ID ungültig!"; return; }
 
                 let ranking = drivers.map((d, i) => {
-                    const lastName = d.name.split(' ').reverse()[0].toLowerCase(); // Nimmt den letzten Teil des Namens
+                    // Nimmt den Nachnamen für den Vergleich
+                    const lastName = d.name.split(' ').pop().toLowerCase();
                     const isBusy = text.includes(lastName);
-                    const distText = mResp.rows[i].elements[0].distance.text;
-                    const distVal = mResp.rows[i].elements[0].distance.value;
-                    return { ...d, distText, distVal, isBusy };
+                    const dist = mResp.rows[i].elements[0].distance.text;
+                    const val = mResp.rows[i].elements[0].distance.value;
+                    return { ...d, dist, val, isBusy };
                 });
 
-                ranking.sort((a,b) => a.isBusy - b.isBusy || a.distVal - b.distVal);
+                ranking.sort((a,b) => a.isBusy - b.isBusy || a.val - b.val);
                 resDiv.innerHTML = "";
                 ranking.forEach(d => {
                     resDiv.innerHTML += `
                         <div class="driver-card ${d.isBusy ? 'is-busy' : 'is-free'}">
                             <div>
                                 <strong>${d.name}</strong><br>
-                                <small>${d.distText} von ${d.plz}</small>
+                                <small>${d.dist} von ${d.plz}</small>
                             </div>
                             <span class="status-badge ${d.isBusy ? 'busy' : 'free'}">${d.isBusy ? 'BESETZT' : 'FREI'}</span>
                         </div>`;
