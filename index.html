@@ -2,15 +2,15 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Springer-Dispo 12.0 (Final)</title>
+    <title>Springer-Dispo 12.8 (Chrome-Fix)</title>
     <style>
         :root { --p: #007bff; --s: #28a745; --d: #dc3545; --bg: #f4f7f6; }
-        body { font-family: sans-serif; background: var(--bg); padding: 20px; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); padding: 20px; }
         .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 600px; margin: auto; }
         input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 15px; }
-        .btn-main { width: 100%; padding: 16px; background: var(--p); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
-        .log-box { background: #000; color: #0f0; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 0.8rem; margin-bottom: 20px; min-height: 50px; }
-        .driver { background: white; padding: 12px; border-radius: 10px; margin-top: 8px; display: flex; justify-content: space-between; border-left: 6px solid #ccc; }
+        .btn-main { width: 100%; padding: 16px; background: var(--p); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1.1rem; }
+        .log-box { background: #000; color: #0f0; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 0.8rem; margin-bottom: 20px; min-height: 40px; }
+        .driver { background: white; padding: 12px; border-radius: 10px; margin-top: 8px; display: flex; justify-content: space-between; align-items: center; border-left: 6px solid #ccc; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .is-busy { border-left-color: var(--d); background: #fff5f5; }
         .is-free { border-left-color: var(--s); }
     </style>
@@ -18,16 +18,19 @@
 <body>
 
 <div class="card">
-    <h2 style="text-align:center; color:var(--p);">Springer-Dispo 12.0</h2>
-    <div id="statusLog" class="log-box">Bereit für den privaten Tunnel.</div>
+    <h2 style="text-align:center; color:var(--p); margin-top:0;">Springer-Dispo 12.8</h2>
+    <div id="statusLog" class="log-box">Status: Bereit.</div>
 
     <label>Ziel-PLZ</label>
     <input type="text" id="destPlz" value="30177">
     <label>Datum</label>
     <input type="date" id="targetDate" value="2026-04-24">
 
-    <button class="btn-main" onclick="run()">Abfrage über eigenen Server starten</button>
-    <p style="text-align:center;"><a href="#" onclick="setup()">⚙️ Keys & Tunnel-URL einstellen</a></p>
+    <button class="btn-main" onclick="run()">Verfügbarkeit prüfen</button>
+    <p style="text-align:center; font-size:0.8rem;">
+        <a href="#" onclick="setup()">⚙️ Keys einstellen</a> | 
+        <a href="https://cors-anywhere.herokuapp.com/corsdemo" target="_blank">🔓 Proxy freischalten</a>
+    </p>
 </div>
 
 <div id="results" style="max-width: 600px; margin: 20px auto;"></div>
@@ -42,54 +45,77 @@
 
     function setup() {
         localStorage.setItem('kKey', prompt("X-API-KEY:", localStorage.getItem('kKey') || ""));
-        localStorage.setItem('kIds', prompt("Kalender-IDs:", localStorage.getItem('kIds') || ""));
+        localStorage.setItem('kIds', prompt("Kalender-IDs (mit Komma):", localStorage.getItem('kIds') || ""));
         localStorage.setItem('gKey', prompt("Google API Key:", localStorage.getItem('gKey') || ""));
-        localStorage.setItem('proxyUrl', prompt("Google Web-App URL (aus Schritt 1):", localStorage.getItem('proxyUrl') || ""));
         location.reload();
     }
 
     async function run() {
-        const kKey = localStorage.getItem('kKey'), kIds = localStorage.getItem('kIds'), proxy = localStorage.getItem('proxyUrl');
+        const kKey = localStorage.getItem('kKey'), kIds = localStorage.getItem('kIds');
         const date = document.getElementById('targetDate').value;
         const log = document.getElementById('statusLog');
-        if(!proxy) return alert("Bitte erst die Google Web-App URL im Setup eintragen!");
+        const resDiv = document.getElementById('results');
 
-        log.innerHTML = "🛰️ Sende Anfrage an privaten Tunnel...";
+        if(!kKey || !kIds) return alert("Bitte erst Keys unter 'Setup' eintragen!");
+
+        log.innerHTML = "🛰️ Lade Kalenderdaten...";
         try {
             let allEvents = [];
-            for(let id of kIds.split(',')) {
-                const target = `https://api.kalender.digital/public/event?calendarId=${id.trim()}&startDate=${date}&endDate=${date}`;
-                const resp = await fetch(`${proxy}?url=${encodeURIComponent(target)}&key=${kKey}`);
+            const ids = kIds.split(',');
+            // Wir nutzen den öffentlichen Proxy, den du oben freigeschaltet hast
+            const proxy = "https://cors-anywhere.herokuapp.com/";
+
+            for(let id of ids) {
+                const url = `https://api.kalender.digital/public/event?calendarId=${id.trim()}&startDate=${date}&endDate=${date}`;
+                const resp = await fetch(proxy + url, { headers: { 'X-API-KEY': kKey } });
+                
+                if (resp.status === 403) {
+                    log.innerHTML = "⚠️ Proxy nicht freigeschaltet! Klicke auf den Link unten.";
+                    return;
+                }
+                
                 const data = await resp.json();
                 if(data.events) allEvents = allEvents.concat(data.events);
             }
 
-            log.innerHTML = `✅ ${allEvents.length} Termine geladen.`;
-            
+            log.innerHTML = "✅ Daten da. Berechne Google Maps...";
+
             const service = new google.maps.DistanceMatrixService();
             service.getDistanceMatrix({
                 origins: drivers.map(d => d.plz),
                 destinations: [document.getElementById('destPlz').value],
                 travelMode: 'DRIVING'
             }, (mResp, status) => {
+                if(status !== 'OK') return log.innerHTML = "❌ Google Maps Fehler.";
+                
                 let ranking = drivers.map((d, i) => {
                     const lastName = d.name.split(' ').pop().toLowerCase();
                     const event = allEvents.find(ev => ev.title.toLowerCase().includes(lastName));
-                    return { ...d, distT: mResp.rows[i].elements[0].distance.text, distV: mResp.rows[i].elements[0].distance.value, isBusy: !!event, eName: event ? event.title : '' };
+                    const distT = mResp.rows[i].elements[0].distance.text;
+                    const distV = mResp.rows[i].elements[0].distance.value;
+                    return { ...d, distT, distV, isBusy: !!event, eName: event ? event.title : '' };
                 });
+
                 ranking.sort((a,b) => a.isBusy - b.isBusy || a.distV - b.distV);
-                document.getElementById('results').innerHTML = ranking.map(d => `
+                resDiv.innerHTML = ranking.map(d => `
                     <div class="driver ${d.isBusy ? 'is-busy' : 'is-free'}">
-                        <div><strong>${d.name} (${d.distT})</strong>${d.isBusy ? `<br><small>${d.eName}</small>` : ''}</div>
-                        <span>${d.isBusy ? '🔴 BELEGT' : '🟢 FREI'}</span>
+                        <div><strong>${d.name} (${d.distT})</strong>${d.isBusy ? `<br><small style="color:red">${d.eName}</small>` : ''}</div>
+                        <span style="font-weight:bold">${d.isBusy ? '🔴 BELEGT' : '🟢 FREI'}</span>
                     </div>`).join('');
+                log.innerHTML = "📊 Analyse abgeschlossen.";
             });
-        } catch(e) { log.innerHTML = "❌ Fehler im Tunnel. Web-App URL korrekt?"; }
+        } catch(e) { 
+            log.innerHTML = "❌ Verbindung blockiert. Hast du den Proxy freigeschaltet?";
+        }
     }
 
     (function() {
         const key = localStorage.getItem('gKey');
-        if(key) { document.write(`<script src="https://maps.googleapis.com/maps/api/js?key=${key}"><\/script>`); }
+        if(key) {
+            const s = document.createElement('script');
+            s.src = `https://maps.googleapis.com/maps/api/js?key=${key}`;
+            document.head.appendChild(s);
+        }
     })();
 </script>
 </body>
