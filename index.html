@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Springer-Dispo-Pro</title>
+    <title>Springer-Dispo-Pro 2.2</title>
     <style>
         :root { --primary: #007bff; --success: #28a745; --danger: #dc3545; --bg: #f4f7f6; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 20px; color: #333; }
@@ -13,7 +13,6 @@
         label { display: block; margin: 10px 0 5px; font-weight: bold; font-size: 0.85rem; }
         input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 1rem; margin-bottom: 10px; }
         button { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; margin-top: 10px; cursor: pointer; transition: 0.2s; }
-        .btn-book { padding: 6px 12px; background: var(--success); font-size: 0.8rem; margin-top: 5px; width: auto; color: white; border: none; border-radius: 4px; cursor: pointer; }
         .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; }
         .free { background: #d4edda; color: #155724; }
         .busy { background: #f8d7da; color: #721c24; }
@@ -27,7 +26,7 @@
 <body>
 
 <div class="card">
-    <h2>Springer-Dispo-Zentrale 2.1</h2>
+    <h2>Springer-Dispo-Zentrale 2.2</h2>
     
     <label>Ziel auswählen</label>
     <select id="schoolSelect" onchange="updatePlz()">
@@ -113,11 +112,19 @@
         location.reload();
     }
 
-    if (localStorage.getItem('google_key')) {
-        const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${localStorage.getItem('google_key')}&libraries=geometry`;
-        document.head.appendChild(script);
-    }
+    // Google Maps Script asynchron laden
+    (function loadGoogleMaps() {
+        const gKey = localStorage.getItem('google_key');
+        if (gKey) {
+            const script = document.createElement('script');
+            script.src = `https://maps.googleapis.com/maps/api/js?key=${gKey}&libraries=geometry&loading=async&callback=initMap`;
+            script.async = true;
+            script.defer = true;
+            document.head.appendChild(script);
+        }
+    })();
+
+    function initMap() { console.log("Google Maps bereit."); }
 
     async function generateRanking() {
         const dest = document.getElementById('destinationPlz').value;
@@ -125,34 +132,64 @@
         const end = document.getElementById('endDate').value;
         const kId = localStorage.getItem('kalender_id');
         const resDiv = document.getElementById('results');
-        resDiv.innerHTML = "<p style='text-align:center;'>Kalender wird abgeglichen...</p>";
+        
+        if (!dest) { alert("Bitte Ziel-PLZ eingeben!"); return; }
+
+        resDiv.innerHTML = "<p style='text-align:center;'>Kalender wird über Proxy abgeglichen...</p>";
 
         try {
             let busyNames = [];
-            const kUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(`https://api.kalender.digital/public/event?calendarId=${kId}&startDate=${start}&endDate=${end}`)}`;
+            // Neuer Proxy: corsproxy.io (Sollte stabiler sein)
+            const kApiUrl = `https://api.kalender.digital/public/event?calendarId=${kId}&startDate=${start}&endDate=${end}`;
+            const kUrl = `https://corsproxy.io/?${encodeURIComponent(kApiUrl)}`;
+            
             const kResponse = await fetch(kUrl);
-            const kData = JSON.parse((await kResponse.json()).contents);
-            if (kData.events) busyNames = kData.events.map(e => ({ title: (e.title || "").toLowerCase(), sub: (e.subcalendarName || "").toLowerCase() }));
+            const kData = await kResponse.json();
+            
+            if (kData.events) {
+                busyNames = kData.events.map(e => ({ 
+                    title: (e.title || "").toLowerCase(), 
+                    sub: (e.subcalendarName || "").toLowerCase() 
+                }));
+            }
 
             const service = new google.maps.DistanceMatrixService();
-            service.getDistanceMatrix({ origins: drivers.map(d => d.plz), destinations: [dest], travelMode: 'DRIVING' }, (response, status) => {
-                if (status !== "OK") { resDiv.innerHTML = "Google Fehler"; return; }
+            service.getDistanceMatrix({ 
+                origins: drivers.map(d => d.plz), 
+                destinations: [dest], 
+                travelMode: 'DRIVING' 
+            }, (response, status) => {
+                if (status !== "OK") { resDiv.innerHTML = "<p style='color:red;'>Google Fehler: " + status + "</p>"; return; }
+                
                 let ranking = drivers.map((d, index) => {
                     const el = response.rows[index].elements[0];
                     const lastName = d.name.split(' ')[0].toLowerCase();
                     const isBusy = busyNames.some(ev => ev.title.includes(lastName) || ev.sub.includes(lastName));
-                    return { ...d, distance: el.status === "OK" ? el.distance.text : "N/A", distVal: el.status === "OK" ? el.distance.value : 999999, isBusy };
+                    return { 
+                        ...d, 
+                        distance: el.status === "OK" ? el.distance.text : "N/A", 
+                        distVal: el.status === "OK" ? el.distance.value : 999999, 
+                        isBusy 
+                    };
                 });
+
                 ranking.sort((a, b) => a.isBusy === b.isBusy ? a.distVal - b.distVal : (a.isBusy ? 1 : -1));
+                
                 resDiv.innerHTML = "";
                 ranking.forEach(d => {
                     const row = document.createElement('div');
                     row.className = `driver-row ${d.isBusy ? 'is-busy' : 'is-free'}`;
-                    row.innerHTML = `<div><strong>${d.name}</strong><br><small>${d.distance}</small></div><span class="status-badge ${d.isBusy ? 'busy' : 'free'}">${d.isBusy ? 'BESETZT' : 'FREI'}</span>`;
+                    row.innerHTML = `
+                        <div><strong>${d.name}</strong><br><small>${d.plz} → ${dest}: ${d.distance}</small></div>
+                        <span class="status-badge ${d.isBusy ? 'busy' : 'free'}">${d.isBusy ? 'BESETZT' : 'FREI'}</span>
+                    `;
                     resDiv.appendChild(row);
                 });
             });
-        } catch (e) { resDiv.innerHTML = "Fehler bei der Abfrage."; }
+        } catch (e) { 
+            console.error(e);
+            resDiv.innerHTML = "<p style='color:red; text-align:center;'>Proxy-Fehler oder Kalender nicht erreichbar. Bitte erneut versuchen.</p>"; 
+        }
     }
 </script>
 </body>
