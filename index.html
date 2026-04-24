@@ -2,37 +2,48 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Springer-Dispo 5.0</title>
+    <title>Springer-Dispo 5.1</title>
     <style>
         :root { --p: #007bff; --s: #28a745; --d: #dc3545; --bg: #f4f7f6; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); padding: 20px; }
         .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 600px; margin: auto; }
+        label { display: block; margin: 12px 0 5px; font-weight: bold; }
         input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 10px; box-sizing: border-box; }
-        .btn-main { width: 100%; padding: 16px; background: var(--p); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .btn-main { width: 100%; padding: 16px; background: var(--p); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1.1rem; }
         .driver { background: white; padding: 15px; border-radius: 10px; margin-top: 10px; display: flex; justify-content: space-between; align-items: center; border-left: 6px solid #ccc; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        .busy { border-left-color: var(--d); background: #fff5f5; }
+        .busy { border-left-color: var(--d); background: #fff5f5; opacity: 0.8; }
         .free { border-left-color: var(--s); }
-        .status { font-weight: bold; padding: 4px 8px; border-radius: 4px; }
+        .status { font-weight: bold; padding: 4px 8px; border-radius: 4px; font-size: 0.85rem; }
         .st-busy { background: #f8d7da; color: #721c24; }
         .st-free { background: #d4edda; color: #155724; }
-        .btn-book { background: var(--s); color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; margin-top: 5px; }
+        .btn-book { background: var(--s); color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; margin-top: 5px; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2 style="text-align:center; color:var(--p);">Springer-Dispo 5.0</h2>
+    <h2 style="text-align:center; color:var(--p); margin-top:0;">Springer-Dispo 5.1</h2>
     
+    <label>Einrichtung / Ziel auswählen</label>
+    <select id="schoolSelect" onchange="document.getElementById('destPlz').value = this.value">
+        <option value="">-- Bitte wählen --</option>
+        <option value="30655">Albert-Liebmann-Schule (30655)</option>
+        <option value="30165">Lebenshilfe Büttnerstraße (30165)</option>
+        <option value="30900">Kindergarten Domino (30900)</option>
+        <option value="30419">Kindergarten Forst Mecklenheide (30419)</option>
+        <option value="30449">Wilhelm-Schade-Schule (30449)</option>
+    </select>
+
     <label>Ziel-PLZ</label>
     <input type="text" id="destPlz" value="30177">
 
     <div style="display:flex; gap:10px;">
-        <div style="flex:1;"><label>Von</label><input type="date" id="dateFrom" value="2026-04-24"></div>
-        <div style="flex:1;"><label>Bis</label><input type="date" id="dateTo" value="2026-04-24"></div>
+        <div style="flex:1;"><label>Einsatz von</label><input type="date" id="dateFrom" value="2026-04-24"></div>
+        <div style="flex:1;"><label>Einsatz bis</label><input type="date" id="dateTo" value="2026-04-24"></div>
     </div>
 
-    <button class="btn-main" onclick="run()">Doku-konforme Abfrage starten</button>
-    <p style="text-align:center;"><small><a href="#" onclick="setup()">⚙️ API-Keys & Kalender-ID korrigieren</a></small></p>
+    <button class="btn-main" onclick="run()">Verfügbarkeit & Ranking prüfen</button>
+    <p style="text-align:center;"><small><a href="#" onclick="setup()" style="color:#888;">⚙️ API-Keys & Kalender-ID verwalten</a></small></p>
 </div>
 
 <div id="results" style="max-width: 600px; margin: 20px auto;"></div>
@@ -47,9 +58,12 @@
     ];
 
     function setup() {
-        localStorage.setItem('kId', prompt("Kalender-ID:", localStorage.getItem('kId') || ""));
-        localStorage.setItem('kKey', prompt("X-API-KEY:", localStorage.getItem('kKey') || ""));
-        localStorage.setItem('gKey', prompt("Google API Key:", localStorage.getItem('gKey') || ""));
+        const id = prompt("Kalender-ID:", localStorage.getItem('kId') || "");
+        const key = prompt("API-KEY (X-API-KEY):", localStorage.getItem('kKey') || "");
+        const g = prompt("Google API Key:", localStorage.getItem('gKey') || "");
+        if(id) localStorage.setItem('kId', id);
+        if(key) localStorage.setItem('kKey', key);
+        if(g) localStorage.setItem('gKey', g);
         location.reload();
     }
 
@@ -58,27 +72,26 @@
         const from = document.getElementById('dateFrom').value, to = document.getElementById('dateTo').value;
         const resDiv = document.getElementById('results');
         
-        if(!id || !key) { alert("Daten fehlen!"); return; }
-        resDiv.innerHTML = "Prüfe Kalender...";
+        if(!id || !key) { alert("Bitte erst IDs in den Einstellungen (unten) eingeben!"); return; }
+        resDiv.innerHTML = "<p style='text-align:center;'>Kalenderdaten werden geladen...</p>";
 
         try {
-            // URL exakt nach curl-Vorgabe: Kalender-ID gehört NICHT in die Query-Params, wenn Header genutzt wird
-            const url = `https://api.kalender.digital/public/event?startDate=${from}&endDate=${to}&timeZone=Europe/Berlin`;
+            // Kombinierte URL nach Doku: Kalender-ID direkt im Pfad + Zeitraum in Query
+            const url = `https://api.kalender.digital/public/event?calendarId=${id}&startDate=${from}&endDate=${to}&timeZone=Europe/Berlin`;
             const proxy = `https://corsproxy.io/?${encodeURIComponent(url)}`;
             
             const resp = await fetch(proxy, {
                 method: 'GET',
-                headers: { 'X-API-KEY': key.trim() } // Header laut Doku
+                headers: { 'X-API-KEY': key.trim() }
             });
 
             if(!resp.ok) throw new Error("API-Fehler " + resp.status);
             const events = await resp.json();
             const text = JSON.stringify(events).toLowerCase();
 
-            // Google Maps
             if (typeof google === 'undefined') {
                 const s = document.createElement('script');
-                s.src = `https://maps.googleapis.com/maps/api/js?key=${g}`;
+                s.src = `https://maps.googleapis.com/maps/api/js?key=${g}&libraries=geometry`;
                 document.head.appendChild(s);
                 await new Promise(r => s.onload = r);
             }
@@ -89,6 +102,8 @@
                 destinations: [document.getElementById('destPlz').value],
                 travelMode: 'DRIVING'
             }, (mResp, status) => {
+                if(status !== "OK") { resDiv.innerHTML = "Google Key ungültig!"; return; }
+
                 let ranking = drivers.map((d, i) => {
                     const lastName = d.name.split(' ').pop().toLowerCase();
                     const isBusy = text.includes(lastName);
@@ -102,14 +117,14 @@
                     resDiv.innerHTML += `
                         <div class="driver ${d.isBusy ? 'busy' : 'free'}">
                             <div>
-                                <strong>${d.name}</strong><br><small>${d.distT} entfernt</small><br>
-                                ${!d.isBusy ? `<button class="btn-book" onclick="alert('Buchung...')">Jetzt buchen</button>` : ''}
+                                <strong>${d.name}</strong><br><small>${d.distT} entfernt (${d.plz})</small><br>
+                                ${!d.isBusy ? `<button class="btn-book" onclick="alert('Buchung für ${d.name} wird vorbereitet...')">Jetzt buchen</button>` : ''}
                             </div>
                             <span class="status ${d.isBusy ? 'st-busy' : 'st-free'}">${d.isBusy ? 'BESETZT' : 'FREI'}</span>
                         </div>`;
                 });
             });
-        } catch(e) { resDiv.innerHTML = "Fehler: " + e.message; }
+        } catch(e) { resDiv.innerHTML = "<p style='color:red;'>Fehler: " + e.message + "</p>"; }
     }
 </script>
 </body>
