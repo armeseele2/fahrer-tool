@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Springer-Dispo 9.0 (Detektiv)</title>
+    <title>Springer-Dispo 9.5 (Multi-ID)</title>
     <style>
         :root { --p: #007bff; --s: #28a745; --d: #dc3545; --bg: #f4f7f6; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); padding: 20px; color: #333; }
@@ -20,8 +20,8 @@
 <body>
 
 <div class="card">
-    <h2 style="text-align:center; color:var(--p); margin-top:0;">Springer-Dispo 9.0</h2>
-    <div id="statusLog" class="log-box">Bereit für Analyse.</div>
+    <h2 style="text-align:center; color:var(--p); margin-top:0;">Springer-Dispo 9.5</h2>
+    <div id="statusLog" class="log-box">Bereit für Multi-Scan.</div>
 
     <label>Einrichtung wählen</label>
     <select id="schoolSelect" onchange="document.getElementById('destPlz').value = this.value">
@@ -40,10 +40,10 @@
         <div style="flex:1;"><label>Bis</label><input type="date" id="dateTo" value="2026-04-24"></div>
     </div>
 
-    <button class="btn-main" onclick="run()">Analyse & Prüfung starten</button>
+    <button class="btn-main" onclick="run()">Verfügbarkeit prüfen</button>
 
     <div class="setup-area">
-        <p style="color:var(--s); font-weight:bold;">Firefox CORS Everywhere muss GRÜN sein!</p>
+        <p style="color:var(--s); font-weight:bold;">Firefox CORS Everywhere muss AN sein!</p>
         <a href="#" onclick="setup()">Keys & IDs anpassen</a>
     </div>
 </div>
@@ -61,32 +61,33 @@
 
     function setup() {
         localStorage.setItem('kKey', prompt("X-API-KEY:", localStorage.getItem('kKey') || ""));
-        localStorage.setItem('kId', prompt("Kalender-ID:", localStorage.getItem('kId') || ""));
+        localStorage.setItem('kIds', prompt("Kalender-IDs (mit Komma getrennt):", localStorage.getItem('kIds') || ""));
         localStorage.setItem('gKey', prompt("Google API Key:", localStorage.getItem('gKey') || ""));
         location.reload();
     }
 
     async function run() {
-        const kKey = localStorage.getItem('kKey'), kId = localStorage.getItem('kId');
+        const kKey = localStorage.getItem('kKey'), kIdsRaw = localStorage.getItem('kIds');
         const from = document.getElementById('dateFrom').value, to = document.getElementById('dateTo').value;
         const log = document.getElementById('statusLog');
         const resDiv = document.getElementById('results');
 
-        if(!kKey || !kId) return alert("Setup unvollständig!");
+        if(!kKey || !kIdsRaw) return alert("Setup unvollständig!");
         
-        log.innerHTML = `🔍 Rufe Kalender ${kId} ab...`;
+        const idList = kIdsRaw.split(',').map(id => id.trim());
+        log.innerHTML = `🔍 Scanne ${idList.length} Kalender parallel...`;
+        
         try {
-            const url = `https://api.kalender.digital/public/event?calendarId=${kId}&startDate=${from}&endDate=${to}`;
-            const resp = await fetch(url, { headers: { 'X-API-KEY': kKey.trim() } });
-            const data = await resp.json();
-            
-            const events = data.events || [];
-            
-            if(events.length === 0) {
-                log.innerHTML = `⚠️ Warnung: Kalender ${kId} lieferte 0 Termine für diesen Zeitraum.\nBitte ID prüfen!`;
-            } else {
-                log.innerHTML = `✅ ${events.length} Termine gefunden.\nVerarbeite Daten...`;
+            let allEvents = [];
+            // Jede ID einzeln abfragen
+            for (let id of idList) {
+                const url = `https://api.kalender.digital/public/event?calendarId=${id}&startDate=${from}&endDate=${to}`;
+                const resp = await fetch(url, { headers: { 'X-API-KEY': kKey.trim() } });
+                const data = await resp.json();
+                if(data.events) allEvents = allEvents.concat(data.events);
             }
+            
+            log.innerHTML = `✅ ${allEvents.length} Termine insgesamt geladen.\nBerechne Google-Routing...`;
 
             const service = new google.maps.DistanceMatrixService();
             service.getDistanceMatrix({
@@ -97,11 +98,10 @@
                 if(status !== 'OK') return;
                 let ranking = drivers.map((d, i) => {
                     const lastName = d.name.split(' ').pop().toLowerCase();
-                    const event = events.find(ev => {
-                        const inTitle = ev.title.toLowerCase().includes(lastName);
-                        const inSub = ev.subCalendars && ev.subCalendars.some(sc => sc.toLowerCase().includes(lastName));
-                        return inTitle || inSub;
-                    });
+                    const event = allEvents.find(ev => 
+                        ev.title.toLowerCase().includes(lastName) || 
+                        (ev.subCalendars && ev.subCalendars.some(sc => sc.toLowerCase().includes(lastName)))
+                    );
                     const distT = mResp.rows[i].elements[0].distance.text;
                     const distV = mResp.rows[i].elements[0].distance.value;
                     return { ...d, distT, distV, isBusy: !!event, eName: event ? event.title : '' };
@@ -110,12 +110,12 @@
                 resDiv.innerHTML = "";
                 ranking.forEach(d => {
                     resDiv.innerHTML += `<div class="driver ${d.isBusy ? 'is-busy' : 'is-free'}">
-                        <div><strong>${d.name} (${d.distT})</strong>${d.isBusy ? `<br><small style="color:red">${d.eName}</small>` : ''}</div>
+                        <div><strong>${d.name} (${d.distT})</strong>${d.isBusy ? `<br><small style="color:red">Einsatz: ${d.eName}</small>` : ''}</div>
                         <span style="font-weight:bold">${d.isBusy ? '🔴 BELEGT' : '🟢 FREI'}</span>
                     </div>`;
                 });
             });
-        } catch(e) { log.innerHTML = "❌ Kritischer Fehler. Ist die Firefox-Erweiterung wirklich an?"; }
+        } catch(e) { log.innerHTML = "❌ Fehler beim Abruf!"; }
     }
 
     (function() {
