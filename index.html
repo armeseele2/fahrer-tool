@@ -44,7 +44,7 @@
     <button onclick="generateRanking()">Verfügbarkeit & Ranking prüfen</button>
     
     <div style="text-align: center;">
-        <button class="info-btn" onclick="setupKeys()">Keys verwalten (Google & Kalender)</button>
+        <button class="info-btn" onclick="setupKeys()">Keys verwalten</button>
     </div>
 </div>
 
@@ -99,19 +99,24 @@
         }
 
         const resDiv = document.getElementById('results');
-        resDiv.innerHTML = "<p style='text-align:center;'>Daten werden geladen...</p>";
+        resDiv.innerHTML = "<p style='text-align:center;'>Suche Verfügbarkeiten...</p>";
 
+        let busyNames = [];
         try {
-            // 1. Kalender-Abfrage über Proxy zur Umgehung von CORS
             const kUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(`https://api.kalender.digital/public/event?calendarId=${kId}&startDate=${date}&endDate=${date}`)}`;
-            
             const kResponse = await fetch(kUrl);
             const kDataRaw = await kResponse.json();
             const kData = JSON.parse(kDataRaw.contents);
-            
-            const busyNames = kData.events ? kData.events.map(e => e.subcalendarName.toLowerCase()) : [];
+            busyNames = kData.events ? kData.events.map(e => e.subcalendarName.toLowerCase()) : [];
+        } catch (e) {
+            console.error("Kalender Fehler", e);
+            // Wir machen trotzdem weiter, zeigen aber eine Warnung
+            resDiv.innerHTML += "<p style='color:orange; font-size:0.8rem;'>Warnung: Kalender konnte nicht geladen werden.</p>";
+        }
 
-            // 2. Google Maps Abfrage
+        resDiv.innerHTML = "<p style='text-align:center;'>Berechne Entfernungen...</p>";
+
+        try {
             const origins = drivers.map(d => d.plz).join('|');
             const gUrl = `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${origins}&destinations=${dest}&key=${gKey}`;
             
@@ -124,14 +129,10 @@
                 const element = gData.rows[index].elements[0];
                 const distText = element.status === "OK" ? element.distance.text : "N/A";
                 const distVal = element.status === "OK" ? element.distance.value : 999999;
-                
-                // Prüfen ob Name im Kalender vorkommt (Groß/Kleinschreibung egal)
                 const isBusy = busyNames.some(bn => bn.includes(d.name.toLowerCase()));
-                
                 return { ...d, distance: distText, distVal, isBusy };
             });
 
-            // Sortierung
             ranking.sort((a, b) => {
                 if (a.isBusy === b.isBusy) return a.distVal - b.distVal;
                 return a.isBusy ? 1 : -1;
@@ -147,14 +148,16 @@
                         <small>${d.plz} → ${dest}: ${d.distance}</small>
                     </div>
                     <span class="status-badge ${d.isBusy ? 'busy' : 'free'}">
-                        ${d.isBusy ? 'BESETZT' : 'FREI'}
+                        ${d.isBusy ? '${d.isBusy ? "BESETZT" : "FREI"}'}
                     </span>
                 `;
+                // Fix für den Badge-Text:
+                row.querySelector('.status-badge').innerText = d.isBusy ? "BESETZT" : "FREI";
                 resDiv.appendChild(row);
             });
 
         } catch (err) {
-            resDiv.innerHTML = `<p style='color:red; text-align:center;'>Fehler: ${err.message}<br>Bitte Keys prüfen.</p>`;
+            resDiv.innerHTML = `<p style='color:red; text-align:center;'>Google-Fehler: ${err.message}<br>Bitte prüfe deinen Google API Key.</p>`;
         }
     }
 </script>
