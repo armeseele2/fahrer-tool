@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Springer-Dispo 13.1 FINAL</title>
+<title>Springer-Dispo 14.0 QUERY FINAL</title>
 
 <style>
 :root{
@@ -14,7 +14,7 @@
 }
 
 body{
-font-family:'Segoe UI',sans-serif;
+font-family:Segoe UI,sans-serif;
 background:var(--bg);
 padding:20px;
 color:#333;
@@ -25,15 +25,15 @@ background:#fff;
 padding:25px;
 border-radius:12px;
 box-shadow:0 4px 15px rgba(0,0,0,.1);
-max-width:680px;
+max-width:700px;
 margin:auto;
 }
 
 label{
 display:block;
-margin-bottom:5px;
 font-weight:bold;
 font-size:.85rem;
+margin-bottom:5px;
 color:#666;
 }
 
@@ -66,9 +66,9 @@ padding:12px;
 border-radius:8px;
 font-family:monospace;
 font-size:.8rem;
-margin-bottom:20px;
-min-height:70px;
 white-space:pre-wrap;
+min-height:80px;
+margin-bottom:20px;
 }
 
 .driver{
@@ -83,29 +83,29 @@ border-left:8px solid #ccc;
 box-shadow:0 2px 8px rgba(0,0,0,.05);
 }
 
-.is-busy{
-border-left-color:var(--d)!important;
-background:#fff5f5;
-}
-
 .is-free{
 border-left-color:var(--s)!important;
 background:#fafffa;
 }
 
-.setup-links{
+.is-busy{
+border-left-color:var(--d)!important;
+background:#fff5f5;
+}
+
+.links{
 text-align:center;
-margin-top:20px;
+margin-top:18px;
 font-size:.85rem;
 }
 
-.setup-links a{
-color:var(--p);
+.links a{
 text-decoration:none;
-margin:0 10px;
+margin:0 8px;
 border:1px solid #ddd;
 padding:5px 10px;
 border-radius:5px;
+color:var(--p);
 }
 </style>
 </head>
@@ -115,12 +115,10 @@ border-radius:5px;
 <div class="card">
 
 <h2 style="text-align:center;color:var(--p);margin-top:0;">
-Springer-Dispo 13.1 FINAL
+Springer-Dispo 14.0 QUERY FINAL
 </h2>
 
-<div id="statusLog" class="log-box">
-Status: Bereit.
-</div>
+<div id="statusLog" class="log-box">Status: Bereit.</div>
 
 <label>Einrichtung wählen</label>
 <select id="schoolSelect" onchange="document.getElementById('destPlz').value=this.value">
@@ -147,18 +145,16 @@ Status: Bereit.
 </div>
 </div>
 
-<button class="btn-main" onclick="run()">
-Verfügbarkeit & Ranking prüfen
-</button>
+<button class="btn-main" onclick="run()">Verfügbarkeit & Ranking prüfen</button>
 
-<div class="setup-links">
+<div class="links">
 <a href="#" onclick="setup()">⚙️ Setup</a>
-<a href="https://cors-anywhere.herokuapp.com/corsdemo" target="_blank">🔓 Proxy freischalten</a>
+<a href="https://cors-anywhere.herokuapp.com/corsdemo" target="_blank">🔓 Proxy</a>
 </div>
 
 </div>
 
-<div id="results" style="max-width:680px;margin:20px auto;"></div>
+<div id="results" style="max-width:700px;margin:20px auto;"></div>
 
 <script>
 const drivers = [
@@ -174,9 +170,6 @@ const drivers = [
 {name:"Neubauer Michael",plz:"30853"}
 ];
 
-/* =========================
-SETUP
-========================= */
 function setup(){
 localStorage.setItem("kKey",prompt("Kalender.digital API-Key",localStorage.getItem("kKey")||""));
 localStorage.setItem("kIds",prompt("Kalender-ID(s), komma getrennt",localStorage.getItem("kIds")||""));
@@ -184,23 +177,17 @@ localStorage.setItem("gKey",prompt("Google API Key",localStorage.getItem("gKey")
 location.reload();
 }
 
-/* =========================
-LOG
-========================= */
-function log(msg){
-document.getElementById("statusLog").textContent=msg;
+function log(t){
+document.getElementById("statusLog").textContent=t;
 }
 
-/* =========================
-MAIN
-========================= */
 async function run(){
 
 const kKey=localStorage.getItem("kKey");
 const kIds=localStorage.getItem("kIds");
 const gKey=localStorage.getItem("gKey");
 
-if(!kKey || !kIds){
+if(!kKey || !kIds || !gKey){
 alert("Bitte Setup ausfüllen.");
 return;
 }
@@ -209,21 +196,72 @@ const from=document.getElementById("dateFrom").value;
 const to=document.getElementById("dateTo").value;
 const dest=document.getElementById("destPlz").value;
 
-log("🛰️ Lade Kalenderdaten...");
-
 try{
 
-const ids=kIds.split(",");
-let allEvents=[];
+log("🛰️ Lade Google Maps...");
+await ensureGoogle(gKey);
 
-for(let rawId of ids){
+log("🗺️ Berechne Entfernungen...");
+const matrix=await getMatrix(dest);
+
+log("📅 Prüfe Fahrer einzeln über Query...");
+let ranking=[];
+
+for(let i=0;i<drivers.length;i++){
+
+const d=drivers[i];
+
+const busy=await checkBusyByQuery(d.name,from,to,kIds,kKey);
+
+ranking.push({
+...d,
+isBusy:busy.found,
+eventTitle:busy.title,
+distText:matrix.rows[i].elements[0].distance.text,
+distValue:matrix.rows[i].elements[0].distance.value
+});
+
+log("Prüfe: " + d.name);
+
+}
+
+ranking.sort((a,b)=>
+(a.isBusy-b.isBusy) || (a.distValue-b.distValue)
+);
+
+render(ranking);
+
+log("✅ Analyse abgeschlossen.");
+
+}catch(e){
+console.error(e);
+log("❌ Fehler:\n"+e.message);
+}
+
+}
+
+/* ==========================
+QUERY PRÜFUNG
+========================== */
+async function checkBusyByQuery(driverName,from,to,kIds,kKey){
+
+const ids=kIds.split(",");
+const searchTerms=[
+driverName,
+driverName.split(" ").pop()
+];
+
+for(const rawId of ids){
 
 const id=rawId.trim();
 
-const url =
-`https://api.kalender.digital/public/event?calendarId=${encodeURIComponent(id)}&startDate=${from}&endDate=${to}T23:59:59&timeZone=Europe/Berlin`;
+for(const term of searchTerms){
 
-const proxy="https://cors-anywhere.herokuapp.com/" + url;
+const url=
+`https://api.kalender.digital/public/event?calendarId=${encodeURIComponent(id)}&startDate=${from}&endDate=${to}T23:59:59&timeZone=Europe/Berlin&query=${encodeURIComponent(term)}`;
+
+const proxy=
+"https://corsproxy.io/?"+encodeURIComponent(url);
 
 const resp=await fetch(proxy,{
 headers:{
@@ -231,113 +269,38 @@ headers:{
 }
 });
 
-if(!resp.ok){
-throw new Error("Kalender API Fehler " + resp.status);
-}
+if(!resp.ok) continue;
 
 const data=await resp.json();
 
-console.log("Kalender Response:",data);
+let events=[];
 
-/* Unterstützt beide Varianten:
-1) Direktes Array
-2) {events:[...]}
-*/
-if(Array.isArray(data)){
-allEvents=allEvents.concat(data);
-}
-else if(Array.isArray(data.events)){
-allEvents=allEvents.concat(data.events);
-}
+if(Array.isArray(data)) events=data;
+else if(Array.isArray(data.events)) events=data.events;
 
-}
-
-log(`📅 ${allEvents.length} Termine geladen.\n🗺️ Berechne Entfernungen...`);
-
-await ensureGoogle(gKey);
-
-const matrix = await getMatrix(dest);
-
-let ranking = drivers.map((driver,index)=>{
-
-const foundEvent=findDriverEvent(driver,allEvents);
+if(events.length>0){
 
 return {
-...driver,
-isBusy: !!foundEvent,
-eventTitle: foundEvent ? (foundEvent.title || "Termin") : "",
-distText: matrix.rows[index].elements[0].distance.text,
-distValue: matrix.rows[index].elements[0].distance.value
+found:true,
+title:events[0].title || "Termin"
 };
 
-});
-
-ranking.sort((a,b)=>
-(a.isBusy - b.isBusy) || (a.distValue - b.distValue)
-);
-
-render(ranking);
-
-log(`✅ Analyse abgeschlossen (${from} bis ${to})`);
-
-}catch(err){
-console.error(err);
-log("❌ Fehler:\n" + err.message);
 }
 
 }
 
-/* =========================
-FAHRER EVENT FINDEN
-========================= */
-function findDriverEvent(driver,events){
-
-const full=driver.name.toLowerCase();
-const last=driver.name.split(" ").pop().toLowerCase();
-
-return events.find(ev=>{
-
-const title=(ev.title || "").toLowerCase();
-const desc=(ev.description || "").toLowerCase();
-
-let subText="";
-
-if(Array.isArray(ev.subCalendars)){
-
-subText = ev.subCalendars.map(sc=>{
-
-if(typeof sc==="string") return sc;
-
-if(typeof sc==="object"){
-return (sc.name || sc.title || JSON.stringify(sc));
 }
 
-return "";
-
-}).join(" ").toLowerCase();
+return {
+found:false,
+title:""
+};
 
 }
 
-/* Zusätzliche Vollprüfung */
-const blob = (
-title + " " +
-desc + " " +
-subText + " " +
-JSON.stringify(ev)
-).toLowerCase();
-
-return (
-blob.includes(full) ||
-blob.includes(last)
-);
-
-});
-
-}
-
-/* =========================
+/* ==========================
 GOOGLE
-========================= */
+========================== */
 function ensureGoogle(key){
 
 return new Promise(resolve=>{
@@ -381,15 +344,15 @@ resolve(response);
 
 }
 
-/* =========================
+/* ==========================
 RENDER
-========================= */
+========================== */
 function render(list){
 
-document.getElementById("results").innerHTML =
+document.getElementById("results").innerHTML=
 list.map(d=>`
 
-<div class="driver ${d.isBusy ? 'is-busy':'is-free'}">
+<div class="driver ${d.isBusy?'is-busy':'is-free'}">
 
 <div>
 <strong style="font-size:1.05rem;">${d.name}</strong><br>
@@ -401,9 +364,9 @@ ${d.isBusy ? `<br><small style="color:var(--d);font-weight:bold;">${d.eventTitle
 <span style="
 padding:5px 10px;
 border-radius:5px;
-color:#fff;
 font-weight:bold;
-background:${d.isBusy ? 'var(--d)' : 'var(--s)'};
+color:#fff;
+background:${d.isBusy?'var(--d)':'var(--s)'};
 ">
 ${d.isBusy ? "BESETZT" : "FREI"}
 </span>
