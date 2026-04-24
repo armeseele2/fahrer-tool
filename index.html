@@ -2,149 +2,108 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Springer-Dispo-Zentrale 3.7 🚀 (Deep Scan Mode)</title>
+    <title>Springer-Dispo-Zentrale 3.8 🚀</title>
     <style>
         :root { --primary: #007bff; --success: #28a745; --danger: #dc3545; --bg: #f4f7f6; }
-        body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); margin: 0; padding: 20px; color: #333; }
-        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 650px; margin: auto; }
-        h2 { margin-top: 0; color: var(--primary); text-align: center; font-size: 1.5rem; }
-        label { display: block; margin: 12px 0 5px; font-weight: bold; font-size: 0.9rem; }
-        input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 1rem; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .btn-main { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; margin-top: 20px; cursor: pointer; font-size: 1rem; }
-        .btn-settings { width: 100%; background: none; color: var(--primary); border: none; text-decoration: underline; margin-top: 15px; cursor: pointer; font-size: 0.85rem; }
-        
-        #results { max-width: 650px; margin: 25px auto; }
-        .driver-card { background: white; padding: 18px; border-radius: 10px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-left: 6px solid #ccc; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); padding: 20px; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 600px; margin: auto; }
+        h2 { color: var(--primary); text-align: center; margin-top: 0; }
+        label { display: block; margin: 12px 0 5px; font-weight: bold; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+        .btn-main { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; margin-top: 20px; cursor: pointer; }
+        .driver-card { background: white; padding: 15px; border-radius: 10px; margin-top: 10px; display: flex; justify-content: space-between; align-items: center; border-left: 5px solid #ccc; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .is-free { border-left-color: var(--success); }
-        .is-busy { border-left-color: var(--danger); opacity: 0.8; background: #fff5f5; }
-        
-        .driver-info strong { font-size: 1.1rem; display: block; }
-        .driver-info span { color: #666; font-size: 0.9rem; }
-        .status-badge { padding: 5px 10px; border-radius: 5px; font-weight: bold; font-size: 0.85rem; }
-        .free-badge { background: #d4edda; color: #155724; }
-        .busy-badge { background: #f8d7da; color: #721c24; }
-        .btn-book { background: var(--success); color: white; border: none; padding: 8px 15px; border-radius: 5px; margin-top: 8px; cursor: pointer; font-weight: bold; }
+        .is-busy { border-left-color: var(--danger); background: #fffafa; }
+        .status-badge { padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 0.8rem; }
+        .free-badge { background: #e6f4ea; color: #1e7e34; }
+        .busy-badge { background: #fce8e6; color: #d93025; }
+        .btn-book { background: var(--success); color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; margin-top: 5px; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2>Springer-Dispo-Zentrale 3.7</h2>
-    
-    <label>Einrichtung / Ziel auswählen</label>
+    <h2>Springer-Dispo-Zentrale 3.8</h2>
+    <label>Ziel auswählen</label>
     <select id="schoolSelect" onchange="document.getElementById('destinationPlz').value = this.value">
-        <option value="">-- Bitte wählen --</option>
         <option value="30655">Albert-Liebmann-Schule (30655)</option>
         <option value="30165">Lebenshilfe Büttnerstraße (30165)</option>
         <option value="30900">Kindergarten Domino (30900)</option>
-        <option value="30419">Kindergarten Forst Mecklenheide (30419)</option>
-        <option value="30449">Wilhelm-Schade-Schule (30449)</option>
-        <option value="manual">Manuelle Eingabe...</option>
     </select>
-
     <label>Ziel-PLZ</label>
-    <input type="text" id="destinationPlz" placeholder="z.B. 30177" value="30177">
-
-    <div class="grid">
-        <div><label>Einsatz von</label><input type="date" id="startDate"></div>
-        <div><label>Einsatz bis</label><input type="date" id="endDate"></div>
+    <input type="text" id="destinationPlz" value="30177">
+    <div style="display:flex; gap:10px;">
+        <div style="flex:1;"><label>Von</label><input type="date" id="startDate" value="2026-04-24"></div>
+        <div style="flex:1;"><label>Bis</label><input type="date" id="endDate" value="2026-04-24"></div>
     </div>
-
-    <button class="btn-main" onclick="checkAllData()">Verfügbarkeit prüfen & Ranking</button>
-    <button class="btn-settings" onclick="setupKeys()">⚙️ API-Keys & Kalender-ID verwalten</button>
+    <button class="btn-main" onclick="runCheck()">Verfügbarkeit prüfen & Ranking</button>
+    <p style="text-align:center; font-size:0.8rem;"><a href="#" onclick="setup()">API-Einstellungen</a></p>
 </div>
 
-<div id="results"></div>
+<div id="results" style="max-width:600px; margin: 20px auto;"></div>
 
 <script>
     const drivers = [
-        { name: "Türkel Tuncer", plz: "30161" },
-        { name: "Otto Alexander", plz: "30173" },
-        { name: "Ferkau Eckart", plz: "30851" },
-        { name: "Ohm Lars", plz: "30559" },
         { name: "Bachmeier Reinhard", plz: "30659" },
-        { name: "Neubauer Michael", plz: "30853" },
-        { name: "Schrader Harald", plz: "30880" },
-        { name: "Aschenbach André", plz: "30989" }
+        { name: "Türkel Tuncer", plz: "30161" },
+        { name: "Isfahan Mozaffaey Hamid", plz: "30519" },
+        { name: "Otto Alexander", plz: "30173" },
+        { name: "Schrader Harald", plz: "30880" }
     ];
 
-    document.getElementById('startDate').value = "2026-04-24";
-    document.getElementById('endDate').value = "2026-04-24";
-
-    function setupKeys() {
-        const kId = prompt("Kalender-ID (Admin-Link):", localStorage.getItem('kalender_id') || "");
-        const kKey = prompt("Kalender API-Key:", localStorage.getItem('kalender_key') || "");
-        const gKey = prompt("Google Maps API-Key:", localStorage.getItem('google_key') || "");
-        if(kId) localStorage.setItem('kalender_id', kId);
-        if(kKey) localStorage.setItem('kalender_key', kKey);
-        if(gKey) localStorage.setItem('google_key', gKey);
+    function setup() {
+        localStorage.setItem('k_id', prompt("Kalender-ID:", localStorage.getItem('k_id')));
+        localStorage.setItem('k_key', prompt("API-Key:", localStorage.getItem('k_key')));
+        localStorage.setItem('g_key', prompt("Google-Key:", localStorage.getItem('g_key')));
         location.reload();
     }
 
-    const gKey = localStorage.getItem('google_key');
-    if(gKey) {
-        const s = document.createElement('script');
-        s.src = `https://maps.googleapis.com/maps/api/js?key=${gKey}&libraries=geometry`;
-        document.head.appendChild(s);
-    }
+    async function runCheck() {
+        const id = localStorage.getItem('k_id'), key = localStorage.getItem('k_key'), gkey = localStorage.getItem('g_key');
+        const start = document.getElementById('startDate').value, end = document.getElementById('endDate').value;
+        const dest = document.getElementById('destinationPlz').value, resDiv = document.getElementById('results');
 
-    async function checkAllData() {
-        const kId = localStorage.getItem('kalender_id');
-        const kKey = localStorage.getItem('kalender_key');
-        const start = document.getElementById('startDate').value;
-        const end = document.getElementById('endDate').value;
-        const dest = document.getElementById('destinationPlz').value;
-        const resDiv = document.getElementById('results');
-
-        if(!gKey || !kKey || !kId) { alert("Bitte API-Daten prüfen!"); return; }
-        resDiv.innerHTML = "<p style='text-align:center;'>Führe Tiefen-Scan der Kalenderdaten durch...</p>";
+        resDiv.innerHTML = "Lade Daten...";
 
         try {
-            // Abfrage inklusive aller Unterkalender nach Doku-Vorgabe
-            const kUrl = `https://corsproxy.io/?${encodeURIComponent(`https://api.kalender.digital/public/event?calendarId=${kId}&startDate=${start}&endDate=${end}&includeSubcalendars=1`)}`;
-            const kResp = await fetch(kUrl, { headers: { 'X-API-KEY': kKey, 'Accept': 'application/json' } });
-            const data = await kResp.json();
-            
-            // Wir ziehen alle Namen aus den Kalendereinträgen
-            const busyText = JSON.stringify(data.events || []).toLowerCase();
+            // Abruf exakt nach Doku-Schema
+            const url = `https://corsproxy.io/?${encodeURIComponent(`https://api.kalender.digital/public/event?calendarId=${id}&startDate=${start}&endDate=${end}&includeSubcalendars=1`)}`;
+            const resp = await fetch(url, { headers: { 'X-API-KEY': key, 'Accept': 'application/json' } });
+            const json = await resp.json();
+            const eventsString = JSON.stringify(json).toLowerCase();
 
+            // Google Maps Abfrage
             const service = new google.maps.DistanceMatrixService();
             service.getDistanceMatrix({
                 origins: drivers.map(d => d.plz),
                 destinations: [dest],
                 travelMode: 'DRIVING'
             }, (mResp, status) => {
-                if(status !== "OK") { resDiv.innerHTML = "Google Maps Fehler!"; return; }
-                
                 let ranking = drivers.map((d, i) => {
-                    const lastName = d.name.split(' ')[0].toLowerCase();
-                    const isBusy = busyText.includes(lastName);
+                    const namePart = d.name.split(' ')[0].toLowerCase();
+                    const isBusy = eventsString.includes(namePart);
                     const dist = mResp.rows[i].elements[0].distance.text;
                     const val = mResp.rows[i].elements[0].distance.value;
                     return { ...d, dist, val, isBusy };
                 });
 
                 ranking.sort((a,b) => a.isBusy - b.isBusy || a.val - b.val);
-
                 resDiv.innerHTML = "";
                 ranking.forEach(d => {
                     resDiv.innerHTML += `
                         <div class="driver-card ${d.isBusy ? 'is-busy' : 'is-free'}">
-                            <div class="driver-info">
-                                <strong>${d.name}</strong>
-                                <span>${d.plz} &rarr; ${dest}: ${d.dist}</span>
-                                ${!d.isBusy ? `<br><button class="btn-book" onclick="alert('Buchung gestartet...')">Jetzt buchen</button>` : ''}
+                            <div>
+                                <strong>${d.name}</strong><br>
+                                <small>${d.dist} Entfernung</small><br>
+                                ${!d.isBusy ? '<button class="btn-book">Jetzt buchen</button>' : ''}
                             </div>
-                            <span class="status-badge ${d.isBusy ? 'busy-badge' : 'free-badge'}">
-                                ${d.isBusy ? 'BESETZT' : 'FREI'}
-                            </span>
+                            <span class="status-badge ${d.isBusy ? 'busy-badge' : 'free-badge'}">${d.isBusy ? 'BESETZT' : 'FREI'}</span>
                         </div>`;
                 });
             });
-        } catch(e) { resDiv.innerHTML = "Fehler bei der Abfrage."; }
+        } catch(e) { resDiv.innerHTML = "Fehler bei der API-Abfrage."; }
     }
 </script>
+<script src="https://maps.googleapis.com/maps/api/js?key=YOUR_KEY&libraries=geometry"></script>
 </body>
 </html>
