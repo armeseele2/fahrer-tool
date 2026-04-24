@@ -1,158 +1,420 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-    <meta charset="UTF-8">
-    <title>Springer-Dispo 13.0 (Kalender-Fix)</title>
-    <style>
-        :root { --p: #007bff; --s: #28a745; --d: #dc3545; --bg: #f4f7f6; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); padding: 20px; color: #333; }
-        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 650px; margin: auto; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.85rem; color: #666; }
-        input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 15px; box-sizing: border-box; font-size: 1rem; }
-        .btn-main { width: 100%; padding: 16px; background: var(--p); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1.1rem; }
-        .log-box { background: #000; color: #0f0; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 0.8rem; margin-bottom: 20px; min-height: 60px; white-space: pre-wrap; }
-        .driver { background: white; padding: 15px; border-radius: 10px; margin-top: 10px; display: flex; justify-content: space-between; align-items: center; border-left: 8px solid #ccc; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        .is-busy { border-left-color: var(--d) !important; background: #fff5f5; }
-        .is-free { border-left-color: var(--s) !important; background: #fafffa; }
-        .setup-links { text-align: center; margin-top: 20px; font-size: 0.85rem; }
-        .setup-links a { color: var(--p); text-decoration: none; margin: 0 10px; border: 1px solid #ddd; padding: 5px 10px; border-radius: 5px; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Springer-Dispo 13.1 FINAL</title>
+
+<style>
+:root{
+--p:#007bff;
+--s:#28a745;
+--d:#dc3545;
+--bg:#f4f7f6;
+}
+
+body{
+font-family:'Segoe UI',sans-serif;
+background:var(--bg);
+padding:20px;
+color:#333;
+}
+
+.card{
+background:#fff;
+padding:25px;
+border-radius:12px;
+box-shadow:0 4px 15px rgba(0,0,0,.1);
+max-width:680px;
+margin:auto;
+}
+
+label{
+display:block;
+margin-bottom:5px;
+font-weight:bold;
+font-size:.85rem;
+color:#666;
+}
+
+input,select{
+width:100%;
+padding:12px;
+border:1px solid #ddd;
+border-radius:8px;
+margin-bottom:15px;
+box-sizing:border-box;
+font-size:1rem;
+}
+
+.btn-main{
+width:100%;
+padding:16px;
+background:var(--p);
+color:#fff;
+border:none;
+border-radius:8px;
+font-weight:bold;
+cursor:pointer;
+font-size:1.05rem;
+}
+
+.log-box{
+background:#000;
+color:#0f0;
+padding:12px;
+border-radius:8px;
+font-family:monospace;
+font-size:.8rem;
+margin-bottom:20px;
+min-height:70px;
+white-space:pre-wrap;
+}
+
+.driver{
+background:#fff;
+padding:15px;
+border-radius:10px;
+margin-top:10px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+border-left:8px solid #ccc;
+box-shadow:0 2px 8px rgba(0,0,0,.05);
+}
+
+.is-busy{
+border-left-color:var(--d)!important;
+background:#fff5f5;
+}
+
+.is-free{
+border-left-color:var(--s)!important;
+background:#fafffa;
+}
+
+.setup-links{
+text-align:center;
+margin-top:20px;
+font-size:.85rem;
+}
+
+.setup-links a{
+color:var(--p);
+text-decoration:none;
+margin:0 10px;
+border:1px solid #ddd;
+padding:5px 10px;
+border-radius:5px;
+}
+</style>
 </head>
+
 <body>
 
 <div class="card">
-    <h2 style="text-align:center; color:var(--p); margin-top:0;">Springer-Dispo 13.0</h2>
-    <div id="statusLog" class="log-box">Status: Bereit für Abfrage.</div>
 
-    <label>Einrichtung wählen (PLZ wird angepasst)</label>
-    <select id="schoolSelect" onchange="document.getElementById('destPlz').value = this.value">
-        <option value="30655">Albert-Liebmann-Schule (30655)</option>
-        <option value="30165">Lebenshilfe Büttnerstraße (30165)</option>
-        <option value="30449">Wilhelm-Schade-Schule (30449)</option>
-        <option value="30853">Pestalozzi-Schule (30853)</option>
-        <option value="30880">Mecklenheide Forst (30880)</option>
-        <option value="30177">Test-Standort (30177)</option>
-    </select>
+<h2 style="text-align:center;color:var(--p);margin-top:0;">
+Springer-Dispo 13.1 FINAL
+</h2>
 
-    <label>Ziel-PLZ</label>
-    <input type="text" id="destPlz" value="30655">
-
-    <div style="display:flex; gap:10px;">
-        <div style="flex:1;">
-            <label>Von Datum</label>
-            <input type="date" id="dateFrom" value="2026-04-24">
-        </div>
-        <div style="flex:1;">
-            <label>Bis Datum</label>
-            <input type="date" id="dateTo" value="2026-04-24">
-        </div>
-    </div>
-
-    <button class="btn-main" onclick="run()">Verfügbarkeit & Ranking prüfen</button>
-
-    <div class="setup-links">
-        <a href="#" onclick="setup()">⚙️ Setup (Keys/IDs)</a>
-        <a href="https://cors-anywhere.herokuapp.com/corsdemo" target="_blank">🔓 Proxy freischalten</a>
-    </div>
+<div id="statusLog" class="log-box">
+Status: Bereit.
 </div>
 
-<div id="results" style="max-width: 650px; margin: 20px auto;"></div>
+<label>Einrichtung wählen</label>
+<select id="schoolSelect" onchange="document.getElementById('destPlz').value=this.value">
+<option value="30655">Albert-Liebmann-Schule (30655)</option>
+<option value="30165">Lebenshilfe Büttnerstraße (30165)</option>
+<option value="30449">Wilhelm-Schade-Schule (30449)</option>
+<option value="30853">Pestalozzi-Schule (30853)</option>
+<option value="30880">Mecklenheide Forst (30880)</option>
+<option value="30177">Test-Standort (30177)</option>
+</select>
+
+<label>Ziel-PLZ</label>
+<input type="text" id="destPlz" value="30655">
+
+<div style="display:flex;gap:10px;">
+<div style="flex:1;">
+<label>Von Datum</label>
+<input type="date" id="dateFrom" value="2026-04-24">
+</div>
+
+<div style="flex:1;">
+<label>Bis Datum</label>
+<input type="date" id="dateTo" value="2026-04-24">
+</div>
+</div>
+
+<button class="btn-main" onclick="run()">
+Verfügbarkeit & Ranking prüfen
+</button>
+
+<div class="setup-links">
+<a href="#" onclick="setup()">⚙️ Setup</a>
+<a href="https://cors-anywhere.herokuapp.com/corsdemo" target="_blank">🔓 Proxy freischalten</a>
+</div>
+
+</div>
+
+<div id="results" style="max-width:680px;margin:20px auto;"></div>
 
 <script>
-    const drivers = [
-        { name: "Türkel Tuncer", plz: "30161" }, { name: "Von Treskow Albrecht", plz: "30175" },
-        { name: "Otto Alexander", plz: "30173" }, { name: "Ferkau Eckart", plz: "30851" },
-        { name: "Ohm Lars", plz: "30559" }, { name: "Bachmeier Reinhard", plz: "30659" },
-        { name: "Isfahan Mozaffaey Hamid", plz: "30519" }, { name: "Schrader Harald", plz: "30880" },
-        { name: "Aschenbach André", plz: "30989" }, { name: "Neubauer Michael", plz: "30853" }
-    ];
+const drivers = [
+{name:"Türkel Tuncer",plz:"30161"},
+{name:"Von Treskow Albrecht",plz:"30175"},
+{name:"Otto Alexander",plz:"30173"},
+{name:"Ferkau Eckart",plz:"30851"},
+{name:"Ohm Lars",plz:"30559"},
+{name:"Bachmeier Reinhard",plz:"30659"},
+{name:"Isfahan Mozaffaey Hamid",plz:"30519"},
+{name:"Schrader Harald",plz:"30880"},
+{name:"Aschenbach André",plz:"30989"},
+{name:"Neubauer Michael",plz:"30853"}
+];
 
-    function setup() {
-        localStorage.setItem('kKey', prompt("X-API-KEY:", localStorage.getItem('kKey') || ""));
-        localStorage.setItem('kIds', prompt("Kalender-IDs (kommagetrennt):", localStorage.getItem('kIds') || ""));
-        localStorage.setItem('gKey', prompt("Google API Key:", localStorage.getItem('gKey') || ""));
-        location.reload();
-    }
+/* =========================
+SETUP
+========================= */
+function setup(){
+localStorage.setItem("kKey",prompt("Kalender.digital API-Key",localStorage.getItem("kKey")||""));
+localStorage.setItem("kIds",prompt("Kalender-ID(s), komma getrennt",localStorage.getItem("kIds")||""));
+localStorage.setItem("gKey",prompt("Google API Key",localStorage.getItem("gKey")||""));
+location.reload();
+}
 
-    async function run() {
-        const kKey = localStorage.getItem('kKey'), kIds = localStorage.getItem('kIds');
-        const from = document.getElementById('dateFrom').value, to = document.getElementById('dateTo').value;
-        const log = document.getElementById('statusLog');
-        const resDiv = document.getElementById('results');
+/* =========================
+LOG
+========================= */
+function log(msg){
+document.getElementById("statusLog").textContent=msg;
+}
 
-        if(!kKey || !kIds) return alert("Setup unvollständig!");
+/* =========================
+MAIN
+========================= */
+async function run(){
 
-        log.innerHTML = "🛰️ Lade Kalender-Daten über Proxy...";
-        try {
-            let allEvents = [];
-            const ids = kIds.split(',');
-            const proxy = "https://cors-anywhere.herokuapp.com/";
+const kKey=localStorage.getItem("kKey");
+const kIds=localStorage.getItem("kIds");
+const gKey=localStorage.getItem("gKey");
 
-            for(let id of ids) {
-                const url = `https://api.kalender.digital/public/event?calendarId=${id.trim()}&startDate=${from}&endDate=${to}`;
-                const resp = await fetch(proxy + url, { headers: { 'X-API-KEY': kKey } });
-                const data = await resp.json();
-                if(data.events) allEvents = allEvents.concat(data.events);
-            }
+if(!kKey || !kIds){
+alert("Bitte Setup ausfüllen.");
+return;
+}
 
-            log.innerHTML = `✅ ${allEvents.length} Termine gefunden.\n🗺️ Berechne Entfernungen...`;
+const from=document.getElementById("dateFrom").value;
+const to=document.getElementById("dateTo").value;
+const dest=document.getElementById("destPlz").value;
 
-            const service = new google.maps.DistanceMatrixService();
-            service.getDistanceMatrix({
-                origins: drivers.map(d => d.plz),
-                destinations: [document.getElementById('destPlz').value],
-                travelMode: 'DRIVING'
-            }, (mResp, status) => {
-                if(status !== 'OK') return log.innerHTML = "❌ Google Maps Fehler.";
+log("🛰️ Lade Kalenderdaten...");
 
-                let ranking = drivers.map((d, i) => {
-                    const lastName = d.name.split(' ').pop().toLowerCase();
-                    
-                    // KRITISCHER FIX: Wir suchen gründlicher nach dem Namen im Kalender
-                    const event = allEvents.find(ev => {
-                        const titleMatch = ev.title.toLowerCase().includes(lastName);
-                        const subMatch = ev.subCalendars && ev.subCalendars.some(sc => sc.toLowerCase().includes(lastName));
-                        return titleMatch || subMatch;
-                    });
+try{
 
-                    const distText = mResp.rows[i].elements[0].distance.text;
-                    const distValue = mResp.rows[i].elements[0].distance.value;
+const ids=kIds.split(",");
+let allEvents=[];
 
-                    return { ...d, distText, distValue, isBusy: !!event, eventTitle: event ? event.title : '' };
-                });
+for(let rawId of ids){
 
-                // Sortierung: Erst alle FREIEN, dann nach Entfernung
-                ranking.sort((a, b) => a.isBusy - b.isBusy || a.distValue - b.distValue);
+const id=rawId.trim();
 
-                resDiv.innerHTML = ranking.map(d => `
-                    <div class="driver ${d.isBusy ? 'is-busy' : 'is-free'}">
-                        <div>
-                            <strong style="font-size:1.1rem;">${d.name}</strong><br>
-                            <span style="color:#666;">Entfernung: ${d.distText}</span>
-                            ${d.isBusy ? `<br><small style="color:var(--d); font-weight:bold;">Eingeteilt: ${d.eventTitle}</small>` : ''}
-                        </div>
-                        <div style="text-align:right;">
-                            <span style="padding: 5px 10px; border-radius: 5px; color:white; font-weight:bold; background:${d.isBusy ? 'var(--d)' : 'var(--s)'}">
-                                ${d.isBusy ? 'BESETZT' : 'FREI'}
-                            </span>
-                        </div>
-                    </div>
-                `).join('');
-                log.innerHTML = `Analyse für ${from} bis ${to} abgeschlossen.`;
-            });
-        } catch(e) {
-            log.innerHTML = "❌ Fehler. Proxy freigeschaltet?";
-        }
-    }
+const url =
+`https://api.kalender.digital/public/event?calendarId=${encodeURIComponent(id)}&startDate=${from}&endDate=${to}T23:59:59&timeZone=Europe/Berlin`;
 
-    (function() {
-        const key = localStorage.getItem('gKey');
-        if(key) {
-            const s = document.createElement('script');
-            s.src = `https://maps.googleapis.com/maps/api/js?key=${key}`;
-            document.head.appendChild(s);
-        }
-    })();
+const proxy="https://cors-anywhere.herokuapp.com/" + url;
+
+const resp=await fetch(proxy,{
+headers:{
+"X-API-KEY":kKey.trim()
+}
+});
+
+if(!resp.ok){
+throw new Error("Kalender API Fehler " + resp.status);
+}
+
+const data=await resp.json();
+
+console.log("Kalender Response:",data);
+
+/* Unterstützt beide Varianten:
+1) Direktes Array
+2) {events:[...]}
+*/
+if(Array.isArray(data)){
+allEvents=allEvents.concat(data);
+}
+else if(Array.isArray(data.events)){
+allEvents=allEvents.concat(data.events);
+}
+
+}
+
+log(`📅 ${allEvents.length} Termine geladen.\n🗺️ Berechne Entfernungen...`);
+
+await ensureGoogle(gKey);
+
+const matrix = await getMatrix(dest);
+
+let ranking = drivers.map((driver,index)=>{
+
+const foundEvent=findDriverEvent(driver,allEvents);
+
+return {
+...driver,
+isBusy: !!foundEvent,
+eventTitle: foundEvent ? (foundEvent.title || "Termin") : "",
+distText: matrix.rows[index].elements[0].distance.text,
+distValue: matrix.rows[index].elements[0].distance.value
+};
+
+});
+
+ranking.sort((a,b)=>
+(a.isBusy - b.isBusy) || (a.distValue - b.distValue)
+);
+
+render(ranking);
+
+log(`✅ Analyse abgeschlossen (${from} bis ${to})`);
+
+}catch(err){
+console.error(err);
+log("❌ Fehler:\n" + err.message);
+}
+
+}
+
+/* =========================
+FAHRER EVENT FINDEN
+========================= */
+function findDriverEvent(driver,events){
+
+const full=driver.name.toLowerCase();
+const last=driver.name.split(" ").pop().toLowerCase();
+
+return events.find(ev=>{
+
+const title=(ev.title || "").toLowerCase();
+const desc=(ev.description || "").toLowerCase();
+
+let subText="";
+
+if(Array.isArray(ev.subCalendars)){
+
+subText = ev.subCalendars.map(sc=>{
+
+if(typeof sc==="string") return sc;
+
+if(typeof sc==="object"){
+return (sc.name || sc.title || JSON.stringify(sc));
+}
+
+return "";
+
+}).join(" ").toLowerCase();
+
+}
+
+/* Zusätzliche Vollprüfung */
+const blob = (
+title + " " +
+desc + " " +
+subText + " " +
+JSON.stringify(ev)
+).toLowerCase();
+
+return (
+blob.includes(full) ||
+blob.includes(last)
+);
+
+});
+
+}
+
+/* =========================
+GOOGLE
+========================= */
+function ensureGoogle(key){
+
+return new Promise(resolve=>{
+
+if(typeof google!=="undefined"){
+resolve();
+return;
+}
+
+const s=document.createElement("script");
+s.src=`https://maps.googleapis.com/maps/api/js?key=${key}`;
+s.onload=resolve;
+document.head.appendChild(s);
+
+});
+
+}
+
+function getMatrix(dest){
+
+return new Promise((resolve,reject)=>{
+
+const service=new google.maps.DistanceMatrixService();
+
+service.getDistanceMatrix({
+origins:drivers.map(d=>d.plz),
+destinations:[dest],
+travelMode:"DRIVING"
+},(response,status)=>{
+
+if(status!=="OK"){
+reject(new Error("Google Maps Fehler"));
+return;
+}
+
+resolve(response);
+
+});
+
+});
+
+}
+
+/* =========================
+RENDER
+========================= */
+function render(list){
+
+document.getElementById("results").innerHTML =
+list.map(d=>`
+
+<div class="driver ${d.isBusy ? 'is-busy':'is-free'}">
+
+<div>
+<strong style="font-size:1.05rem;">${d.name}</strong><br>
+<span style="color:#666;">Entfernung: ${d.distText}</span>
+${d.isBusy ? `<br><small style="color:var(--d);font-weight:bold;">${d.eventTitle}</small>` : ""}
+</div>
+
+<div>
+<span style="
+padding:5px 10px;
+border-radius:5px;
+color:#fff;
+font-weight:bold;
+background:${d.isBusy ? 'var(--d)' : 'var(--s)'};
+">
+${d.isBusy ? "BESETZT" : "FREI"}
+</span>
+</div>
+
+</div>
+
+`).join("");
+
+}
 </script>
+
 </body>
 </html>
