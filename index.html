@@ -2,33 +2,39 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Springer-Dispo 7.2</title>
+    <title>Springer-Dispo 7.5</title>
     <style>
         :root { --p: #007bff; --s: #28a745; --d: #dc3545; --bg: #f4f7f6; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); padding: 20px; color: #333; }
         .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 600px; margin: auto; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.9rem; color: #555; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.9rem; }
         input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 15px; box-sizing: border-box; font-size: 1rem; }
-        .btn-main { width: 100%; padding: 16px; background: var(--p); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1.1rem; transition: background 0.2s; }
-        .btn-main:hover { background: #0056b3; }
-        .log-box { background: #000; color: #0f0; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 0.8rem; margin-bottom: 20px; white-space: pre-wrap; min-height: 60px; border: 2px solid #333; }
+        .btn-main { width: 100%; padding: 16px; background: var(--p); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1.1rem; }
+        .log-box { background: #000; color: #0f0; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 0.8rem; margin-bottom: 20px; min-height: 50px; white-space: pre-wrap; }
         .driver { background: white; padding: 15px; border-radius: 10px; margin-top: 10px; display: flex; justify-content: space-between; align-items: center; border-left: 6px solid #ccc; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .is-busy { border-left-color: var(--d); background: #fff5f5; }
         .is-free { border-left-color: var(--s); }
-        .info-sub { font-size: 0.75rem; color: #666; display: block; margin-top: 4px; }
-        .setup-link { text-align: center; margin-top: 15px; font-size: 0.85rem; }
-        .setup-link a { color: #666; text-decoration: none; margin: 0 10px; }
+        .setup-area { text-align: center; margin-top: 15px; font-size: 0.8rem; border-top: 1px solid #eee; padding-top: 15px; }
+        .setup-area a { color: #666; margin: 0 10px; text-decoration: none; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2 style="text-align:center; color:var(--p); margin-top:0;">Springer-Dispo 7.2</h2>
-    
-    <div id="statusLog" class="log-box">Status: Bereit.</div>
+    <h2 style="text-align:center; color:var(--p); margin-top:0;">Springer-Dispo 7.5</h2>
+    <div id="statusLog" class="log-box">Bereit für Abfrage.</div>
 
-    <label>Ziel-Einrichtung (PLZ)</label>
-    <input type="text" id="destPlz" placeholder="z.B. 30655" value="30655">
+    <label>Einrichtung auswählen</label>
+    <select id="schoolSelect" onchange="document.getElementById('destPlz').value = this.value">
+        <option value="30655">Albert-Liebmann-Schule (30655)</option>
+        <option value="30165">Lebenshilfe Büttnerstraße (30165)</option>
+        <option value="30449">Wilhelm-Schade-Schule (30449)</option>
+        <option value="30853">Pestalozzi-Schule (30853)</option>
+        <option value="30177">Test-Standort (30177)</option>
+    </select>
+
+    <label>Ziel-PLZ (automatisch)</label>
+    <input type="text" id="destPlz" value="30655">
 
     <div style="display:flex; gap:10px;">
         <div style="flex:1;">
@@ -42,11 +48,10 @@
     </div>
 
     <button class="btn-main" onclick="run()">Verfügbarkeit prüfen</button>
-    
-    <div class="setup-link">
-        <a href="https://cors-anywhere.herokuapp.com/corsdemo" target="_blank" style="color:var(--d); font-weight:bold;">1. PROXY AKTIVIEREN</a>
-        |
-        <a href="#" onclick="setup()">2. Schlüssel-Setup</a>
+
+    <div class="setup-area">
+        <a href="https://cors-anywhere.herokuapp.com/corsdemo" target="_blank" style="color:var(--d); font-weight:bold;">1. PROXY AKTIVIEREN (WICHTIG!)</a>
+        <a href="#" onclick="setup()">2. Keys & IDs einstellen</a>
     </div>
 </div>
 
@@ -63,43 +68,39 @@
 
     function setup() {
         localStorage.setItem('kKey', prompt("X-API-KEY:", localStorage.getItem('kKey') || ""));
-        localStorage.setItem('kId', prompt("ID-Liste (kommagetrennt):", localStorage.getItem('kId') || ""));
-        localStorage.setItem('gKey', prompt("Google Maps API Key:", localStorage.getItem('gKey') || ""));
+        localStorage.setItem('kId', prompt("ID-Liste:", localStorage.getItem('kId') || ""));
+        localStorage.setItem('gKey', prompt("Google Key:", localStorage.getItem('gKey') || ""));
         location.reload();
     }
 
     async function run() {
         const kKey = localStorage.getItem('kKey'), kIdRaw = localStorage.getItem('kId');
-        const from = document.getElementById('dateFrom').value;
-        const to = document.getElementById('dateTo').value;
+        const from = document.getElementById('dateFrom').value, to = document.getElementById('dateTo').value;
         const log = document.getElementById('statusLog');
         const resDiv = document.getElementById('results');
 
-        if(!kKey || !kIdRaw) return alert("Setup unvollständig! Bitte auf 'Schlüssel-Setup' klicken.");
+        if(!kKey || !kIdRaw) return alert("Bitte Setup ausführen!");
         
-        log.innerHTML = "📡 Frage Kalender ab...";
-        resDiv.innerHTML = "";
+        log.innerHTML = "📡 Kalender werden gelesen...";
         let allEvents = [];
         const ids = kIdRaw.split(',').map(s => s.trim());
 
         try {
             for(let id of ids) {
-                const apiUrl = `https://api.kalender.digital/public/event?calendarId=${id}&startDate=${from}&endDate=${to}`;
-                const resp = await fetch(`https://cors-anywhere.herokuapp.com/${apiUrl}`, { 
-                    headers: { 'X-API-KEY': kKey.trim() } 
-                });
-                
+                const url = `https://api.kalender.digital/public/event?calendarId=${id}&startDate=${from}&endDate=${to}`;
+                const resp = await fetch(`https://cors-anywhere.herokuapp.com/${url}`, { headers: { 'X-API-KEY': kKey.trim() } });
                 const text = await resp.text();
-                try {
-                    const data = JSON.parse(text);
-                    if(data.events) allEvents = allEvents.concat(data.events);
-                } catch(e) {
-                    log.innerHTML = "⚠️ Proxy-Fehler!\nBitte klicke auf den roten Link 'PROXY AKTIVIEREN' und klicke dort auf den Button.";
+                
+                if(text.includes("Request temporary access")) {
+                    log.innerHTML = "❌ PROXY GESPERRT!\nBitte klicke unten auf den roten Link und dort auf den Button.";
                     return;
                 }
+                
+                const data = JSON.parse(text);
+                if(data.events) allEvents = allEvents.concat(data.events);
             }
 
-            log.innerHTML = `✅ ${allEvents.length} Termine gefunden.\nPrüfe Entfernungen...`;
+            log.innerHTML = `✅ ${allEvents.length} Termine gefunden.\nBerechne Google-Wegzeiten...`;
 
             const service = new google.maps.DistanceMatrixService();
             service.getDistanceMatrix({
@@ -107,39 +108,31 @@
                 destinations: [document.getElementById('destPlz').value],
                 travelMode: 'DRIVING'
             }, (mResp, status) => {
-                if(status !== 'OK') {
-                    log.innerHTML = "❌ Google Maps Fehler: " + status;
-                    return;
-                }
+                if(status !== 'OK') return alert("Google Maps Fehler: " + status);
 
                 let ranking = drivers.map((d, i) => {
                     const lastName = d.name.split(' ').pop().toLowerCase();
-                    // Suche im subCalendars Feld (wie in deinen Rohdaten gesehen)
                     const event = allEvents.find(ev => 
                         ev.subCalendars && ev.subCalendars.some(sc => sc.toLowerCase().includes(lastName))
                     );
-                    
-                    const distElement = mResp.rows[i].elements[0];
-                    const distT = distElement.status === "OK" ? distElement.distance.text : "??";
-                    const distV = distElement.status === "OK" ? distElement.distance.value : 999999;
-
-                    return { ...d, distT, distV, isBusy: !!event, eTitle: event ? event.title : '' };
+                    const dist = mResp.rows[i].elements[0].distance.text;
+                    const val = mResp.rows[i].elements[0].distance.value;
+                    return { ...d, distT: dist, distV: val, isBusy: !!event, eName: event ? event.title : '' };
                 });
 
                 ranking.sort((a,b) => a.isBusy - b.isBusy || a.distV - b.distV);
-                
+                resDiv.innerHTML = "";
                 ranking.forEach(d => {
-                    resDiv.innerHTML += `
-                        <div class="driver ${d.isBusy ? 'is-busy' : 'is-free'}">
-                            <div>
-                                <strong>${d.name} (${d.distT})</strong>
-                                ${d.isBusy ? `<span class="info-sub">Einsatz: ${d.eTitle}</span>` : ''}
-                            </div>
-                            <span style="font-weight:bold">${d.isBusy ? '🔴 BELEGT' : '🟢 FREI'}</span>
-                        </div>`;
+                    resDiv.innerHTML += `<div class="driver ${d.isBusy ? 'is-busy' : 'is-free'}">
+                        <div>
+                            <strong>${d.name} (${d.distT})</strong>
+                            ${d.isBusy ? `<br><small style="color:red">Einsatz: ${d.eName}</small>` : ''}
+                        </div>
+                        <span style="font-weight:bold">${d.isBusy ? '🔴 BELEGT' : '🟢 FREI'}</span>
+                    </div>`;
                 });
             });
-        } catch(e) { log.innerHTML = "❌ Fehler: " + e.message; }
+        } catch(e) { log.innerHTML = "❌ Fehler beim Laden der Daten."; }
     }
 
     (function() {
