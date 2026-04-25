@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Springer-Dispo 15.2 FINAL FIX</title>
+<title>Springer-Dispo 15.3 FINAL CLEAN</title>
 
 <style>
 :root{
@@ -22,7 +22,7 @@ color:#333;
 }
 
 .card{
-max-width:760px;
+max-width:780px;
 margin:auto;
 background:#fff;
 padding:24px;
@@ -96,7 +96,7 @@ min-height:70px;
 }
 
 #results{
-max-width:760px;
+max-width:780px;
 margin:18px auto;
 }
 
@@ -132,13 +132,8 @@ color:#fff;
 margin-top:6px;
 }
 
-.state.free{
-background:var(--green);
-}
-
-.state.busy{
-background:var(--red);
-}
+.state.free{background:var(--green);}
+.state.busy{background:var(--red);}
 
 .book-btn{
 margin-top:8px;
@@ -147,9 +142,7 @@ background:var(--green);
 color:#fff;
 }
 
-small{
-color:#666;
-}
+small{color:#666;}
 </style>
 </head>
 
@@ -157,7 +150,7 @@ color:#666;
 
 <div class="card">
 
-<h2>Springer-Dispo 15.2 FINAL FIX</h2>
+<h2>Springer-Dispo 15.3 FINAL CLEAN</h2>
 
 <label>Einrichtung / Ziel</label>
 <select id="schoolSelect" onchange="document.getElementById('destPlz').value=this.value">
@@ -174,10 +167,17 @@ color:#666;
 
 <div class="row">
 <div>
-<label>Datum</label>
-<input type="date" id="date" value="2026-04-24">
+<label>Von Datum</label>
+<input type="date" id="dateFrom" value="2026-04-24">
 </div>
 
+<div>
+<label>Bis Datum</label>
+<input type="date" id="dateTo" value="2026-04-24">
+</div>
+</div>
+
+<div class="row">
 <div>
 <label>Startzeit Buchung</label>
 <input type="time" id="startTime" value="07:00">
@@ -217,9 +217,7 @@ const drivers = [
 
 let loadedEvents = [];
 
-/* ==========================
-SETUP
-========================== */
+/* ===================== */
 function setup(){
 localStorage.setItem("kKey", prompt("Kalender.digital API-Key:", localStorage.getItem("kKey") || ""));
 localStorage.setItem("kIds", prompt("Kalender-ID(s), komma getrennt:", localStorage.getItem("kIds") || ""));
@@ -231,9 +229,7 @@ function log(txt){
 document.getElementById("log").textContent = txt;
 }
 
-/* ==========================
-MAIN
-========================== */
+/* ===================== */
 async function run(){
 
 try{
@@ -247,11 +243,12 @@ alert("Bitte zuerst Setup ausfüllen.");
 return;
 }
 
-const date = document.getElementById("date").value;
+const from = document.getElementById("dateFrom").value;
+const to   = document.getElementById("dateTo").value;
 const dest = document.getElementById("destPlz").value;
 
 log("📅 Lade Kalenderdaten...");
-loadedEvents = await loadEvents(date,kIds,kKey);
+loadedEvents = await loadEvents(from,to,kIds,kKey);
 
 log("🗺️ Lade Google Maps...");
 await loadGoogle(gKey);
@@ -263,12 +260,12 @@ log("🔎 Prüfe Fahrer...");
 
 let ranking = drivers.map((d,i)=>{
 
-const busyHit = isBusy(d.name, loadedEvents);
+const hit = isBusy(d.name, loadedEvents);
 
 return {
 ...d,
-busy: busyHit.busy,
-reason: busyHit.reason,
+busy: hit.busy,
+reason: hit.reason,
 distText: matrix.rows[i].elements[0].distance.text,
 distVal: matrix.rows[i].elements[0].distance.value
 };
@@ -290,10 +287,8 @@ log("❌ Fehler:\n"+e.message);
 
 }
 
-/* ==========================
-LOAD EVENTS
-========================== */
-async function loadEvents(date,kIds,kKey){
+/* ===================== */
+async function loadEvents(from,to,kIds,kKey){
 
 let all = [];
 
@@ -302,15 +297,13 @@ for(const raw of kIds.split(",")){
 const id = raw.trim();
 
 const url =
-`https://api.kalender.digital/public/event?calendarId=${encodeURIComponent(id)}&startDate=${date}&endDate=${date}T23:59:59&timeZone=Europe/Berlin`;
+`https://api.kalender.digital/public/event?calendarId=${encodeURIComponent(id)}&startDate=${from}&endDate=${to}T23:59:59&timeZone=Europe/Berlin`;
 
 const proxy =
 "https://corsproxy.io/?"+encodeURIComponent(url);
 
 const r = await fetch(proxy,{
-headers:{
-"X-API-KEY":kKey.trim()
-}
+headers:{ "X-API-KEY":kKey.trim() }
 });
 
 if(!r.ok) continue;
@@ -325,20 +318,29 @@ else if(Array.isArray(data.events)) all.push(...data.events);
 return all;
 }
 
-/* ==========================
-BUSY CHECK
-========================== */
-function isBusy(name, events){
+/* ===================== */
+/* NUR RELEVANTE FELDER */
+/* Kein createdName etc. */
+/* ===================== */
+function isBusy(driverName, events){
 
-const full = name.toLowerCase();
-const parts = name.toLowerCase().split(" ");
+const parts = driverName.toLowerCase().split(" ");
 
 for(const ev of events){
 
-const txt = JSON.stringify(ev).toLowerCase();
+let text = "";
+
+if(ev.title) text += " " + ev.title.toLowerCase();
+if(ev.description) text += " " + ev.description.toLowerCase();
+if(ev.who) text += " " + ev.who.toLowerCase();
+if(ev.where) text += " " + ev.where.toLowerCase();
+
+if(Array.isArray(ev.subCalendars)){
+text += " " + ev.subCalendars.join(" ").toLowerCase();
+}
 
 for(const p of parts){
-if(txt.includes(p)){
+if(text.includes(p)){
 return {
 busy:true,
 reason: ev.title || "Termin"
@@ -346,21 +348,16 @@ reason: ev.title || "Termin"
 }
 }
 
-if(txt.includes(full)){
+}
+
 return {
-busy:true,
-reason: ev.title || "Termin"
+busy:false,
+reason:""
 };
-}
 
 }
 
-return {busy:false,reason:""};
-}
-
-/* ==========================
-GOOGLE
-========================== */
+/* ===================== */
 function loadGoogle(key){
 
 return new Promise(resolve=>{
@@ -378,6 +375,7 @@ document.head.appendChild(s);
 });
 }
 
+/* ===================== */
 function getDistances(dest){
 
 return new Promise((resolve,reject)=>{
@@ -402,9 +400,7 @@ resolve(res);
 });
 }
 
-/* ==========================
-RENDER
-========================== */
+/* ===================== */
 function render(list){
 
 document.getElementById("results").innerHTML =
@@ -415,15 +411,17 @@ list.map(d=>`
 <div>
 <strong>${d.name}</strong><br>
 <small>${d.distText} entfernt (${d.plz})</small><br>
+
 ${d.busy
 ? `<span class="state busy">BESETZT</span><br><small>${d.reason}</small>`
 : `<span class="state free">FREI</span>
 <br>
 <button class="book-btn" onclick="book('${escapeQuotes(d.name)}')">BUCHEN</button>`
 }
+
 </div>
 
-<div style="font-size:1.2rem;font-weight:bold;">
+<div style="font-size:1.15rem;font-weight:bold;">
 ${d.distText}
 </div>
 
@@ -437,31 +435,29 @@ function escapeQuotes(str){
 return str.replace(/'/g,"\\'");
 }
 
-/* ==========================
-BOOK (MIT PROXY FIX)
-========================== */
+/* ===================== */
 async function book(driver){
 
 try{
 
 const kKey = localStorage.getItem("kKey");
-const date = document.getElementById("date").value;
+const date = document.getElementById("dateFrom").value;
 const start = document.getElementById("startTime").value;
 const end = document.getElementById("endTime").value;
 const school = document.getElementById("schoolSelect").selectedOptions[0].text;
 const desc = document.getElementById("desc").value || "Automatisch gebucht";
 
 const payload = {
-startDate: `${date} ${start}:00`,
-endDate: `${date} ${end}:00`,
-timeZone: "Europe/Berlin",
-title: school,
-description: desc,
-who: "",
-where: "",
-wholeDay: false,
-subCalendars: [driver],
-links: []
+startDate:`${date} ${start}:00`,
+endDate:`${date} ${end}:00`,
+timeZone:"Europe/Berlin",
+title:school,
+description:desc,
+who:"",
+where:"",
+wholeDay:false,
+subCalendars:[driver],
+links:[]
 };
 
 const url = "https://api.kalender.digital/public/event";
@@ -475,7 +471,7 @@ headers:{
 "Content-Type":"application/json",
 "X-API-KEY":kKey
 },
-body: JSON.stringify(payload)
+body:JSON.stringify(payload)
 });
 
 if(!r.ok){
