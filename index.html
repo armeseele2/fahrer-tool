@@ -2,19 +2,16 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Springer-Dispo 15.0 PROFI</title>
+<title>Springer-Dispo 15.2 FINAL</title>
 
 <style>
 body{font-family:Segoe UI;background:#f4f7f6;padding:20px}
-.card{max-width:800px;margin:auto;background:#fff;padding:20px;border-radius:12px;box-shadow:0 4px 15px rgba(0,0,0,.1)}
-.driver{display:flex;justify-content:space-between;padding:12px;margin-top:10px;border-left:6px solid #ccc;background:#fff;border-radius:8px}
-.free{border-left-color:#28a745}
+.card{max-width:700px;margin:auto;background:#fff;padding:20px;border-radius:12px;box-shadow:0 4px 15px rgba(0,0,0,.1)}
+.driver{display:flex;justify-content:space-between;padding:12px;margin-top:10px;border-left:6px solid #ccc;border-radius:8px}
+.free{border-left-color:#28a745;background:#fafffa}
 .busy{border-left-color:#dc3545;background:#fff5f5}
-button{padding:8px 12px;border:none;border-radius:6px;cursor:pointer}
+button{padding:6px 10px;border:none;border-radius:6px;cursor:pointer}
 .book{background:#28a745;color:#fff}
-h2{text-align:center}
-input,select{width:100%;padding:10px;margin:6px 0}
 </style>
 </head>
 
@@ -22,28 +19,15 @@ input,select{width:100%;padding:10px;margin:6px 0}
 
 <div class="card">
 
-<h2>Springer-Dispo 15.0 PROFI</h2>
+<h2>Springer-Dispo 15.2</h2>
 
-<label>Einrichtung</label>
-<select id="school">
-<option value="Albert Liebmann Schule">Albert Liebmann Schule</option>
-<option value="Wilhelm Schade Schule">Wilhelm Schade Schule</option>
-<option value="Pestalozzi Schule">Pestalozzi Schule</option>
-</select>
+<label>Ziel-PLZ</label>
+<input id="dest" value="30655">
 
 <label>Datum</label>
-<input type="date" id="date">
+<input type="date" id="date" value="2026-04-24">
 
-<label>Uhrzeit von</label>
-<input type="time" id="start">
-
-<label>Uhrzeit bis</label>
-<input type="time" id="end">
-
-<label>Tour / Beschreibung</label>
-<input type="text" id="desc" placeholder="z.B. Hin / Rücktour">
-
-<button onclick="loadData()">Fahrer prüfen</button>
+<button onclick="run()">Start</button>
 
 <div id="out"></div>
 
@@ -52,117 +36,122 @@ input,select{width:100%;padding:10px;margin:6px 0}
 <script>
 
 const drivers=[
-"Türkel Tuncer",
-"Von Treskow Albrecht",
-"Otto Alexander",
-"Ferkau Eckart",
-"Ohm Lars",
-"Bachmeier Reinhard",
-"Isfahan Hamid",
-"Schrader Harald",
-"Aschenbach André",
-"Neubauer Michael"
+{name:"Türkel Tuncer",plz:"30161"},
+{name:"Von Treskow Albrecht",plz:"30175"},
+{name:"Otto Alexander",plz:"30173"},
+{name:"Ferkau Eckart",plz:"30851"},
+{name:"Ohm Lars",plz:"30559"},
+{name:"Bachmeier Reinhard",plz:"30659"},
+{name:"Isfahan Mozaffaey Hamid",plz:"30519"},
+{name:"Schrader Harald",plz:"30880"},
+{name:"Aschenbach André",plz:"30989"},
+{name:"Neubauer Michael",plz:"30853"}
 ];
 
 let events=[];
 
-/* ================= LOAD ================= */
-async function loadData(){
+async function run(){
 
 const date=document.getElementById("date").value;
+const dest=document.getElementById("dest").value;
 
 const kKey=localStorage.getItem("kKey");
 const kIds=localStorage.getItem("kIds");
+const gKey=localStorage.getItem("gKey");
 
 events=[];
 
+/* ========= 1. KALENDER LADEN ========= */
 for(let id of kIds.split(",")){
 
 const url=`https://api.kalender.digital/public/event?calendarId=${id}&startDate=${date}&endDate=${date}T23:59:59&timeZone=Europe/Berlin`;
 
 const proxy="https://corsproxy.io/?"+encodeURIComponent(url);
 
-const r=await fetch(proxy,{
-headers:{"X-API-KEY":kKey}
-});
-
+const r=await fetch(proxy,{headers:{"X-API-KEY":kKey}});
 const data=await r.json();
 
 if(Array.isArray(data)) events.push(...data);
 else if(Array.isArray(data.events)) events.push(...data.events);
 }
 
-render();
-
-}
-
-/* ================= CHECK ================= */
-function isBusy(name){
-
-const n=name.toLowerCase();
-
-return events.some(e=>{
-
-const text=JSON.stringify(e).toLowerCase();
-return text.includes(n);
-
+/* ========= 2. GOOGLE LADEN ========= */
+if(typeof google==="undefined"){
+await new Promise(res=>{
+const s=document.createElement("script");
+s.src=`https://maps.googleapis.com/maps/api/js?key=${gKey}`;
+s.onload=res;
+document.head.appendChild(s);
 });
-
 }
 
-/* ================= RENDER ================= */
-function render(){
+/* ========= 3. DISTANZ ========= */
+const service=new google.maps.DistanceMatrixService();
 
-const out=document.getElementById("out");
-out.innerHTML="";
+service.getDistanceMatrix({
+origins:drivers.map(d=>d.plz),
+destinations:[dest],
+travelMode:"DRIVING"
+},(resp,status)=>{
 
-drivers.forEach(d=>{
+let list=drivers.map((d,i)=>{
 
-const busy=isBusy(d);
+const text=JSON.stringify(events).toLowerCase();
+const name=d.name.toLowerCase();
 
-out.innerHTML+=`
-<div class="driver ${busy?'busy':'free'}">
-<div>
-<b>${d}</b><br>
-${busy?'BESETZT':'FREI'}
-</div>
+const busy=text.includes(name);
 
-<div>
-${!busy?`<button class="book" onclick="book('${d}')">JETZT EINSETZEN</button>`:''}
-</div>
-</div>
-`;
-
-});
-
-}
-
-/* ================= BOOK ================= */
-async function book(driver){
-
-const school=document.getElementById("school").value;
-const date=document.getElementById("date").value;
-const start=document.getElementById("start").value;
-const end=document.getElementById("end").value;
-const desc=document.getElementById("desc").value;
-
-const kKey=localStorage.getItem("kKey");
-const kIds=localStorage.getItem("kIds");
-
-const payload={
-startDate:`${date} ${start}:00`,
-endDate:`${date} ${end}:00`,
-timeZone:"Europe/Berlin",
-title:school,
-description:desc,
-who:"",
-where:"",
-wholeDay:false,
-subCalendars:[driver],
-links:[]
+return{
+...d,
+busy,
+distText:resp.rows[i].elements[0].distance.text,
+distVal:resp.rows[i].elements[0].distance.value
 };
 
-for(let id of kIds.split(",")){
+});
+
+/* ========= 4. SORT ========= */
+list.sort((a,b)=>
+(a.busy - b.busy) || (a.distVal - b.distVal)
+);
+
+/* ========= 5. RENDER ========= */
+document.getElementById("out").innerHTML=list.map(d=>`
+
+<div class="driver ${d.busy?'busy':'free'}">
+
+<div>
+<b>${d.name}</b><br>
+${d.distText}<br>
+${d.busy?'BESETZT':'FREI'}
+</div>
+
+<div>
+${!d.busy?`<button class="book" onclick="book('${d.name}')">BUCHEN</button>`:''}
+</div>
+
+</div>
+
+`).join("");
+
+});
+
+}
+
+/* ========= 6. BUCHEN ========= */
+async function book(name){
+
+const kKey=localStorage.getItem("kKey");
+
+const payload={
+startDate:document.getElementById("date").value+" 07:00:00",
+endDate:document.getElementById("date").value+" 13:00:00",
+timeZone:"Europe/Berlin",
+title:"Einsatz",
+description:"Automatisch gebucht",
+subCalendars:[name],
+wholeDay:false
+};
 
 await fetch("https://api.kalender.digital/public/event",{
 method:"POST",
@@ -173,10 +162,8 @@ headers:{
 body:JSON.stringify(payload)
 });
 
-}
-
-alert("Gebucht: " + driver);
-loadData();
+alert("Gebucht: "+name);
+run();
 
 }
 
