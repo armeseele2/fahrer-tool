@@ -2,16 +2,154 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>Springer-Dispo 15.2 FINAL</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Springer-Dispo 15.2 FINAL FIX</title>
 
 <style>
-body{font-family:Segoe UI;background:#f4f7f6;padding:20px}
-.card{max-width:700px;margin:auto;background:#fff;padding:20px;border-radius:12px;box-shadow:0 4px 15px rgba(0,0,0,.1)}
-.driver{display:flex;justify-content:space-between;padding:12px;margin-top:10px;border-left:6px solid #ccc;border-radius:8px}
-.free{border-left-color:#28a745;background:#fafffa}
-.busy{border-left-color:#dc3545;background:#fff5f5}
-button{padding:6px 10px;border:none;border-radius:6px;cursor:pointer}
-.book{background:#28a745;color:#fff}
+:root{
+--blue:#007bff;
+--green:#28a745;
+--red:#dc3545;
+--bg:#f4f7f6;
+}
+
+body{
+margin:0;
+padding:20px;
+background:var(--bg);
+font-family:Segoe UI,sans-serif;
+color:#333;
+}
+
+.card{
+max-width:760px;
+margin:auto;
+background:#fff;
+padding:24px;
+border-radius:14px;
+box-shadow:0 4px 16px rgba(0,0,0,.08);
+}
+
+h2{
+margin-top:0;
+text-align:center;
+color:var(--blue);
+}
+
+label{
+display:block;
+font-size:.9rem;
+font-weight:700;
+margin:12px 0 6px;
+}
+
+input,select{
+width:100%;
+padding:11px;
+border:1px solid #ddd;
+border-radius:8px;
+box-sizing:border-box;
+font-size:1rem;
+}
+
+.row{
+display:flex;
+gap:10px;
+}
+
+.row > div{
+flex:1;
+}
+
+button{
+border:none;
+border-radius:8px;
+cursor:pointer;
+font-weight:700;
+}
+
+.main-btn{
+width:100%;
+padding:14px;
+margin-top:14px;
+background:var(--blue);
+color:#fff;
+font-size:1rem;
+}
+
+.setup-btn{
+margin-top:10px;
+padding:10px 14px;
+background:#eee;
+}
+
+.log{
+margin-top:14px;
+background:#111;
+color:#0f0;
+padding:12px;
+border-radius:8px;
+font-family:monospace;
+font-size:.82rem;
+white-space:pre-wrap;
+min-height:70px;
+}
+
+#results{
+max-width:760px;
+margin:18px auto;
+}
+
+.driver{
+background:#fff;
+padding:14px;
+border-radius:10px;
+margin-bottom:10px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+border-left:7px solid #ccc;
+box-shadow:0 2px 8px rgba(0,0,0,.05);
+}
+
+.free{
+border-left-color:var(--green);
+background:#fafffa;
+}
+
+.busy{
+border-left-color:var(--red);
+background:#fff5f5;
+}
+
+.state{
+display:inline-block;
+padding:5px 10px;
+border-radius:6px;
+font-size:.82rem;
+font-weight:700;
+color:#fff;
+margin-top:6px;
+}
+
+.state.free{
+background:var(--green);
+}
+
+.state.busy{
+background:var(--red);
+}
+
+.book-btn{
+margin-top:8px;
+padding:8px 12px;
+background:var(--green);
+color:#fff;
+}
+
+small{
+color:#666;
+}
 </style>
 </head>
 
@@ -19,23 +157,52 @@ button{padding:6px 10px;border:none;border-radius:6px;cursor:pointer}
 
 <div class="card">
 
-<h2>Springer-Dispo 15.2</h2>
+<h2>Springer-Dispo 15.2 FINAL FIX</h2>
+
+<label>Einrichtung / Ziel</label>
+<select id="schoolSelect" onchange="document.getElementById('destPlz').value=this.value">
+<option value="30655">Albert-Liebmann-Schule (30655)</option>
+<option value="30165">Lebenshilfe Büttnerstraße (30165)</option>
+<option value="30449">Wilhelm-Schade-Schule (30449)</option>
+<option value="30853">Pestalozzi-Schule (30853)</option>
+<option value="30880">Mecklenheide Forst (30880)</option>
+<option value="30177">Test-Standort (30177)</option>
+</select>
 
 <label>Ziel-PLZ</label>
-<input id="dest" value="30655">
+<input id="destPlz" value="30655">
 
+<div class="row">
+<div>
 <label>Datum</label>
 <input type="date" id="date" value="2026-04-24">
+</div>
 
-<button onclick="run()">Start</button>
+<div>
+<label>Startzeit Buchung</label>
+<input type="time" id="startTime" value="07:00">
+</div>
 
-<div id="out"></div>
+<div>
+<label>Endzeit Buchung</label>
+<input type="time" id="endTime" value="13:00">
+</div>
+</div>
+
+<label>Beschreibung / Tour</label>
+<input id="desc" placeholder="z.B. Tour 27 / Hinfahrt">
+
+<button class="main-btn" onclick="run()">Verfügbarkeit & Ranking prüfen</button>
+<button class="setup-btn" onclick="setup()">⚙️ Setup (Keys / IDs)</button>
+
+<div id="log" class="log">Bereit.</div>
 
 </div>
 
-<script>
+<div id="results"></div>
 
-const drivers=[
+<script>
+const drivers = [
 {name:"Türkel Tuncer",plz:"30161"},
 {name:"Von Treskow Albrecht",plz:"30175"},
 {name:"Otto Alexander",plz:"30173"},
@@ -48,125 +215,284 @@ const drivers=[
 {name:"Neubauer Michael",plz:"30853"}
 ];
 
-let events=[];
+let loadedEvents = [];
 
+/* ==========================
+SETUP
+========================== */
+function setup(){
+localStorage.setItem("kKey", prompt("Kalender.digital API-Key:", localStorage.getItem("kKey") || ""));
+localStorage.setItem("kIds", prompt("Kalender-ID(s), komma getrennt:", localStorage.getItem("kIds") || ""));
+localStorage.setItem("gKey", prompt("Google API Key:", localStorage.getItem("gKey") || ""));
+location.reload();
+}
+
+function log(txt){
+document.getElementById("log").textContent = txt;
+}
+
+/* ==========================
+MAIN
+========================== */
 async function run(){
 
-const date=document.getElementById("date").value;
-const dest=document.getElementById("dest").value;
+try{
 
-const kKey=localStorage.getItem("kKey");
-const kIds=localStorage.getItem("kIds");
-const gKey=localStorage.getItem("gKey");
+const kKey = localStorage.getItem("kKey");
+const kIds = localStorage.getItem("kIds");
+const gKey = localStorage.getItem("gKey");
 
-events=[];
-
-/* ========= 1. KALENDER LADEN ========= */
-for(let id of kIds.split(",")){
-
-const url=`https://api.kalender.digital/public/event?calendarId=${id}&startDate=${date}&endDate=${date}T23:59:59&timeZone=Europe/Berlin`;
-
-const proxy="https://corsproxy.io/?"+encodeURIComponent(url);
-
-const r=await fetch(proxy,{headers:{"X-API-KEY":kKey}});
-const data=await r.json();
-
-if(Array.isArray(data)) events.push(...data);
-else if(Array.isArray(data.events)) events.push(...data.events);
+if(!kKey || !kIds || !gKey){
+alert("Bitte zuerst Setup ausfüllen.");
+return;
 }
 
-/* ========= 2. GOOGLE LADEN ========= */
-if(typeof google==="undefined"){
-await new Promise(res=>{
-const s=document.createElement("script");
-s.src=`https://maps.googleapis.com/maps/api/js?key=${gKey}`;
-s.onload=res;
-document.head.appendChild(s);
-});
-}
+const date = document.getElementById("date").value;
+const dest = document.getElementById("destPlz").value;
 
-/* ========= 3. DISTANZ ========= */
-const service=new google.maps.DistanceMatrixService();
+log("📅 Lade Kalenderdaten...");
+loadedEvents = await loadEvents(date,kIds,kKey);
 
-service.getDistanceMatrix({
-origins:drivers.map(d=>d.plz),
-destinations:[dest],
-travelMode:"DRIVING"
-},(resp,status)=>{
+log("🗺️ Lade Google Maps...");
+await loadGoogle(gKey);
 
-let list=drivers.map((d,i)=>{
+log("📏 Berechne Entfernungen...");
+const matrix = await getDistances(dest);
 
-const text=JSON.stringify(events).toLowerCase();
-const name=d.name.toLowerCase();
+log("🔎 Prüfe Fahrer...");
 
-const busy=text.includes(name);
+let ranking = drivers.map((d,i)=>{
 
-return{
+const busyHit = isBusy(d.name, loadedEvents);
+
+return {
 ...d,
-busy,
-distText:resp.rows[i].elements[0].distance.text,
-distVal:resp.rows[i].elements[0].distance.value
+busy: busyHit.busy,
+reason: busyHit.reason,
+distText: matrix.rows[i].elements[0].distance.text,
+distVal: matrix.rows[i].elements[0].distance.value
 };
 
 });
 
-/* ========= 4. SORT ========= */
-list.sort((a,b)=>
+ranking.sort((a,b)=>
 (a.busy - b.busy) || (a.distVal - b.distVal)
 );
 
-/* ========= 5. RENDER ========= */
-document.getElementById("out").innerHTML=list.map(d=>`
+render(ranking);
 
-<div class="driver ${d.busy?'busy':'free'}">
+log("✅ Analyse abgeschlossen.");
+
+}catch(e){
+console.error(e);
+log("❌ Fehler:\n"+e.message);
+}
+
+}
+
+/* ==========================
+LOAD EVENTS
+========================== */
+async function loadEvents(date,kIds,kKey){
+
+let all = [];
+
+for(const raw of kIds.split(",")){
+
+const id = raw.trim();
+
+const url =
+`https://api.kalender.digital/public/event?calendarId=${encodeURIComponent(id)}&startDate=${date}&endDate=${date}T23:59:59&timeZone=Europe/Berlin`;
+
+const proxy =
+"https://corsproxy.io/?"+encodeURIComponent(url);
+
+const r = await fetch(proxy,{
+headers:{
+"X-API-KEY":kKey.trim()
+}
+});
+
+if(!r.ok) continue;
+
+const data = await r.json();
+
+if(Array.isArray(data)) all.push(...data);
+else if(Array.isArray(data.events)) all.push(...data.events);
+
+}
+
+return all;
+}
+
+/* ==========================
+BUSY CHECK
+========================== */
+function isBusy(name, events){
+
+const full = name.toLowerCase();
+const parts = name.toLowerCase().split(" ");
+
+for(const ev of events){
+
+const txt = JSON.stringify(ev).toLowerCase();
+
+for(const p of parts){
+if(txt.includes(p)){
+return {
+busy:true,
+reason: ev.title || "Termin"
+};
+}
+}
+
+if(txt.includes(full)){
+return {
+busy:true,
+reason: ev.title || "Termin"
+};
+}
+
+}
+
+return {busy:false,reason:""};
+}
+
+/* ==========================
+GOOGLE
+========================== */
+function loadGoogle(key){
+
+return new Promise(resolve=>{
+
+if(typeof google !== "undefined"){
+resolve();
+return;
+}
+
+const s = document.createElement("script");
+s.src = `https://maps.googleapis.com/maps/api/js?key=${key}`;
+s.onload = resolve;
+document.head.appendChild(s);
+
+});
+}
+
+function getDistances(dest){
+
+return new Promise((resolve,reject)=>{
+
+const service = new google.maps.DistanceMatrixService();
+
+service.getDistanceMatrix({
+origins: drivers.map(d=>d.plz),
+destinations:[dest],
+travelMode:"DRIVING"
+},(res,status)=>{
+
+if(status !== "OK"){
+reject(new Error("Google Maps Fehler"));
+return;
+}
+
+resolve(res);
+
+});
+
+});
+}
+
+/* ==========================
+RENDER
+========================== */
+function render(list){
+
+document.getElementById("results").innerHTML =
+list.map(d=>`
+
+<div class="driver ${d.busy ? 'busy':'free'}">
 
 <div>
-<b>${d.name}</b><br>
-${d.distText}<br>
-${d.busy?'BESETZT':'FREI'}
+<strong>${d.name}</strong><br>
+<small>${d.distText} entfernt (${d.plz})</small><br>
+${d.busy
+? `<span class="state busy">BESETZT</span><br><small>${d.reason}</small>`
+: `<span class="state free">FREI</span>
+<br>
+<button class="book-btn" onclick="book('${escapeQuotes(d.name)}')">BUCHEN</button>`
+}
 </div>
 
-<div>
-${!d.busy?`<button class="book" onclick="book('${d.name}')">BUCHEN</button>`:''}
+<div style="font-size:1.2rem;font-weight:bold;">
+${d.distText}
 </div>
 
 </div>
 
 `).join("");
 
-});
-
 }
 
-/* ========= 6. BUCHEN ========= */
-async function book(name){
+function escapeQuotes(str){
+return str.replace(/'/g,"\\'");
+}
 
-const kKey=localStorage.getItem("kKey");
+/* ==========================
+BOOK (MIT PROXY FIX)
+========================== */
+async function book(driver){
 
-const payload={
-startDate:document.getElementById("date").value+" 07:00:00",
-endDate:document.getElementById("date").value+" 13:00:00",
-timeZone:"Europe/Berlin",
-title:"Einsatz",
-description:"Automatisch gebucht",
-subCalendars:[name],
-wholeDay:false
+try{
+
+const kKey = localStorage.getItem("kKey");
+const date = document.getElementById("date").value;
+const start = document.getElementById("startTime").value;
+const end = document.getElementById("endTime").value;
+const school = document.getElementById("schoolSelect").selectedOptions[0].text;
+const desc = document.getElementById("desc").value || "Automatisch gebucht";
+
+const payload = {
+startDate: `${date} ${start}:00`,
+endDate: `${date} ${end}:00`,
+timeZone: "Europe/Berlin",
+title: school,
+description: desc,
+who: "",
+where: "",
+wholeDay: false,
+subCalendars: [driver],
+links: []
 };
 
-await fetch("https://api.kalender.digital/public/event",{
+const url = "https://api.kalender.digital/public/event";
+const proxy = "https://corsproxy.io/?"+encodeURIComponent(url);
+
+log("📝 Buche Fahrer...");
+
+const r = await fetch(proxy,{
 method:"POST",
 headers:{
 "Content-Type":"application/json",
 "X-API-KEY":kKey
 },
-body:JSON.stringify(payload)
+body: JSON.stringify(payload)
 });
 
-alert("Gebucht: "+name);
-run();
-
+if(!r.ok){
+throw new Error("Buchung fehlgeschlagen");
 }
 
+alert("✅ Gebucht: " + driver);
+
+run();
+
+}catch(e){
+console.error(e);
+alert("❌ " + e.message);
+log("❌ Buchung fehlgeschlagen");
+}
+
+}
 </script>
 
 </body>
