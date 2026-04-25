@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Springer-Dispo 15.3 FINAL CLEAN</title>
+<title>Springer-Dispo 15.4 SMART BOOKING</title>
 
 <style>
 :root{
@@ -22,12 +22,12 @@ color:#333;
 }
 
 .card{
-max-width:780px;
+max-width:820px;
 margin:auto;
 background:#fff;
 padding:24px;
 border-radius:14px;
-box-shadow:0 4px 16px rgba(0,0,0,.08);
+box-shadow:0 4px 18px rgba(0,0,0,.08);
 }
 
 h2{
@@ -38,9 +38,9 @@ color:var(--blue);
 
 label{
 display:block;
-font-size:.9rem;
-font-weight:700;
 margin:12px 0 6px;
+font-weight:700;
+font-size:.92rem;
 }
 
 input,select{
@@ -57,7 +57,7 @@ display:flex;
 gap:10px;
 }
 
-.row > div{
+.row>div{
 flex:1;
 }
 
@@ -83,6 +83,13 @@ padding:10px 14px;
 background:#eee;
 }
 
+.book-btn{
+margin-top:8px;
+padding:8px 12px;
+background:var(--green);
+color:#fff;
+}
+
 .log{
 margin-top:14px;
 background:#111;
@@ -92,11 +99,11 @@ border-radius:8px;
 font-family:monospace;
 font-size:.82rem;
 white-space:pre-wrap;
-min-height:70px;
+min-height:72px;
 }
 
 #results{
-max-width:780px;
+max-width:820px;
 margin:18px auto;
 }
 
@@ -135,11 +142,16 @@ margin-top:6px;
 .state.free{background:var(--green);}
 .state.busy{background:var(--red);}
 
-.book-btn{
-margin-top:8px;
-padding:8px 12px;
-background:var(--green);
-color:#fff;
+.inline{
+display:flex;
+align-items:center;
+gap:8px;
+margin-top:10px;
+}
+
+.inline input[type=checkbox]{
+width:auto;
+transform:scale(1.2);
 }
 
 small{color:#666;}
@@ -150,7 +162,7 @@ small{color:#666;}
 
 <div class="card">
 
-<h2>Springer-Dispo 15.3 FINAL CLEAN</h2>
+<h2>Springer-Dispo 15.4 SMART BOOKING</h2>
 
 <label>Einrichtung / Ziel</label>
 <select id="schoolSelect" onchange="document.getElementById('destPlz').value=this.value">
@@ -170,21 +182,24 @@ small{color:#666;}
 <label>Von Datum</label>
 <input type="date" id="dateFrom" value="2026-04-24">
 </div>
-
 <div>
 <label>Bis Datum</label>
 <input type="date" id="dateTo" value="2026-04-24">
 </div>
 </div>
 
-<div class="row">
-<div>
-<label>Startzeit Buchung</label>
-<input type="time" id="startTime" value="07:00">
+<div class="inline">
+<input type="checkbox" id="wholeDay" checked onchange="toggleTime()">
+<label for="wholeDay" style="margin:0;">Ganztägig buchen</label>
 </div>
 
+<div class="row" id="timeBox" style="display:none;">
 <div>
-<label>Endzeit Buchung</label>
+<label>Startzeit</label>
+<input type="time" id="startTime" value="07:00">
+</div>
+<div>
+<label>Endzeit</label>
 <input type="time" id="endTime" value="13:00">
 </div>
 </div>
@@ -215,100 +230,99 @@ const drivers = [
 {name:"Neubauer Michael",plz:"30853"}
 ];
 
-let loadedEvents = [];
+let loadedEvents=[];
 
-/* ===================== */
+/* ==================== */
 function setup(){
-localStorage.setItem("kKey", prompt("Kalender.digital API-Key:", localStorage.getItem("kKey") || ""));
-localStorage.setItem("kIds", prompt("Kalender-ID(s), komma getrennt:", localStorage.getItem("kIds") || ""));
-localStorage.setItem("gKey", prompt("Google API Key:", localStorage.getItem("gKey") || ""));
+localStorage.setItem("kKey",prompt("Kalender.digital API-Key:",localStorage.getItem("kKey")||""));
+localStorage.setItem("kIds",prompt("Kalender-ID(s), komma getrennt:",localStorage.getItem("kIds")||""));
+localStorage.setItem("gKey",prompt("Google API Key:",localStorage.getItem("gKey")||""));
 location.reload();
 }
 
-function log(txt){
-document.getElementById("log").textContent = txt;
+function log(t){
+document.getElementById("log").textContent=t;
 }
 
-/* ===================== */
+function toggleTime(){
+document.getElementById("timeBox").style.display =
+document.getElementById("wholeDay").checked ? "none":"flex";
+}
+
+/* ==================== */
 async function run(){
 
 try{
 
-const kKey = localStorage.getItem("kKey");
-const kIds = localStorage.getItem("kIds");
-const gKey = localStorage.getItem("gKey");
+const kKey=localStorage.getItem("kKey");
+const kIds=localStorage.getItem("kIds");
+const gKey=localStorage.getItem("gKey");
 
-if(!kKey || !kIds || !gKey){
-alert("Bitte zuerst Setup ausfüllen.");
+if(!kKey||!kIds||!gKey){
+alert("Bitte Setup ausfüllen.");
 return;
 }
 
-const from = document.getElementById("dateFrom").value;
-const to   = document.getElementById("dateTo").value;
-const dest = document.getElementById("destPlz").value;
+const from=document.getElementById("dateFrom").value;
+const to=document.getElementById("dateTo").value;
+const dest=document.getElementById("destPlz").value;
 
-log("📅 Lade Kalenderdaten...");
-loadedEvents = await loadEvents(from,to,kIds,kKey);
+log("📅 Lade Kalender...");
+loadedEvents=await loadEvents(from,to,kIds,kKey);
 
-log("🗺️ Lade Google Maps...");
+log("🗺️ Lade Maps...");
 await loadGoogle(gKey);
 
-log("📏 Berechne Entfernungen...");
-const matrix = await getDistances(dest);
+log("📏 Berechne Distanz...");
+const matrix=await getDistances(dest);
 
-log("🔎 Prüfe Fahrer...");
+let ranking=drivers.map((d,i)=>{
 
-let ranking = drivers.map((d,i)=>{
+const hit=isBusy(d.name,loadedEvents);
 
-const hit = isBusy(d.name, loadedEvents);
-
-return {
+return{
 ...d,
-busy: hit.busy,
-reason: hit.reason,
-distText: matrix.rows[i].elements[0].distance.text,
-distVal: matrix.rows[i].elements[0].distance.value
+busy:hit.busy,
+reason:hit.reason,
+distText:matrix.rows[i].elements[0].distance.text,
+distVal:matrix.rows[i].elements[0].distance.value
 };
 
 });
 
-ranking.sort((a,b)=>
-(a.busy - b.busy) || (a.distVal - b.distVal)
-);
+ranking.sort((a,b)=>(a.busy-b.busy)||(a.distVal-b.distVal));
 
 render(ranking);
 
-log("✅ Analyse abgeschlossen.");
+log("✅ Fertig.");
 
 }catch(e){
 console.error(e);
-log("❌ Fehler:\n"+e.message);
+log("❌ "+e.message);
 }
 
 }
 
-/* ===================== */
+/* ==================== */
 async function loadEvents(from,to,kIds,kKey){
 
-let all = [];
+let all=[];
 
 for(const raw of kIds.split(",")){
 
-const id = raw.trim();
+const id=raw.trim();
 
-const url =
-`https://api.kalender.digital/public/event?calendarId=${encodeURIComponent(id)}&startDate=${from}&endDate=${to}T23:59:59&timeZone=Europe/Berlin`;
+const url=`https://api.kalender.digital/public/event?calendarId=${encodeURIComponent(id)}&startDate=${from}&endDate=${to}T23:59:59&timeZone=Europe/Berlin`;
 
-const proxy =
-"https://corsproxy.io/?"+encodeURIComponent(url);
+const proxy="https://corsproxy.io/?"+encodeURIComponent(url);
 
-const r = await fetch(proxy,{
-headers:{ "X-API-KEY":kKey.trim() }
+const r=await fetch(proxy,{
+headers:{"X-API-KEY":kKey}
 });
 
 if(!r.ok) continue;
 
-const data = await r.json();
+const data=await r.json();
 
 if(Array.isArray(data)) all.push(...data);
 else if(Array.isArray(data.events)) all.push(...data.events);
@@ -318,78 +332,70 @@ else if(Array.isArray(data.events)) all.push(...data.events);
 return all;
 }
 
-/* ===================== */
-/* NUR RELEVANTE FELDER */
-/* Kein createdName etc. */
-/* ===================== */
-function isBusy(driverName, events){
+/* ==================== */
+function isBusy(name,events){
 
-const parts = driverName.toLowerCase().split(" ");
+const parts=name.toLowerCase().split(" ");
 
 for(const ev of events){
 
-let text = "";
+let txt="";
 
-if(ev.title) text += " " + ev.title.toLowerCase();
-if(ev.description) text += " " + ev.description.toLowerCase();
-if(ev.who) text += " " + ev.who.toLowerCase();
-if(ev.where) text += " " + ev.where.toLowerCase();
-
-if(Array.isArray(ev.subCalendars)){
-text += " " + ev.subCalendars.join(" ").toLowerCase();
-}
+if(ev.title) txt+=" "+ev.title.toLowerCase();
+if(ev.description) txt+=" "+ev.description.toLowerCase();
+if(ev.who) txt+=" "+ev.who.toLowerCase();
+if(Array.isArray(ev.subCalendars)) txt+=" "+ev.subCalendars.join(" ").toLowerCase();
 
 for(const p of parts){
-if(text.includes(p)){
-return {
+if(txt.includes(p)){
+return{
 busy:true,
-reason: ev.title || "Termin"
+reason:ev.title||"Termin"
 };
 }
 }
 
 }
 
-return {
+return{
 busy:false,
 reason:""
 };
 
 }
 
-/* ===================== */
+/* ==================== */
 function loadGoogle(key){
 
 return new Promise(resolve=>{
 
-if(typeof google !== "undefined"){
+if(typeof google!=="undefined"){
 resolve();
 return;
 }
 
-const s = document.createElement("script");
-s.src = `https://maps.googleapis.com/maps/api/js?key=${key}`;
-s.onload = resolve;
+const s=document.createElement("script");
+s.src=`https://maps.googleapis.com/maps/api/js?key=${key}`;
+s.onload=resolve;
 document.head.appendChild(s);
 
 });
+
 }
 
-/* ===================== */
+/* ==================== */
 function getDistances(dest){
 
 return new Promise((resolve,reject)=>{
 
-const service = new google.maps.DistanceMatrixService();
-
-service.getDistanceMatrix({
-origins: drivers.map(d=>d.plz),
+new google.maps.DistanceMatrixService().getDistanceMatrix({
+origins:drivers.map(d=>d.plz),
 destinations:[dest],
 travelMode:"DRIVING"
 },(res,status)=>{
 
-if(status !== "OK"){
-reject(new Error("Google Maps Fehler"));
+if(status!=="OK"){
+reject(new Error("Google Fehler"));
 return;
 }
 
@@ -398,15 +404,15 @@ resolve(res);
 });
 
 });
+
 }
 
-/* ===================== */
+/* ==================== */
 function render(list){
 
-document.getElementById("results").innerHTML =
-list.map(d=>`
+document.getElementById("results").innerHTML=list.map(d=>`
 
-<div class="driver ${d.busy ? 'busy':'free'}">
+<div class="driver ${d.busy?'busy':'free'}">
 
 <div>
 <strong>${d.name}</strong><br>
@@ -414,14 +420,13 @@ list.map(d=>`
 
 ${d.busy
 ? `<span class="state busy">BESETZT</span><br><small>${d.reason}</small>`
-: `<span class="state free">FREI</span>
-<br>
-<button class="book-btn" onclick="book('${escapeQuotes(d.name)}')">BUCHEN</button>`
+: `<span class="state free">FREI</span><br>
+<button class="book-btn" onclick="book('${safe(d.name)}')">BUCHEN</button>`
 }
 
 </div>
 
-<div style="font-size:1.15rem;font-weight:bold;">
+<div style="font-size:1.1rem;font-weight:bold;">
 ${d.distText}
 </div>
 
@@ -431,41 +436,64 @@ ${d.distText}
 
 }
 
-function escapeQuotes(str){
-return str.replace(/'/g,"\\'");
+function safe(t){
+return t.replace(/'/g,"\\'");
 }
 
-/* ===================== */
+/* ==================== */
 async function book(driver){
 
 try{
 
-const kKey = localStorage.getItem("kKey");
-const date = document.getElementById("dateFrom").value;
-const start = document.getElementById("startTime").value;
-const end = document.getElementById("endTime").value;
-const school = document.getElementById("schoolSelect").selectedOptions[0].text;
-const desc = document.getElementById("desc").value || "Automatisch gebucht";
+const kKey=localStorage.getItem("kKey");
 
-const payload = {
-startDate:`${date} ${start}:00`,
-endDate:`${date} ${end}:00`,
+const from=document.getElementById("dateFrom").value;
+const to=document.getElementById("dateTo").value;
+
+const whole=document.getElementById("wholeDay").checked;
+
+const start=document.getElementById("startTime").value;
+const end=document.getElementById("endTime").value;
+
+const title=document.getElementById("schoolSelect").selectedOptions[0].text;
+const desc=document.getElementById("desc").value || "Automatisch gebucht";
+
+let payload={};
+
+if(whole){
+
+payload={
+startDate:`${from} 00:00:00`,
+endDate:`${to} 23:59:59`,
 timeZone:"Europe/Berlin",
-title:school,
+title:title,
 description:desc,
-who:"",
-where:"",
+wholeDay:true,
+subCalendars:[driver],
+links:[]
+};
+
+}else{
+
+payload={
+startDate:`${from} ${start}:00`,
+endDate:`${to} ${end}:00`,
+timeZone:"Europe/Berlin",
+title:title,
+description:desc,
 wholeDay:false,
 subCalendars:[driver],
 links:[]
 };
 
-const url = "https://api.kalender.digital/public/event";
-const proxy = "https://corsproxy.io/?"+encodeURIComponent(url);
+}
 
-log("📝 Buche Fahrer...");
+const url="https://api.kalender.digital/public/event";
+const proxy="https://corsproxy.io/?"+encodeURIComponent(url);
 
-const r = await fetch(proxy,{
+log("📝 Buche...");
+
+const r=await fetch(proxy,{
 method:"POST",
 headers:{
 "Content-Type":"application/json",
@@ -478,14 +506,14 @@ if(!r.ok){
 throw new Error("Buchung fehlgeschlagen");
 }
 
-alert("✅ Gebucht: " + driver);
+alert("✅ Gebucht: "+driver);
 
 run();
 
 }catch(e){
 console.error(e);
-alert("❌ " + e.message);
-log("❌ Buchung fehlgeschlagen");
+alert("❌ "+e.message);
+log("❌ Fehler bei Buchung");
 }
 
 }
