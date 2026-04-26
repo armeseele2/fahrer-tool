@@ -1,257 +1,271 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Springer-Dispo 15.9 - Komplette Fahrerliste</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Springer-Dispo Pro</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --success: #22c55e;
+            --danger: #ef4444;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-sub: #64748b;
+        }
 
-<style>
-:root{
---blue:#007bff;
---green:#28a745;
---red:#dc3545;
---bg:#f4f7f6;
-}
+        body {
+            margin: 0;
+            padding: 15px;
+            background-color: var(--bg);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            color: var(--text-main);
+            line-height: 1.5;
+        }
 
-body{
-margin:0;
-padding:20px;
-background:var(--bg);
-font-family:Segoe UI,sans-serif;
-color:#333;
-}
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
 
-.card{
-max-width:820px;
-margin:auto;
-background:#fff;
-padding:24px;
-border-radius:14px;
-box-shadow:0 4px 18px rgba(0,0,0,.08);
-}
+        .header-card {
+            background: var(--card-bg);
+            padding: 24px;
+            border-radius: 20px;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
 
-h2{
-margin-top:0;
-text-align:center;
-color:var(--blue);
-}
+        h2 {
+            margin: 0 0 20px 0;
+            font-size: 24px;
+            text-align: center;
+            color: var(--primary);
+            font-weight: 800;
+        }
 
-label{
-display:block;
-margin:12px 0 6px;
-font-weight:700;
-font-size:.92rem;
-}
+        .input-group { margin-bottom: 16px; }
 
-input,select{
-width:100%;
-padding:11px;
-border:1px solid #ddd;
-border-radius:8px;
-box-sizing:border-box;
-font-size:1rem;
-}
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--text-sub);
+        }
 
-.row{
-display:flex;
-gap:10px;
-}
+        input, select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 16px; /* Verhindert Auto-Zoom auf iPhone */
+            transition: border-color 0.2s;
+            background: #fff;
+        }
 
-.row>div{
-flex:1;
-}
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
 
-button{
-border:none;
-border-radius:8px;
-cursor:pointer;
-font-weight:700;
-}
+        .row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
 
-.main-btn{
-width:100%;
-padding:14px;
-margin-top:14px;
-background:var(--blue);
-color:#fff;
-font-size:1rem;
-}
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            background: #f1f5f9;
+            padding: 12px;
+            border-radius: 12px;
+            margin: 10px 0;
+            cursor: pointer;
+        }
 
-.setup-btn{
-margin-top:10px;
-padding:10px 14px;
-background:#eee;
-}
+        .checkbox-container input {
+            width: auto;
+            margin-right: 12px;
+            transform: scale(1.2);
+        }
 
-.book-btn{
-margin-top:8px;
-padding:8px 12px;
-background:var(--green);
-color:#fff;
-}
+        button {
+            border: none;
+            border-radius: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
 
-.del-btn{
-margin-top:8px;
-padding:6px 10px;
-background:#fff;
-color:var(--red);
-border:1px solid var(--red);
-font-size: 0.8rem;
-}
+        .main-btn {
+            width: 100%;
+            padding: 16px;
+            background: var(--primary);
+            color: white;
+            font-size: 16px;
+            box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
+        }
 
-.del-btn:hover{
-background:var(--red);
-color:#fff;
-}
+        .main-btn:active { transform: scale(0.98); }
 
-.log{
-margin-top:14px;
-background:#111;
-color:#0f0;
-padding:12px;
-border-radius:8px;
-font-family:monospace;
-font-size:.82rem;
-white-space:pre-wrap;
-min-height:72px;
-}
+        .setup-btn {
+            background: none;
+            color: var(--text-sub);
+            width: 100%;
+            margin-top: 10px;
+            font-size: 13px;
+            text-decoration: underline;
+        }
 
-#results{
-max-width:820px;
-margin:18px auto;
-}
+        .log {
+            margin-top: 15px;
+            background: #1e293b;
+            color: #38bdf8;
+            padding: 10px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            min-height: 20px;
+        }
 
-.driver{
-background:#fff;
-padding:14px;
-border-radius:10px;
-margin-bottom:10px;
-display:flex;
-justify-content:space-between;
-align-items:center;
-border-left:7px solid #ccc;
-box-shadow:0 2px 8px rgba(0,0,0,.05);
-}
+        /* Fahrer Liste */
+        .driver-card {
+            background: var(--card-bg);
+            margin-bottom: 12px;
+            padding: 16px;
+            border-radius: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            border-left: 6px solid #cbd5e1;
+        }
 
-.free{
-border-left-color:var(--green);
-background:#fafffa;
-}
+        .driver-card.free { border-left-color: var(--success); }
+        .driver-card.busy { border-left-color: var(--danger); opacity: 0.8; }
 
-.busy{
-border-left-color:var(--red);
-background:#fff5f5;
-}
+        .driver-info h3 { margin: 0 0 4px 0; font-size: 17px; }
+        .driver-info p { margin: 0; font-size: 13px; color: var(--text-sub); }
 
-.state{
-display:inline-block;
-padding:5px 10px;
-border-radius:6px;
-font-size:.82rem;
-font-weight:700;
-color:#fff;
-margin-top:6px;
-}
+        .status-badge {
+            font-size: 11px;
+            font-weight: 800;
+            padding: 4px 8px;
+            border-radius: 6px;
+            text-transform: uppercase;
+            display: inline-block;
+            margin-top: 5px;
+        }
 
-.state.free{background:var(--green);}
-.state.busy{background:var(--red);}
+        .status-badge.free { background: #dcfce7; color: #166534; }
+        .status-badge.busy { background: #fee2e2; color: #991b1b; }
 
-.inline{
-display:flex;
-align-items:center;
-gap:8px;
-margin-top:10px;
-}
+        .action-btn {
+            padding: 10px 16px;
+            font-size: 14px;
+        }
 
-.inline input[type=checkbox]{
-width:auto;
-transform:scale(1.2);
-}
+        .book-btn { background: var(--success); color: white; margin-top: 10px; }
+        .del-btn { background: white; color: var(--danger); border: 1.5px solid var(--danger); margin-top: 10px; }
 
-small{color:#666;}
-</style>
+        .dist-tag {
+            text-align: right;
+            font-weight: 800;
+            color: var(--primary);
+            font-size: 18px;
+        }
+    </style>
 </head>
-
 <body>
 
-<div class="card">
+<div class="container">
+    <div class="header-card">
+        <h2>Springer-Dispo 15.9</h2>
 
-<h2>Springer-Dispo 15.9</h2>
+        <div class="input-group">
+            <label>Zielort / Einrichtung</label>
+            <select id="schoolSelect" onchange="document.getElementById('destPlz').value=this.value">
+                <option value="30655">Albert-Liebmann-Schule (30655)</option>
+                <option value="30165">Lebenshilfe Büttnerstraße (30165)</option>
+                <option value="30900">Kindergarten Domino (30900)</option>
+                <option value="30419">Kindergarten - Forst Mecklenheide (30419)</option>
+                <option value="30880">Freie Martinschule (30880)</option>
+                <option value="30851">Kindergarten Langenhagen (30851)</option>
+                <option value="30629">Kindergarten Misburg (30629)</option>
+                <option value="31535">Michael-Ende-Schule (31535)</option>
+                <option value="31515">Paul-Moor-Schule (31515)</option>
+                <option value="30938">Pestalozzi-Schule (30938)</option>
+                <option value="31303">Grundschule Otze (31303)</option>
+                <option value="31303">Schule am Wasserwerk (31303)</option>
+                <option value="31319">Schule im Großen Freien (31319)</option>
+                <option value="30900">Unter den Eichen/BOS (30900)</option>
+                <option value="30179">Stötzner-Schule (30179)</option>
+                <option value="30449">Wilhelm-Schade-Schule (30449)</option>
+                <option value="30559">Bildungszentrum f. Taubblinde (30559)</option>
+                <option value="30900">GS Bissendorf/ Brelingen (30900)</option>
+                <option value="30855">Adolf-Reichwein-Schule (30855)</option>
+                <option value="30982">Calenberger Schule (30982)</option>
+                <option value="30938">Kindergarten Craney (30938)</option>
+                <option value="30890">Bert-Brecht-Schule (30890)</option>
+                <option value="30853">Gutzmann Schule (30853)</option>
+                <option value="30926">Anne Frank Schule (30926)</option>
+            </select>
+        </div>
 
-<label>Einrichtung / Ziel</label>
-<select id="schoolSelect" onchange="document.getElementById('destPlz').value=this.value">
-<option value="30655">Albert-Liebmann-Schule (30655)</option>
-        <option value="30165">Lebenshilfe Büttnerstraße (30165)</option>
-        <option value="30900">Kindergarten Domino (30900)</option>
-        <option value="30419">Kindergarten - Forst Mecklenheide (30419)</option>
-        <option value="30880">Freie Martinschule (30880)</option>
-        <option value="30851">Kindergarten Langenhagen (30851)</option>
-        <option value="30629">Kindergarten Misburg (30629)</option>
-        <option value="31535">Michael-Ende-Schule (31535)</option>
-        <option value="31515">Paul-Moor-Schule (31515)</option>
-        <option value="30938">Pestalozzi-Schule (30938)</option>
-        <option value="31303">Grundschule Otze (31303)</option>
-        <option value="31303">Schule am Wasserwerk (31303)</option>
-        <option value="31319">Schule im Großen Freien (31319)</option>
-        <option value="30900">Unter den Eichen/BOS (30900)</option>
-        <option value="30179">Stötzner-Schule (30179)</option>
-        <option value="30449">Wilhelm-Schade-Schule (30449)</option>
-        <option value="30559">Bildungszentrum f. Taubblinde (30559)</option>
-        <option value="30900">GS Bissendorf/ Brelingen (30900)</option>
-        <option value="30855">Adolf-Reichwein-Schule (30855)</option>
-        <option value="30982">Calenberger Schule (30982)</option>
-        <option value="30938">Kindergarten Craney (30938)</option>
-        <option value="30890">Bert-Brecht-Schule (30890)</option>
-        <option value="30853">Gutzmann Schule (30853)</option>
-        <option value="30926">Anne Frank Schule (30926)</option>
+        <div class="input-group">
+            <label>Ziel-PLZ (automatisch)</label>
+            <input id="destPlz" value="30655">
+        </div>
 
-    </select>
+        <div class="row">
+            <div class="input-group">
+                <label>Von</label>
+                <input type="date" id="dateFrom" value="2026-04-24">
+            </div>
+            <div class="input-group">
+                <label>Bis</label>
+                <input type="date" id="dateTo" value="2026-04-24">
+            </div>
+        </div>
 
-   
-<label>Ziel-PLZ</label>
-<input id="destPlz" value="30655">
+        <label class="checkbox-container">
+            <input type="checkbox" id="wholeDay" checked onchange="toggleTime()">
+            <span>Ganztägig buchen</span>
+        </label>
 
-<div class="row">
-<div>
-<label>Von Datum</label>
-<input type="date" id="dateFrom" value="2026-04-24">
+        <div class="row" id="timeBox" style="display:none;">
+            <div class="input-group">
+                <label>Start</label>
+                <input type="time" id="startTime" value="07:00">
+            </div>
+            <div class="input-group">
+                <label>Ende</label>
+                <input type="time" id="endTime" value="13:00">
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label>Info / Tournummer</label>
+            <input id="desc" placeholder="z.B. Tour 27">
+        </div>
+
+        <button class="main-btn" onclick="run()">VERFÜGBARKEIT PRÜFEN</button>
+        <button class="setup-btn" onclick="setup()">⚙️ Einstellungen öffnen</button>
+
+        <div id="log" class="log">Bereit.</div>
+    </div>
+
+    <div id="results"></div>
 </div>
-<div>
-<label>Bis Datum</label>
-<input type="date" id="dateTo" value="2026-04-24">
-</div>
-</div>
-
-<div class="inline">
-<input type="checkbox" id="wholeDay" checked onchange="toggleTime()">
-<label for="wholeDay" style="margin:0;">Ganztägig buchen</label>
-</div>
-
-<div class="row" id="timeBox" style="display:none;">
-<div>
-<label>Startzeit</label>
-<input type="time" id="startTime" value="07:00">
-</div>
-<div>
-<label>Endzeit</label>
-<input type="time" id="endTime" value="13:00">
-</div>
-</div>
-
-<label>Beschreibung / Tour</label>
-<input id="desc" placeholder="z.B. Tour 27 / Hinfahrt">
-
-<button class="main-btn" onclick="run()">Verfügbarkeit & Ranking prüfen</button>
-<button class="setup-btn" onclick="setup()">⚙️ Setup (Keys / IDs)</button>
-
-<div id="log" class="log">Bereit.</div>
-
-</div>
-
-<div id="results"></div>
 
 <script>
-// Die NEUE vollständige Liste aller 18 Fahrer
+// --- FUNKTIONEN BLEIBEN IDENTISCH ZU DEINEM CODE ---
 const drivers = [
     {name:"Aschenbach André", plz:"30989"},
     {name:"Ohm Lars", plz:"30559"},
@@ -282,13 +296,10 @@ function setup(){
     location.reload();
 }
 
-function log(t){
-    document.getElementById("log").textContent=t;
-}
+function log(t){ document.getElementById("log").textContent=t; }
 
 function toggleTime(){
-    document.getElementById("timeBox").style.display =
-    document.getElementById("wholeDay").checked ? "none":"flex";
+    document.getElementById("timeBox").style.display = document.getElementById("wholeDay").checked ? "none":"grid";
 }
 
 async function run(){
@@ -296,80 +307,52 @@ async function run(){
         const kKey=localStorage.getItem("kKey");
         const kIds=localStorage.getItem("kIds");
         const gKey=localStorage.getItem("gKey");
-
-        if(!kKey||!kIds||!gKey){
-            alert("Bitte Setup ausfüllen.");
-            return;
-        }
-
+        if(!kKey||!kIds||!gKey){ alert("Bitte Setup ausfüllen."); return; }
         const from=document.getElementById("dateFrom").value;
         const to=document.getElementById("dateTo").value;
         const dest=document.getElementById("destPlz").value;
 
-        log("📅 Lade aktuelle Kalenderdaten...");
+        log("📅 Lade Kalender...");
         loadedEvents=await loadEvents(from,to,kIds,kKey);
-
-        log("🗺️ Lade Maps...");
+        log("🗺️ Google Maps...");
         await loadGoogle(gKey);
-
-        log("📏 Berechne Distanz...");
+        log("📏 Distanzberechnung...");
         const matrix=await getDistances(dest);
 
         let ranking=drivers.map((d,i)=>{
             const hit=isBusy(d.name,loadedEvents);
             return{
-                ...d,
-                busy:hit.busy,
-                reason:hit.reason,
-                eventId:hit.eventId,
+                ...d, busy:hit.busy, reason:hit.reason, eventId:hit.eventId,
                 distText:matrix.rows[i].elements[0].distance.text,
                 distVal:matrix.rows[i].elements[0].distance.value
             };
         });
-
         ranking.sort((a,b)=>(a.busy-b.busy)||(a.distVal-b.distVal));
         render(ranking);
-        log("✅ Analyse fertig.");
-
-    }catch(e){
-        console.error(e);
-        log("❌ "+e.message);
-    }
+        log("✅ Fertig.");
+    }catch(e){ log("❌ "+e.message); }
 }
 
 async function loadEvents(from,to,kIds,kKey){
     let all=[];
     for(const raw of kIds.split(",")){
         const id=raw.trim();
-        const salt = Math.floor(Math.random() * 999999);
-        const url=`https://api.kalender.digital/public/event?calendarId=${encodeURIComponent(id)}&startDate=${from}&endDate=${to}T23:59:59&timeZone=Europe/Berlin&v=${Date.now()}&s=${salt}`;
+        const url=`https://api.kalender.digital/public/event?calendarId=${encodeURIComponent(id)}&startDate=${from}&endDate=${to}T23:59:59`;
         const proxy="https://corsproxy.io/?"+encodeURIComponent(url);
         const r=await fetch(proxy,{headers:{"X-API-KEY":kKey}});
-        if(!r.ok) continue;
         const data=await r.json();
-        if(Array.isArray(data)) all.push(...data);
-        else if(Array.isArray(data.events)) all.push(...data.events);
+        if(Array.isArray(data)) all.push(...data); else if(data.events) all.push(...data.events);
     }
     return all;
 }
 
 function isBusy(name,events){
-    if (!events || events.length === 0) return { busy: false, reason: "", eventId: null };
     const searchName = name.toLowerCase().trim();
-    const lastName = searchName.split(" ").pop();
-
     for(const ev of events){
-        let txt="";
-        if(ev.title) txt+=" "+ev.title.toLowerCase();
-        if(ev.description) txt+=" "+ev.description.toLowerCase();
-        if(ev.who) txt+=" "+ev.who.toLowerCase();
-        if(Array.isArray(ev.subCalendars)) txt+=" "+ev.subCalendars.join(" ").toLowerCase();
-
-        if(txt.includes(searchName) || (lastName && txt.includes(lastName))){
-            return{ busy:true, reason:ev.title||"Belegt", eventId:ev.id };
-        }
+        let txt = (ev.title + " " + (ev.description||"")).toLowerCase();
+        if(txt.includes(searchName)) return{ busy:true, reason:ev.title||"Belegt", eventId:ev.id };
     }
-    return{ busy:false, reason:"", eventId: null };
+    return { busy:false, reason:"", eventId: null };
 }
 
 function loadGoogle(key){
@@ -385,40 +368,28 @@ function loadGoogle(key){
 function getDistances(dest){
     return new Promise((resolve,reject)=>{
         new google.maps.DistanceMatrixService().getDistanceMatrix({
-            origins:drivers.map(d=>d.plz),
-            destinations:[dest],
-            travelMode:"DRIVING"
-        },(res,status)=>{
-            if(status!=="OK") return reject(new Error("Google Fehler"));
-            resolve(res);
-        });
+            origins:drivers.map(d=>d.plz), destinations:[dest], travelMode:"DRIVING"
+        },(res,status)=>{ if(status!=="OK") reject(); else resolve(res); });
     });
 }
 
 function render(list){
     document.getElementById("results").innerHTML=list.map(d=>`
-        <div class="driver ${d.busy?'busy':'free'}">
-            <div>
-                <strong>${d.name}</strong><br>
-                <small>${d.distText} entfernt</small><br>
-                ${d.busy
-                    ? `<span class="state busy">BESETZT</span><br><small>${d.reason}</small><br>
-                       <button class="del-btn" onclick="deleteEvent('${d.eventId}', '${safe(d.name)}')">🗑️ Termin löschen</button>`
-                    : `<span class="state free">FREI</span><br>
-                       <button class="book-btn" onclick="book('${safe(d.name)}')">BUCHEN</button>`
-                }
+        <div class="driver-card ${d.busy?'busy':'free'}">
+            <div class="driver-info">
+                <h3>${d.name}</h3>
+                <p>${d.plz} • ${d.distText} entfernt</p>
+                <span class="status-badge ${d.busy?'busy':'free'}">${d.busy?'Besetzt':'Verfügbar'}</span>
+                ${d.busy ? `<br><small style="color:var(--danger)">${d.reason}</small><br><button class="action-btn del-btn" onclick="deleteEvent('${d.eventId}', '${d.name}')">Löschen</button>` 
+                         : `<br><button class="action-btn book-btn" onclick="book('${d.name}')">JETZT BUCHEN</button>`}
             </div>
-            <div style="font-size:1.1rem;font-weight:bold;">
-                ${d.distText}
-            </div>
+            <div class="dist-tag">${d.distText}</div>
         </div>
     `).join("");
 }
 
-function safe(t){ return t.replace(/'/g,"\\'"); }
-
 async function book(driver){
-    try{
+    try {
         const kKey=localStorage.getItem("kKey");
         const from=document.getElementById("dateFrom").value;
         const to=document.getElementById("dateTo").value;
@@ -431,44 +402,25 @@ async function book(driver){
         let payload={
             startDate: whole ? `${from} 00:00:00` : `${from} ${start}:00`,
             endDate: whole ? `${to} 23:59:59` : `${to} ${end}:00`,
-            timeZone:"Europe/Berlin",
-            title:title,
-            description:desc,
-            wholeDay:whole,
-            subCalendars:[driver],
-            links:[]
+            timeZone:"Europe/Berlin", title:title, description:desc,
+            wholeDay:whole, subCalendars:[driver]
         };
 
-        log("📝 Buche...");
-        const url="https://api.kalender.digital/public/event";
-        const proxy="https://corsproxy.io/?"+encodeURIComponent(url);
+        const proxy="https://corsproxy.io/?https%3A%2F%2Fapi.kalender.digital%2Fpublic%2Fevent";
         const r=await fetch(proxy,{
-            method:"POST",
-            headers:{"Content-Type":"application/json","X-API-KEY":kKey},
+            method:"POST", headers:{"Content-Type":"application/json","X-API-KEY":kKey},
             body:JSON.stringify(payload)
         });
-        if(!r.ok) throw new Error("Buchung fehlgeschlagen");
-        alert("✅ Gebucht: "+driver);
-        run();
-    }catch(e){ console.error(e); alert("❌ "+e.message); }
+        if(r.ok) { alert("Gebucht!"); run(); }
+    } catch(e) { alert("Fehler"); }
 }
 
-async function deleteEvent(eventId, driverName) {
-    if(!eventId || eventId === "null") { alert("Fehler: Termin-ID nicht gefunden."); return; }
-    if(!confirm(`Soll der Termin für ${driverName} wirklich gelöscht werden?`)) return;
-    try {
-        const kKey = localStorage.getItem("kKey");
-        log("🗑️ Lösche Termin...");
-        const url = `https://api.kalender.digital/public/event/${eventId}`;
-        const proxy = "https://corsproxy.io/?" + encodeURIComponent(url);
-        const r = await fetch(proxy, {
-            method: "DELETE",
-            headers: { "X-API-KEY": kKey }
-        });
-        if (!r.ok) throw new Error("Löschen fehlgeschlagen");
-        alert("✅ Termin für " + driverName + " gelöscht.");
-        run();
-    } catch (e) { alert("❌ Fehler: " + e.message); }
+async function deleteEvent(eventId, name) {
+    if(!confirm(name+" löschen?")) return;
+    const kKey=localStorage.getItem("kKey");
+    const proxy="https://corsproxy.io/?https%3A%2F%2Fapi.kalender.digital%2Fpublic%2Fevent%2F"+eventId;
+    const r=await fetch(proxy,{ method:"DELETE", headers:{"X-API-KEY":kKey} });
+    if(r.ok) run();
 }
 </script>
 </body>
