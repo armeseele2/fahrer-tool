@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Springer-Dispo Pro v23</title>
+<title>Springer-Dispo Pro v29 - KOMPLETT</title>
 <style>
 :root{--blue:#2563eb;--green:#16a34a;--red:#dc2626;--bg:#eef2f7;}
 *{box-sizing:border-box}
@@ -31,7 +31,7 @@ button{border:none;border-radius:10px;cursor:pointer;font-weight:700;}
 <body>
 
 <div class="card">
-    <h2>Springer-Dispo Pro v23</h2>
+    <h2>Springer-Dispo Pro v29</h2>
     
     <label>Einrichtung / Ziel</label>
     <select id="schoolSelect" onchange="document.getElementById('destPlz').value=this.value">
@@ -48,7 +48,8 @@ button{border:none;border-radius:10px;cursor:pointer;font-weight:700;}
         <option value="30916">Erich-Kästner-Schule (30916)</option>
     </select>
     
-    <input type="hidden" id="destPlz" value="30655">
+    <label>Ziel PLZ</label>
+    <input type="text" id="destPlz" value="30655">
 
     <div class="row">
         <div><label>Von</label><input type="date" id="dateFrom" value="2026-04-24"></div>
@@ -74,20 +75,42 @@ button{border:none;border-radius:10px;cursor:pointer;font-weight:700;}
 
 <div id="bookingModal" class="modal-overlay">
     <div class="modal-content">
-        <h3>Termin buchen</h3>
+        <h3>Termin eintragen</h3>
         <label>Fahrer</label>
-        <input type="text" id="popDriver" readonly>
+        <input type="text" id="popDriver" readonly style="background:#f3f4f6">
         <div class="row">
             <div>
                 <label>Wer meldet?</label>
                 <select id="nameSelect" onchange="updatePopDesc()">
-                    <option value="">-- Name --</option>
-                    <option value="Angela">Angela</option><option value="Anja">Anja</option><option value="Beate">Beate</option>
-                    <option value="Bettina">Bettina</option><option value="Frank">Frank</option><option value="Gerhard">Gerhard</option>
-                    <option value="Heike">Heike</option><option value="Jürgen">Jürgen</option><option value="Karin">Karin</option>
-                    <option value="Katja">Katja</option><option value="Klaus">Klaus</option><option value="Manuela">Manuela</option>
-                    <option value="Michael">Michael</option><option value="Moni">Moni</option><option value="Nicole">Nicole</option>
-                    <option value="Nina">Nina</option><option value="Petra">Petra</option><option value="Ralf">Ralf</option><option value="Steffi">Steffi</option>
+                    <option value="">-- Melder --</option>
+                    <option value="Angela">Angela</option>
+                    <option value="Anja">Anja</option>
+                    <option value="Beate">Beate</option>
+                    <option value="Bettina">Bettina</option>
+                    <option value="Birgit">Birgit</option>
+                    <option value="Christiane">Christiane</option>
+                    <option value="Daniela">Daniela</option>
+                    <option value="Frank">Frank</option>
+                    <option value="Gerhard">Gerhard</option>
+                    <option value="Heike">Heike</option>
+                    <option value="Jürgen">Jürgen</option>
+                    <option value="Karin">Karin</option>
+                    <option value="Katja">Katja</option>
+                    <option value="Kerstin">Kerstin</option>
+                    <option value="Klaus">Klaus</option>
+                    <option value="Manuela">Manuela</option>
+                    <option value="Marion">Marion</option>
+                    <option value="Michael">Michael</option>
+                    <option value="Moni">Moni</option>
+                    <option value="Nicole">Nicole</option>
+                    <option value="Nina">Nina</option>
+                    <option value="Petra">Petra</option>
+                    <option value="Ralf">Ralf</option>
+                    <option value="Sabine">Sabine</option>
+                    <option value="Silke">Silke</option>
+                    <option value="Steffi">Steffi</option>
+                    <option value="Susanne">Susanne</option>
+                    <option value="Ute">Ute</option>
                 </select>
             </div>
             <div>
@@ -105,16 +128,27 @@ button{border:none;border-radius:10px;cursor:pointer;font-weight:700;}
 </div>
 
 <script>
+// VOLLSTÄNDIGE LISTE DER FAHRER (Basierend auf deinen Angaben)
 const drivers=[
-{name:"Aschenbach André",plz:"30989"},{name:"Ohm Lars",plz:"30559"},{name:"Bachmeier Reinhard",plz:"30659"},
-{name:"Isfahan Mozaffaey Hamid",plz:"30519"},{name:"Otto Alexander",plz:"30173"},{name:"Türkel Tuncer",plz:"30161"},
-{name:"Schrader Harald",plz:"30880"},{name:"Neubauer Michael",plz:"30853"},{name:"Ferkau Eckart",plz:"30851"},
-{name:"Bethmann Ekkehard",plz:"31535"},{name:"Hauer Frank",plz:"30900"},
-{name:"Häge Klaus-Dieter",plz:"30519"}, // Bindestrich ergänzt
-{name:"Grimpe Dirk",plz:"30827"},{name:"Moser Siegfried",plz:"30827"},{name:"Von Treskow Albrecht",plz:"30659"},
-{name:"Beka Jonel",plz:"31275"},{name:"Giuseppe Caruso",plz:"30880"},
-{name:"Popescu Viorel-Florinel",plz:"30827"}, // Exakter Name mit Bindestrich
-{name:"Bodewell Thomas",plz:"30853"}
+    {name:"Aschenbach André", plz:"30989"},
+    {name:"Ohm Lars", plz:"30559"},
+    {name:"Bachmeier Reinhard", plz:"30659"},
+    {name:"Isfahan Mozaffaey Hamid", plz:"30519"},
+    {name:"Otto Alexander", plz:"30173"},
+    {name:"Türkel Tuncer", plz:"30161"},
+    {name:"Schrader Harald", plz:"30880"},
+    {name:"Neubauer Michael", plz:"30853"},
+    {name:"Ferkau Eckart", plz:"30851"},
+    {name:"Bethmann Ekkehard", plz:"31535"},
+    {name:"Hauer Frank", plz:"30900"},
+    {name:"Häge Klaus Dieter", plz:"30519"},
+    {name:"Grimpe Dirk", plz:"30827"},
+    {name:"Moser Siegfried", plz:"30827"},
+    {name:"Von Treskow Albrecht", plz:"30659"},
+    {name:"Beka Jonel", plz:"31275"},
+    {name:"Giuseppe Caruso", plz:"30880"},
+    {name:"Popescu Viorel", plz:"30827"},
+    {name:"Bodewell Thomas", plz:"30853"}
 ];
 
 let loadedEvents=[];
@@ -122,7 +156,7 @@ let currentDriverForBooking = "";
 
 window.onload=()=>{
     const ts=document.getElementById('tourSelect');
-    for(let i=1;i<=30;i++){let o=document.createElement('option');o.value="Tour "+i;o.innerText="Tour "+i;ts.appendChild(o);}
+    for(let i=1;i<=40;i++){let o=document.createElement('option');o.value="Tour "+i;o.innerText="Tour "+i;ts.appendChild(o);}
 };
 
 function setup(){
@@ -139,7 +173,7 @@ async function run(){
     try{
         const kKey=localStorage.getItem("kKey"),kIds=localStorage.getItem("kIds"),gKey=localStorage.getItem("gKey");
         if(!kKey||!kIds||!gKey)return alert("Setup fehlt!");
-        log("📅 Lade Kalender-Daten...");
+        log("📅 Lade Daten...");
         loadedEvents=await loadEvents(document.getElementById("dateFrom").value,document.getElementById("dateTo").value,kIds,kKey);
         await loadGoogle(gKey);
         const matrix=await getDistances(document.getElementById("destPlz").value);
@@ -149,7 +183,7 @@ async function run(){
         });
         ranking.sort((a,b)=>(a.busy-b.busy)||(a.distVal-a.distVal));
         render(ranking);
-        log("✅ Analyse abgeschlossen.");
+        log("✅ Fertig.");
     }catch(e){log("❌ "+e.message);}
 }
 
@@ -164,8 +198,7 @@ async function loadEvents(from,to,kIds,kKey){
 }
 
 function isBusy(name,events){
-    // Wir suchen bei der Verfügbarkeit nach Teilen des Namens, falls Bindestriche das Problem sind
-    const s=name.toLowerCase().replace("-"," ").trim();
+    const s=name.toLowerCase().trim();
     const l=s.split(" ").pop();
     for(const ev of events){
         let t=(ev.title||"")+" "+(ev.description||"")+" "+(ev.subCalendars?ev.subCalendars.join(" "):"");
@@ -182,15 +215,15 @@ function render(list){
     <div class="driver ${d.busy?'busy':'free'}">
         <div>
             <strong>${d.name}</strong><br><small>${d.distText}</small><br>
-            ${d.busy?`<span style="color:var(--red);font-weight:bold;">BESETZT</span><br><button class="del-btn" onclick="deleteEvent('${d.eventId}')">Termin löschen</button>`:`<button class="book-btn" onclick="openBookingModal('${d.name.replace(/'/g,"\\'")}')">BUCHEN</button>`}
+            ${d.busy?`<span style="color:var(--red);font-weight:bold;">BESETZT</span><br><button class="del-btn" onclick="deleteEvent('${d.eventId}')">Löschen</button>`:`<button class="book-btn" onclick="openBookingModal('${d.name.replace(/'/g,"\\'")}')">BUCHEN</button>`}
         </div>
         <div><strong>${d.distText}</strong></div>
     </div>`).join("");
 }
 
 function openBookingModal(name){
-    currentDriverForBooking=name;
-    document.getElementById('popDriver').value=name;
+    currentDriverForBooking=name.trim();
+    document.getElementById('popDriver').value=currentDriverForBooking;
     document.getElementById('bookingModal').style.display='flex';
 }
 function closeModal(){document.getElementById('bookingModal').style.display='none';}
@@ -221,7 +254,7 @@ async function confirmBooking(){
             subCalendars:[driver]
         };
 
-        log("⏳ Buchung läuft...");
+        log("⏳ Buche...");
         const r=await fetch("https://corsproxy.io/?"+encodeURIComponent("https://api.kalender.digital/public/event"),{
             method:"POST",
             headers:{"Content-Type":"application/json","X-API-KEY":kKey},
@@ -229,20 +262,20 @@ async function confirmBooking(){
         });
         
         if(!r.ok){
-            const errData = await r.json();
-            throw new Error(errData.message || "Der Kalender akzeptiert diesen Namen nicht.");
+            const resData = await r.json();
+            throw new Error(resData.message || "Kalender-Fehler");
         }
         
-        alert("✅ Erfolgreich gebucht!");
+        alert("✅ Eingetragen!");
         run();
     }catch(e){
-        alert("❌ Fehler: " + e.message + "\nBitte prüfen, ob der Name '" + driver + "' exakt so im Kalender steht.");
+        alert("❌ Fehler: " + e.message);
         log("Bereit.");
     }
 }
 
 async function deleteEvent(id){
-    if(!confirm("Wirklich löschen?"))return;
+    if(!confirm("Löschen?"))return;
     try{
         await fetch("https://corsproxy.io/?"+encodeURIComponent(`https://api.kalender.digital/public/event/${id}`),{method:"DELETE",headers:{"X-API-KEY":localStorage.getItem("kKey")}});
         run();
