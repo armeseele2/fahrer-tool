@@ -3,253 +3,526 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Springer-Dispo Pro v42</title>
+<title>Springer-Dispo Pro v43 FIX</title>
+
 <style>
-:root{--blue:#2563eb;--green:#16a34a;--red:#dc2626;--bg:#eef2f7;}
-*{box-sizing:border-box}
-body{margin:0;padding:20px;font-family:sans-serif;background:var(--bg);color:#111827;}
-.card{max-width:800px;margin:auto;background:#fff;padding:25px;border-radius:15px;box-shadow:0 10px 30px rgba(0,0,0,0.1);}
-h2{text-align:center;color:var(--blue);margin-bottom:20px;}
-label{display:block;margin:10px 0 5px;font-weight:700;font-size:0.9rem;}
-input,select,textarea{width:100%;padding:12px;border:1px solid #e5e7eb;border-radius:10px;font-size:1rem;}
-.row{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-bottom:10px;}
-button{border:none;border-radius:10px;cursor:pointer;font-weight:700;}
-.main-btn{width:100%;padding:18px;background:var(--blue);color:#fff;font-size:1.1rem;margin-top:15px;}
-#results{max-width:800px;margin:20px auto;}
-.driver{background:#fff;padding:15px;border-radius:12px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 4px 10px rgba(0,0,0,0.05);border-left:12px solid #ccc;}
-.free{border-left-color:var(--green);}
-.busy{border-left-color:var(--red);background:#fff1f2;opacity:0.8;}
-.book-btn{padding:10px 20px;background:var(--green);color:#fff;}
-.del-btn{padding:8px 12px;background:#fff;color:var(--red);border:1px solid #fecaca;font-size:0.8rem;margin-top:5px;}
-.log{margin-top:15px;background:#1e293b;color:#4ade80;padding:12px;border-radius:10px;font-family:monospace;font-size:0.8rem;min-height:40px;}
-.modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:2000;justify-content:center;align-items:center;backdrop-filter:blur(4px);}
-.modal-content{background:#fff;padding:25px;border-radius:20px;width:95%;max-width:450px;}
+:root{
+--blue:#2563eb;
+--green:#16a34a;
+--red:#dc2626;
+--bg:#eef2f7;
+--card:#ffffff;
+--text:#111827;
+--muted:#6b7280;
+}
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+}
+
+body{
+font-family:Inter,Segoe UI,sans-serif;
+background:linear-gradient(135deg,#eef2f7,#dbeafe);
+padding:20px;
+color:var(--text);
+}
+
+.card{
+max-width:850px;
+margin:auto;
+background:rgba(255,255,255,.92);
+backdrop-filter:blur(12px);
+padding:28px;
+border-radius:22px;
+box-shadow:0 15px 35px rgba(0,0,0,.08);
+}
+
+h2{
+text-align:center;
+color:var(--blue);
+margin-bottom:22px;
+font-size:1.9rem;
+}
+
+label{
+display:block;
+margin:12px 0 6px;
+font-weight:700;
+font-size:.92rem;
+}
+
+input,select,textarea{
+width:100%;
+padding:12px;
+border:1px solid #dbe2ea;
+border-radius:12px;
+font-size:1rem;
+outline:none;
+}
+
+input:focus,select:focus,textarea:focus{
+border-color:var(--blue);
+box-shadow:0 0 0 4px rgba(37,99,235,.12);
+}
+
+.row{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:14px;
+margin-top:10px;
+}
+
+button{
+border:none;
+border-radius:12px;
+cursor:pointer;
+font-weight:700;
+transition:.2s;
+}
+
+button:hover{
+transform:translateY(-1px);
+}
+
+.main-btn{
+width:100%;
+padding:16px;
+background:linear-gradient(135deg,#2563eb,#1d4ed8);
+color:#fff;
+font-size:1.05rem;
+margin-top:18px;
+}
+
+.setup-btn{
+width:100%;
+padding:12px;
+background:#eef2ff;
+color:#374151;
+margin-top:10px;
+}
+
+.log{
+margin-top:16px;
+background:#0f172a;
+color:#4ade80;
+padding:14px;
+border-radius:12px;
+font-family:monospace;
+font-size:.85rem;
+min-height:52px;
+}
+
+#results{
+max-width:850px;
+margin:22px auto;
+}
+
+.driver{
+background:rgba(255,255,255,.95);
+padding:16px;
+border-radius:18px;
+margin-bottom:12px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+box-shadow:0 8px 18px rgba(0,0,0,.06);
+border-left:10px solid #ddd;
+}
+
+.free{
+border-left-color:var(--green);
+}
+
+.busy{
+border-left-color:var(--red);
+background:#fff5f5;
+}
+
+.badge{
+display:inline-block;
+padding:6px 10px;
+border-radius:999px;
+font-size:.78rem;
+font-weight:800;
+margin-top:8px;
+color:#fff;
+}
+
+.badge.free{background:var(--green);}
+.badge.busy{background:var(--red);}
+
+.book-btn{
+padding:10px 18px;
+background:var(--green);
+color:#fff;
+margin-top:8px;
+}
+
+.del-btn{
+padding:8px 14px;
+background:#fff;
+color:var(--red);
+border:1px solid #fecaca;
+margin-top:8px;
+}
+
+small{
+color:var(--muted);
+}
+
+.modal{
+display:none;
+position:fixed;
+inset:0;
+background:rgba(0,0,0,.45);
+backdrop-filter:blur(4px);
+justify-content:center;
+align-items:center;
+z-index:5000;
+padding:15px;
+}
+
+.modal-box{
+background:#fff;
+width:100%;
+max-width:460px;
+border-radius:22px;
+padding:24px;
+box-shadow:0 18px 40px rgba(0,0,0,.15);
+}
+
+.modal-actions{
+display:flex;
+gap:10px;
+margin-top:18px;
+}
+
+.gray{
+background:#f3f4f6;
+padding:12px;
+flex:1;
+}
+
+.blue{
+background:var(--blue);
+color:#fff;
+padding:12px;
+flex:2;
+}
+
+@media(max-width:700px){
+.row{grid-template-columns:1fr;}
+.driver{
+flex-direction:column;
+align-items:flex-start;
+gap:10px;
+}
+}
 </style>
 </head>
+
 <body>
 
 <div class="card">
-    <h2>Springer-Dispo Pro v42</h2>
-    
-    <label>Einrichtung (Ziel-Schule)</label>
-    <select id="schoolSelect">
-        <option value="30655">Albert-Liebmann-Schule (30655)</option>
-        <option value="30165">Lebenshilfe Büttnerstraße (30165)</option>
-        <option value="30449">Wilhelm-Schade-Schule (30449)</option>
-        <option value="30853">Pestalozzi-Schule (30853)</option>
-        <option value="30880">Mecklenheide Forst (30880)</option>
-        <option value="30539">Gutzmannschule (30539)</option>
-        <option value="30419">Schule auf dem Gebirge (30419)</option>
-        <option value="30629">Paul-Klee-Schule (30629)</option>
-        <option value="30171">Leinetalschulen (30171)</option>
-        <option value="30827">Schule am Storchennest (30827)</option>
-        <option value="30916">Erich-Kästner-Schule (30916)</option>
-    </select>
 
-    <label>PLZ vom ersten Kind (Start der Tour)</label>
-    <input type="text" id="startPlz" placeholder="z.B. 30159" value="30159">
+<h2>Springer-Dispo Pro v43 FIX</h2>
 
-    <div class="row">
-        <div><label>Von</label><input type="date" id="dateFrom" value="2026-04-24"></div>
-        <div><label>Bis</label><input type="date" id="dateTo" value="2026-04-24"></div>
-    </div>
+<label>Einrichtung</label>
+<select id="schoolSelect">
+<option value="30655">Albert-Liebmann-Schule (30655)</option>
+<option value="30165">Lebenshilfe Büttnerstraße (30165)</option>
+<option value="30449">Wilhelm-Schade-Schule (30449)</option>
+<option value="30853">Pestalozzi-Schule (30853)</option>
+<option value="30880">Mecklenheide Forst (30880)</option>
+</select>
 
-    <div style="margin:10px 0;">
-        <input type="checkbox" id="wholeDay" checked> <label style="display:inline;" for="wholeDay">Ganztägig buchen</label>
-    </div>
+<label>PLZ erstes Kind</label>
+<input id="startPlz" value="30159">
 
-    <button class="main-btn" onclick="run()">Verfügbarkeit & Ranking prüfen</button>
-    <button onclick="setup()" style="width:100%;background:none;color:gray;font-size:0.7rem;margin-top:15px;">API-Einstellungen</button>
-    <div id="log" class="log">Bereit.</div>
+<div class="row">
+<div>
+<label>Von</label>
+<input type="date" id="dateFrom" value="2026-12-01">
+</div>
+<div>
+<label>Bis</label>
+<input type="date" id="dateTo" value="2026-12-01">
+</div>
+</div>
+
+<button class="main-btn" onclick="run()">Verfügbarkeit prüfen</button>
+<button class="setup-btn" onclick="setup()">⚙️ API Einstellungen</button>
+
+<div class="log" id="log">Bereit.</div>
+
 </div>
 
 <div id="results"></div>
 
-<div id="bookingModal" class="modal-overlay">
-    <div class="modal-content">
-        <h3>Tour eintragen</h3>
-        <label>Fahrer</label>
-        <input type="text" id="popDriver" readonly style="background:#f3f4f6">
-        <div class="row">
-            <div>
-                <label>Wer meldet?</label>
-                <select id="nameSelect" onchange="updatePopDesc()">
-                    <option value="">-- Melder --</option>
-                    <option value="Angela">Angela</option><option value="Anja">Anja</option>
-                    <option value="Beate">Beate</option><option value="Bettina">Bettina</option>
-                    <option value="Birgit">Birgit</option><option value="Christiane">Christiane</option>
-                    <option value="Daniela">Daniela</option><option value="Frank">Frank</option>
-                    <option value="Gerhard">Gerhard</option><option value="Heike">Heike</option>
-                    <option value="Jürgen">Jürgen</option><option value="Karin">Karin</option>
-                    <option value="Katja">Katja</option><option value="Kerstin">Kerstin</option>
-                    <option value="Klaus">Klaus</option><option value="Manuela">Manuela</option>
-                    <option value="Marion">Marion</option><option value="Michael">Michael</option>
-                    <option value="Moni">Moni</option><option value="Nicole">Nicole</option>
-                    <option value="Nina">Nina</option><option value="Petra">Petra</option>
-                    <option value="Ralf">Ralf</option><option value="Sabine">Sabine</option>
-                    <option value="Silke">Silke</option><option value="Steffi">Steffi</option>
-                    <option value="Susanne">Susanne</option><option value="Ute">Ute</option>
-                </select>
-            </div>
-            <div>
-                <label>Tour</label>
-                <select id="tourSelect" onchange="updatePopDesc()"><option value="">-- Tour --</option></select>
-            </div>
-        </div>
-        <label>Zusatz-Beschreibung</label>
-        <textarea id="popDesc" rows="2"></textarea>
-        <div style="margin-top:20px;display:flex;gap:10px;">
-            <button onclick="closeModal()" style="background:#eee;flex:1;padding:12px;">Abbruch</button>
-            <button onclick="confirmBooking()" style="background:var(--blue);color:#fff;flex:2;padding:12px;">Eintragen</button>
-        </div>
-    </div>
+<div class="modal" id="bookModal">
+<div class="modal-box">
+<h3 style="margin-bottom:14px;">Tour buchen</h3>
+
+<label>Fahrer</label>
+<input id="modalDriver" readonly>
+
+<label>Beschreibung</label>
+<textarea id="modalDesc" rows="3">Tour</textarea>
+
+<div class="modal-actions">
+<button class="gray" onclick="closeModal()">Abbruch</button>
+<button class="blue" onclick="confirmBooking()">Buchen</button>
+</div>
+</div>
 </div>
 
 <script>
 const drivers=[
-    {name:"Aschenbach André", plz:"30989"},{name:"Ohm Lars", plz:"30559"},{name:"Bachmeier Reinhard", plz:"30659"},
-    {name:"Isfahan Mozaffaey Hamid", plz:"30519"},{name:"Otto Alexander", plz:"30173"},{name:"Türkel Tuncer", plz:"30161"},
-    {name:"Schrader Harald", plz:"30880"},{name:"Neubauer Michael", plz:"30853"},{name:"Ferkau Eckart", plz:"30851"},
-    {name:"Bethmann Ekkehard", plz:"31535"},{name:"Hauer Frank", plz:"30900"},
-    {name:"Häge Klaus  Dieter", plz:"30519"}, 
-    {name:"Grimpe Dirk", plz:"30827"},{name:"Moser Siegfried", plz:"30827"},{name:"Von Treskow Albrecht", plz:"30659"},
-    {name:"Beka Jonel", plz:"31275"},{name:"Giuseppe Caruso", plz:"30880"},
-    {name:"Popescu Viorel Florinel", plz:"30827"},
-    {name:"Bodewell Thomas", plz:"30853"}
+{name:"Aschenbach André",plz:"30989"},
+{name:"Ohm Lars",plz:"30559"},
+{name:"Bachmeier Reinhard",plz:"30659"},
+{name:"Isfahan Mozaffaey Hamid",plz:"30519"},
+{name:"Otto Alexander",plz:"30173"},
+{name:"Türkel Tuncer",plz:"30161"},
+{name:"Schrader Harald",plz:"30880"},
+{name:"Neubauer Michael",plz:"30853"},
+{name:"Ferkau Eckart",plz:"30851"},
+{name:"Bethmann Ekkehard",plz:"31535"},
+{name:"Hauer Frank",plz:"30900"},
+{name:"Grimpe Dirk",plz:"30827"},
+{name:"Von Treskow Albrecht",plz:"30659"},
+{name:"Popescu Viorel",plz:"30827"}
 ];
 
 let loadedEvents=[];
-let currentDriverName = "";
+let currentDriver="";
 
-window.onload=()=>{
-    const ts=document.getElementById('tourSelect');
-    for(let i=1;i<=40;i++){let o=document.createElement('option');o.value="Tour "+i;o.innerText="Tour "+i;ts.appendChild(o);}
-};
-
-function setup(){
-    localStorage.setItem("kKey",prompt("API-Key:",localStorage.getItem("kKey")||""));
-    localStorage.setItem("kIds",prompt("Kalender-ID(s):",localStorage.getItem("kIds")||""));
-    localStorage.setItem("gKey",prompt("Google API Key:",localStorage.getItem("gKey")||""));
-    location.reload();
+function log(t){
+document.getElementById("log").textContent=t;
 }
 
-function log(t){document.getElementById("log").textContent=t;}
+function setup(){
+localStorage.setItem("kKey",prompt("Kalender API Key:",localStorage.getItem("kKey")||""));
+localStorage.setItem("kIds",prompt("Kalender IDs:",localStorage.getItem("kIds")||""));
+localStorage.setItem("gKey",prompt("Google API Key:",localStorage.getItem("gKey")||""));
+location.reload();
+}
 
 async function run(){
-    try{
-        const kKey=localStorage.getItem("kKey"),kIds=localStorage.getItem("kIds"),gKey=localStorage.getItem("gKey");
-        const startPlz=document.getElementById("startPlz").value;
-        if(!kKey||!kIds||!gKey)return alert("Setup fehlt!");
-        if(!startPlz)return alert("Bitte Start-PLZ eingeben!");
+try{
+const kKey=localStorage.getItem("kKey");
+const kIds=localStorage.getItem("kIds");
+const gKey=localStorage.getItem("gKey");
 
-        log("⏳ Lade Daten...");
-        const dFrom = document.getElementById("dateFrom").value;
-        const dTo = document.getElementById("dateTo").value;
-        loadedEvents = await loadEvents(dFrom, dTo, kIds, kKey);
-        
-        await loadGoogle(gKey);
-        const matrix = await getDistances(startPlz);
-        
-        let ranking = drivers.map((d, i)=>{
-            const hit = isBusy(d.name, loadedEvents);
-            const distInfo = matrix.rows[i].elements[0];
-            return {
-                ...d, 
-                busy: hit.busy, 
-                reason: hit.reason, 
-                eventId: hit.eventId, 
-                distText: distInfo.status === "OK" ? distInfo.distance.text : "Fehler", 
-                distVal: distInfo.status === "OK" ? distInfo.distance.value : 999999
-            };
-        });
-        
-        // SORTIERUNG: Erst nach Verfügbarkeit (Freie zuerst), dann nach Entfernung (Nächste zuerst)
-        ranking.sort((a,b)=>{
-            if (a.busy !== b.busy) return a.busy ? 1 : -1;
-            return a.distVal - b.distVal;
-        });
+if(!kKey||!kIds||!gKey) return alert("Setup fehlt.");
 
-        render(ranking);
-        log("✅ Liste sortiert.");
-    }catch(e){log("❌ Fehler: "+e.message);}
+const from=dateFrom.value;
+const to=dateTo.value;
+const start=startPlz.value;
+
+log("Kalender laden...");
+loadedEvents=await loadEvents(from,to,kIds,kKey);
+
+await loadGoogle(gKey);
+
+log("Entfernungen berechnen...");
+const matrix=await getDistances(start);
+
+let ranking=drivers.map((d,i)=>{
+const hit=isBusy(d.name,loadedEvents);
+return{
+...d,
+busy:hit.busy,
+reason:hit.reason,
+eventId:hit.eventId,
+distText:matrix.rows[i].elements[0].distance.text,
+distVal:matrix.rows[i].elements[0].distance.value
+};
+});
+
+ranking.sort((a,b)=>(a.busy-b.busy)||(a.distVal-b.distVal));
+
+render(ranking);
+log("Fertig.");
+
+}catch(e){
+log("Fehler: "+e.message);
+}
 }
 
 async function loadEvents(from,to,kIds,kKey){
-    let all=[];
-    for(const id of kIds.split(",")){
-        const url=`https://api.kalender.digital/public/event?calendarId=${id.trim()}&startDate=${from}&endDate=${to}T23:59:59`;
-        const r=await fetch("https://corsproxy.io/?"+encodeURIComponent(url),{headers:{"X-API-KEY":kKey}});
-        if(r.ok){const d=await r.json();all.push(...(d.events||d));}
-    }
-    return all;
+let all=[];
+
+for(const raw of kIds.split(",")){
+const id=raw.trim();
+
+const url=`https://api.kalender.digital/public/event?calendarId=${id}&startDate=${from}&endDate=${to}T23:59:59`;
+
+const proxy="https://corsproxy.io/?"+encodeURIComponent(url);
+
+const r=await fetch(proxy,{headers:{"X-API-KEY":kKey}});
+
+if(r.ok){
+const d=await r.json();
+all.push(...(d.events||d));
+}
 }
 
-function isBusy(fullName, events){
-    const s = fullName.toLowerCase().trim();
-    const lastName = s.split(" ")[0]; 
-    for(const ev of events){
-        let t = (ev.title||"") + " " + (ev.description||"") + " " + (ev.subCalendars?ev.subCalendars.join(" "):"");
-        t = t.toLowerCase();
-        if(t.includes(lastName) || t.includes(s)){
-            return {busy:true, reason:ev.title, eventId:ev.id};
-        }
-    }
-    return {busy:false};
+return all;
 }
 
-function loadGoogle(key){return new Promise(resolve=>{if(typeof google!=="undefined")resolve();const s=document.createElement("script");s.src=`https://maps.googleapis.com/maps/api/js?key=${key}`;s.onload=resolve;document.head.appendChild(s);});}
-function getDistances(start){return new Promise((resolve,reject)=>{new google.maps.DistanceMatrixService().getDistanceMatrix({origins:drivers.map(d=>d.plz),destinations:[start],travelMode:"DRIVING"},(res,status)=>status!=="OK"?reject():resolve(res));});}
+/* ===== FIXED BUSY CHECK ===== */
+function isBusy(fullName,events){
+
+const search=fullName.toLowerCase().trim();
+
+const from=document.getElementById("dateFrom").value;
+const to=document.getElementById("dateTo").value;
+
+for(const ev of events){
+
+const evStart=ev.startDate.substring(0,10);
+const evEnd=ev.endDate.substring(0,10);
+
+if(evEnd < from || evStart > to) continue;
+
+let txt="";
+
+if(ev.subCalendars)
+txt+=" "+ev.subCalendars.join(" ").toLowerCase();
+
+if(ev.who)
+txt+=" "+ev.who.toLowerCase();
+
+if(txt.includes(search)){
+return{
+busy:true,
+reason:ev.title || "Belegt",
+eventId:ev.id
+};
+}
+}
+
+return{busy:false};
+}
+
+function loadGoogle(key){
+return new Promise(resolve=>{
+if(typeof google!=="undefined") return resolve();
+const s=document.createElement("script");
+s.src=`https://maps.googleapis.com/maps/api/js?key=${key}`;
+s.onload=resolve;
+document.head.appendChild(s);
+});
+}
+
+function getDistances(start){
+return new Promise((resolve,reject)=>{
+new google.maps.DistanceMatrixService().getDistanceMatrix({
+origins:drivers.map(d=>d.plz),
+destinations:[start],
+travelMode:"DRIVING"
+},(res,status)=>{
+if(status!=="OK") reject();
+else resolve(res);
+});
+});
+}
 
 function render(list){
-    document.getElementById("results").innerHTML=list.map(d=>`
-    <div class="driver ${d.busy?'busy':'free'}">
-        <div>
-            <strong>${d.name}</strong><br>
-            ${d.busy?`<span style="color:var(--red);font-weight:bold;">⚠️ BESETZT: ${d.reason}</span><br><button class="del-btn" onclick="deleteEvent('${d.eventId}')">Löschen</button>`:`<button class="book-btn" onclick="openBookingModal('${d.name.replace(/'/g,"\\'")}')">BUCHEN</button>`}
-        </div>
-        <div style="text-align:right"><strong>${d.distText}</strong></div>
-    </div>`).join("");
+results.innerHTML=list.map(d=>`
+<div class="driver ${d.busy?'busy':'free'}">
+<div>
+<strong>${d.name}</strong><br>
+<small>${d.distText}</small><br>
+
+${d.busy
+? `<span class="badge busy">BESETZT</span><br>
+<small>${d.reason}</small><br>
+<button class="del-btn" onclick="deleteEvent('${d.eventId}')">Löschen</button>`
+: `<span class="badge free">FREI</span><br>
+<button class="book-btn" onclick="openModal('${d.name}')">Buchen</button>`
+}
+</div>
+
+<div style="font-size:1.15rem;font-weight:800;">
+${d.distText}
+</div>
+</div>
+`).join("");
 }
 
-function openBookingModal(name){
-    currentDriverName=name;
-    document.getElementById('popDriver').value=name;
-    document.getElementById('bookingModal').style.display='flex';
+function openModal(name){
+currentDriver=name;
+modalDriver.value=name;
+bookModal.style.display="flex";
 }
-function closeModal(){document.getElementById('bookingModal').style.display='none';}
-function updatePopDesc(){
-    const n=document.getElementById('nameSelect').value;
-    const t=document.getElementById('tourSelect').value;
-    document.getElementById('popDesc').value=(n?n+" meldet: ":"")+(t?t:"");
+
+function closeModal(){
+bookModal.style.display="none";
 }
 
 async function confirmBooking(){
-    const desc=document.getElementById('popDesc').value;
-    const school=document.getElementById('schoolSelect').selectedOptions[0].text;
-    closeModal();
-    try{
-        const kKey=localStorage.getItem("kKey"),dFrom=document.getElementById("dateFrom").value,dTo=document.getElementById("dateTo").value;
-        const payload={
-            startDate:`${dFrom} 00:00:00`, endDate:`${dTo} 23:59:59`,
-            timeZone:"Europe/Berlin", title:school, description:desc, wholeDay:true, subCalendars:[currentDriverName]
-        };
-        log("⏳ Speichere...");
-        const r=await fetch("https://corsproxy.io/?"+encodeURIComponent("https://api.kalender.digital/public/event"),{
-            method:"POST",headers:{"Content-Type":"application/json","X-API-KEY":kKey},body:JSON.stringify(payload)
-        });
-        if(!r.ok) throw new Error("Fehler.");
-        alert("✅ Eingetragen!");
-        run();
-    }catch(e){alert("❌ Fehler: " + e.message);log("Bereit.");}
+try{
+const kKey=localStorage.getItem("kKey");
+
+const from=dateFrom.value;
+const to=dateTo.value;
+
+const payload={
+startDate:`${from} 00:00:00`,
+endDate:`${to} 23:59:59`,
+timeZone:"Europe/Berlin",
+title:schoolSelect.selectedOptions[0].text,
+description:modalDesc.value,
+wholeDay:true,
+subCalendars:[currentDriver],
+links:[]
+};
+
+const url="https://api.kalender.digital/public/event";
+const proxy="https://corsproxy.io/?"+encodeURIComponent(url);
+
+log("Buche Termin...");
+
+const r=await fetch(proxy,{
+method:"POST",
+headers:{
+"Content-Type":"application/json",
+"X-API-KEY":kKey
+},
+body:JSON.stringify(payload)
+});
+
+if(!r.ok) throw new Error("Buchung fehlgeschlagen");
+
+closeModal();
+alert("Gebucht.");
+run();
+
+}catch(e){
+alert("Fehler.");
+}
 }
 
 async function deleteEvent(id){
-    if(!confirm("Löschen?"))return;
-    try{
-        await fetch("https://corsproxy.io/?"+encodeURIComponent(`https://api.kalender.digital/public/event/${id}`),{method:"DELETE",headers:{"X-API-KEY":localStorage.getItem("kKey")}});
-        run();
-    }catch(e){alert("❌ Fehler beim Löschen");}
+if(!confirm("Termin löschen?")) return;
+
+const kKey=localStorage.getItem("kKey");
+
+const url=`https://api.kalender.digital/public/event/${id}`;
+const proxy="https://corsproxy.io/?"+encodeURIComponent(url);
+
+await fetch(proxy,{
+method:"DELETE",
+headers:{"X-API-KEY":kKey}
+});
+
+run();
 }
 </script>
+
 </body>
 </html>
