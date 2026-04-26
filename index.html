@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Springer-Dispo 16.3 FINAL</title>
+<title>Springer-Dispo 16.3 FINAL - Popup</title>
 
 <style>
 :root{
@@ -56,7 +56,7 @@ font-size:.9rem;
 font-weight:700;
 }
 
-input,select{
+input,select,textarea{
 width:100%;
 padding:12px 14px;
 border:1px solid var(--line);
@@ -119,6 +119,53 @@ padding:8px 12px;
 background:#fff;
 color:var(--red);
 border:1px solid #fecaca;
+}
+
+/* POPUP / MODAL STYLES */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background: white;
+    padding: 30px;
+    border-radius: 20px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+}
+
+.modal-header {
+    border-bottom: 2px solid var(--bg);
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+}
+
+.modal-footer {
+    margin-top: 25px;
+    display: flex;
+    gap: 10px;
+}
+
+.cancel-btn {
+    flex: 1;
+    padding: 12px;
+    background: #e5e7eb;
+    color: #374151;
+}
+
+.confirm-btn {
+    flex: 2;
+    padding: 12px;
+    background: var(--blue);
+    color: white;
 }
 
 .log{
@@ -220,9 +267,6 @@ small{color:var(--muted)}
 </div>
 </div>
 
-<label>Beschreibung / Tour</label>
-<input id="desc" placeholder="z.B. Tour 27 / Hinfahrt">
-
 <button class="main-btn" onclick="run()">Verfügbarkeit & Ranking prüfen</button>
 <button class="setup-btn" onclick="setup()">⚙️ Setup (Keys / IDs)</button>
 
@@ -230,6 +274,31 @@ small{color:var(--muted)}
 </div>
 
 <div id="results"></div>
+
+<div id="bookingModal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 style="margin:0; color:var(--blue)">Termin bestätigen</h3>
+        </div>
+        
+        <label>Fahrername</label>
+        <input type="text" id="popDriver" readonly style="background:#f3f4f6">
+
+        <label>Zeitraum</label>
+        <div id="popDateText" style="font-size:0.9rem; font-weight:bold; margin-bottom:10px;"></div>
+
+        <label>Schule</label>
+        <input type="text" id="popSchool" readonly style="background:#f3f4f6">
+
+        <label>Beschreibung (Tour / Notiz)</label>
+        <textarea id="popDesc" rows="3" placeholder="z.B. Tour 27 / Hinfahrt"></textarea>
+
+        <div class="modal-footer">
+            <button class="cancel-btn" onclick="closeModal()">Abbrechen</button>
+            <button class="confirm-btn" onclick="confirmBooking()">Termin buchen</button>
+        </div>
+    </div>
+</div>
 
 <script>
 const drivers=[
@@ -254,6 +323,7 @@ const drivers=[
 ];
 
 let loadedEvents=[];
+let currentDriverForBooking = "";
 
 function setup(){
 localStorage.setItem("kKey",prompt("Kalender.digital API-Key:",localStorage.getItem("kKey")||""));
@@ -321,7 +391,7 @@ return all;
 }
 
 function isBusy(name,events){
-const search=name.toLowerCase();
+const search=name.toLowerCase().trim();
 const last=search.split(" ").pop();
 for(const ev of events){
 let txt="";
@@ -369,7 +439,7 @@ ${d.busy
 ? `<span class="state busy">BESETZT</span><br><small>${d.reason}</small><br>
 <button class="del-btn" onclick="deleteEvent('${d.eventId}','${safe(d.name)}')">🗑️ Termin löschen</button>`
 : `<span class="state free">FREI</span><br>
-<button class="book-btn" onclick="book('${safe(d.name)}')">BUCHEN</button>`
+<button class="book-btn" onclick="openBookingModal('${safe(d.name)}')">BUCHEN</button>`
 }
 </div>
 <div><strong>${d.distText}</strong></div>
@@ -379,8 +449,37 @@ ${d.busy
 
 function safe(t){return t.replace(/'/g,"\\'");}
 
-/* ===== ECHTE BUCHUNGSFUNKTION ===== */
-async function book(driver){
+/* ===== POPUP LOGIK ===== */
+function openBookingModal(driverName) {
+    currentDriverForBooking = driverName;
+    document.getElementById('popDriver').value = driverName;
+    document.getElementById('popSchool').value = schoolSelect.selectedOptions[0].text;
+    
+    let dateStr = "Vom " + dateFrom.value + " bis " + dateTo.value;
+    if(!wholeDay.checked) {
+        dateStr += " (" + startTime.value + " - " + endTime.value + " Uhr)";
+    } else {
+        dateStr += " (Ganztägig)";
+    }
+    document.getElementById('popDateText').innerText = dateStr;
+    document.getElementById('popDesc').value = ""; // Reset Beschreibung
+    
+    document.getElementById('bookingModal').style.display = 'flex';
+}
+
+function closeModal() {
+    document.getElementById('bookingModal').style.display = 'none';
+}
+
+async function confirmBooking() {
+    const driver = currentDriverForBooking;
+    const customDesc = document.getElementById('popDesc').value || "Keine Beschreibung";
+    closeModal();
+    executeBooking(driver, customDesc);
+}
+
+/* ===== ECHTE BUCHUNGSFUNKTION (Kern unverändert) ===== */
+async function executeBooking(driver, descFromPopup){
 try{
 const kKey=localStorage.getItem("kKey");
 const from=dateFrom.value;
@@ -389,20 +488,19 @@ const whole=wholeDay.checked;
 const start=startTime.value;
 const end=endTime.value;
 const title=schoolSelect.selectedOptions[0].text;
-const desc=document.getElementById("desc").value||"Automatisch gebucht";
 
 const payload={
 startDate:whole?`${from} 00:00:00`:`${from} ${start}:00`,
 endDate:whole?`${to} 23:59:59`:`${to} ${end}:00`,
 timeZone:"Europe/Berlin",
 title:title,
-description:desc,
+description:descFromPopup,
 wholeDay:whole,
 subCalendars:[driver],
 links:[]
 };
 
-log("📝 Buche Termin...");
+log("📝 Buche Termin für " + driver + "...");
 
 const url="https://api.kalender.digital/public/event";
 const proxy="https://corsproxy.io/?"+encodeURIComponent(url);
