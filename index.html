@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Springer-Dispo Pro v16</title>
+<title>Springer-Dispo Pro v17</title>
 
 <style>
 :root{
@@ -215,7 +215,7 @@ small{color:var(--muted)}
 <body>
 
 <div class="card">
-<h2>Springer-Dispo Pro v16</h2>
+<h2>Springer-Dispo Pro v17</h2>
 
 <label>Einrichtung / Ziel</label>
 <select id="schoolSelect" onchange="document.getElementById('destPlz').value=this.value">
@@ -319,6 +319,7 @@ small{color:var(--muted)}
 </div>
 
 <script>
+// Fahrerliste
 const drivers=[
 {name:"Aschenbach André",plz:"30989"},
 {name:"Ohm Lars",plz:"30559"},
@@ -466,35 +467,60 @@ async function confirmBooking() {
 }
 
 async function executeBooking(driver, desc){
-try{
-const kKey=localStorage.getItem("kKey");
-const from=document.getElementById("dateFrom").value;
-const to=document.getElementById("dateTo").value;
-const whole=document.getElementById("wholeDay").checked;
-const schoolText = document.getElementById('schoolSelect').selectedOptions[0].text;
-const payload={
-    startDate:whole?`${from} 00:00:00`:`${from} ${document.getElementById("startTime").value}:00`,
-    endDate:whole?`${to} 23:59:59`:`${to} ${document.getElementById("endTime").value}:00`,
-    timeZone:"Europe/Berlin",
-    title:schoolText,
-    description:desc,
-    wholeDay:whole,
-    subCalendars:[driver]
-};
-log("📝 Buche...");
-const r=await fetch("https://corsproxy.io/?"+encodeURIComponent("https://api.kalender.digital/public/event"),{
-    method:"POST",
-    headers:{"Content-Type":"application/json","X-API-KEY":kKey},
-    body:JSON.stringify(payload)
-});
-if(!r.ok) throw new Error();
-alert("✅ Gebucht");
-run();
-}catch(e){alert("❌ Fehler bei Buchung");}
+    try {
+        const kKey = localStorage.getItem("kKey");
+        const from = document.getElementById("dateFrom").value;
+        const to = document.getElementById("dateTo").value;
+        const whole = document.getElementById("wholeDay").checked;
+        const schoolText = document.getElementById('schoolSelect').selectedOptions[0].text;
+
+        const payload = {
+            startDate: whole ? `${from} 00:00:00` : `${from} ${document.getElementById("startTime").value}:00`,
+            endDate: whole ? `${to} 23:59:59` : `${to} ${document.getElementById("endTime").value}:00`,
+            timeZone: "Europe/Berlin",
+            title: schoolText,
+            description: desc,
+            wholeDay: whole,
+            subCalendars: [driver]
+        };
+
+        log("📝 Buchungsversuch für: " + driver);
+
+        const apiUrl = "https://api.kalender.digital/public/event";
+        const proxyUrl = "https://corsproxy.io/?" + encodeURIComponent(apiUrl);
+
+        const r = await fetch(proxyUrl, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-API-KEY": kKey
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const responseData = await r.json();
+
+        if (!r.ok) {
+            let errorMsg = responseData.message || "Unbekannter Fehler";
+            // Prüfen, ob der Kalender den Unterkalender nicht kennt
+            if (responseData.errors && responseData.errors.subCalendars) {
+                errorMsg = "Der Unterkalender '" + driver + "' wurde im System nicht gefunden!";
+            }
+            console.error("API Fehler Details:", responseData);
+            alert("❌ Kalender-Fehler für " + driver + ":\n\n" + errorMsg + "\n\nStelle sicher, dass der Name im Kalender exakt so geschrieben wird!");
+            return;
+        }
+
+        alert("✅ Erfolgreich gebucht für " + driver);
+        run();
+    } catch (e) {
+        alert("❌ Technischer Fehler beim Senden. Bitte Internetverbindung prüfen.");
+        console.error(e);
+    }
 }
 
 async function deleteEvent(id,name){
-if(!confirm("Löschen?")) return;
+if(!confirm("Wirklich löschen?")) return;
 try{
 const r=await fetch("https://corsproxy.io/?"+encodeURIComponent(`https://api.kalender.digital/public/event/${id}`),{
     method:"DELETE",
