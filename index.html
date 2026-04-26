@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Springer-Dispo Pro v30 - MASTER</title>
+<title>Springer-Dispo Pro v34 - Hybrid ID/Name</title>
 <style>
 :root{--blue:#2563eb;--green:#16a34a;--red:#dc2626;--bg:#eef2f7;}
 *{box-sizing:border-box}
@@ -18,11 +18,11 @@ input,select,textarea{width:100%;padding:12px;border:1px solid #e5e7eb;border-ra
 button{border:none;border-radius:10px;cursor:pointer;font-weight:700;}
 .main-btn{width:100%;padding:15px;background:var(--blue);color:#fff;font-size:1.1rem;margin-top:10px;}
 #results{max-width:900px;margin:20px auto;}
-.driver{background:#fff;padding:15px;border-radius:12px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 4px 10px rgba(0,0,0,0.05);border-left:5px solid #ccc;}
+.driver{background:#fff;padding:15px;border-radius:12px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 4px 10px rgba(0,0,0,0.05);border-left:10px solid #ccc;}
 .free{border-left-color:var(--green);}
-.busy{border-left-color:var(--red);}
+.busy{border-left-color:var(--red);background:#fff1f2;}
 .book-btn{padding:10px 20px;background:var(--green);color:#fff;}
-.del-btn{padding:8px 12px;background:#fff;color:var(--red);border:1px solid #fecaca;font-size:0.8rem;}
+.del-btn{padding:8px 12px;background:#fff;color:var(--red);border:1px solid #fecaca;font-size:0.8rem;margin-top:5px;}
 .modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:2000;justify-content:center;align-items:center;backdrop-filter:blur(4px);}
 .modal-content{background:#fff;padding:25px;border-radius:20px;width:95%;max-width:450px;}
 .log{margin-top:15px;background:#1e293b;color:#4ade80;padding:12px;border-radius:10px;font-family:monospace;font-size:0.8rem;min-height:50px;white-space:pre-wrap;}
@@ -31,7 +31,7 @@ button{border:none;border-radius:10px;cursor:pointer;font-weight:700;}
 <body>
 
 <div class="card">
-    <h2>Springer-Dispo Pro v30</h2>
+    <h2>Springer-Dispo Pro v34</h2>
     
     <label>Einrichtung / Ziel auswählen</label>
     <select id="schoolSelect" onchange="document.getElementById('destPlz').value=this.value">
@@ -63,12 +63,12 @@ button{border:none;border-radius:10px;cursor:pointer;font-weight:700;}
     </div>
 
     <div class="row" id="timeBox" style="display:none">
-        <div><label>Startzeit</label><input type="time" id="startTime" value="07:00"></div>
-        <div><label>Endzeit</label><input type="time" id="endTime" value="13:00"></div>
+        <div><label>Start</label><input type="time" id="startTime" value="07:00"></div>
+        <div><label>Ende</label><input type="time" id="endTime" value="13:00"></div>
     </div>
 
-    <button class="main-btn" onclick="run()">Verfügbarkeit & Ranking prüfen</button>
-    <button onclick="setup()" style="width:100%;background:none;color:gray;font-size:0.7rem;margin-top:10px;">Setup / API Keys</button>
+    <button class="main-btn" onclick="run()">Verfügbarkeit prüfen</button>
+    <button onclick="setup()" style="width:100%;background:none;color:gray;font-size:0.7rem;margin-top:10px;">Setup</button>
     <div id="log" class="log">Bereit.</div>
 </div>
 
@@ -79,25 +79,22 @@ button{border:none;border-radius:10px;cursor:pointer;font-weight:700;}
         <h3>Termin eintragen</h3>
         <label>Fahrer</label>
         <input type="text" id="popDriver" readonly style="background:#f3f4f6">
+        <input type="hidden" id="popId">
         <div class="row">
             <div>
                 <label>Wer meldet?</label>
                 <select id="nameSelect" onchange="updatePopDesc()">
                     <option value="">-- Melder --</option>
-                    <option value="Angela">Angela</option><option value="Anja">Anja</option>
-                    <option value="Beate">Beate</option><option value="Bettina">Bettina</option>
-                    <option value="Birgit">Birgit</option><option value="Christiane">Christiane</option>
-                    <option value="Daniela">Daniela</option><option value="Frank">Frank</option>
-                    <option value="Gerhard">Gerhard</option><option value="Heike">Heike</option>
-                    <option value="Jürgen">Jürgen</option><option value="Karin">Karin</option>
-                    <option value="Katja">Katja</option><option value="Kerstin">Kerstin</option>
-                    <option value="Klaus">Klaus</option><option value="Manuela">Manuela</option>
-                    <option value="Marion">Marion</option><option value="Michael">Michael</option>
-                    <option value="Moni">Moni</option><option value="Nicole">Nicole</option>
-                    <option value="Nina">Nina</option><option value="Petra">Petra</option>
-                    <option value="Ralf">Ralf</option><option value="Sabine">Sabine</option>
-                    <option value="Silke">Silke</option><option value="Steffi">Steffi</option>
-                    <option value="Susanne">Susanne</option><option value="Ute">Ute</option>
+                    <option value="Angela">Angela</option><option value="Anja">Anja</option><option value="Beate">Beate</option>
+                    <option value="Bettina">Bettina</option><option value="Birgit">Birgit</option><option value="Christiane">Christiane</option>
+                    <option value="Daniela">Daniela</option><option value="Frank">Frank</option><option value="Gerhard">Gerhard</option>
+                    <option value="Heike">Heike</option><option value="Jürgen">Jürgen</option><option value="Karin">Karin</option>
+                    <option value="Katja">Katja</option><option value="Kerstin">Kerstin</option><option value="Klaus">Klaus</option>
+                    <option value="Manuela">Manuela</option><option value="Marion">Marion</option><option value="Michael">Michael</option>
+                    <option value="Moni">Moni</option><option value="Nicole">Nicole</option><option value="Nina">Nina</option>
+                    <option value="Petra">Petra</option><option value="Ralf">Ralf</option><option value="Sabine">Sabine</option>
+                    <option value="Silke">Silke</option><option value="Steffi">Steffi</option><option value="Susanne">Susanne</option>
+                    <option value="Ute">Ute</option>
                 </select>
             </div>
             <div>
@@ -115,18 +112,20 @@ button{border:none;border-radius:10px;cursor:pointer;font-weight:700;}
 </div>
 
 <script>
+// HYBRID-LISTE: Wer keine ID hat, wird über den Namen gesucht/gebucht.
 const drivers=[
     {name:"Aschenbach André", plz:"30989"},{name:"Ohm Lars", plz:"30559"},{name:"Bachmeier Reinhard", plz:"30659"},
     {name:"Isfahan Mozaffaey Hamid", plz:"30519"},{name:"Otto Alexander", plz:"30173"},{name:"Türkel Tuncer", plz:"30161"},
     {name:"Schrader Harald", plz:"30880"},{name:"Neubauer Michael", plz:"30853"},{name:"Ferkau Eckart", plz:"30851"},
-    {name:"Bethmann Ekkehard", plz:"31535"},{name:"Hauer Frank", plz:"30900"},{name:"Häge Klaus Dieter", plz:"30519"},
+    {name:"Bethmann Ekkehard", plz:"31535"},{name:"Hauer Frank", plz:"30900"},
+    // BEISPIEL FÜR KLAUS DIETER MIT ID-BACKUP:
+    {name:"Häge Klaus Dieter", plz:"30519", id:"b4de17043c70e4f16790"}, 
     {name:"Grimpe Dirk", plz:"30827"},{name:"Moser Siegfried", plz:"30827"},{name:"Von Treskow Albrecht", plz:"30659"},
     {name:"Beka Jonel", plz:"31275"},{name:"Giuseppe Caruso", plz:"30880"},{name:"Popescu Viorel", plz:"30827"},
     {name:"Bodewell Thomas", plz:"30853"}
 ];
 
 let loadedEvents=[];
-let currentDriverForBooking = "";
 
 window.onload=()=>{
     const ts=document.getElementById('tourSelect');
@@ -152,7 +151,7 @@ async function run(){
         await loadGoogle(gKey);
         const matrix=await getDistances(document.getElementById("destPlz").value);
         let ranking=drivers.map((d,i)=>{
-            const hit=isBusy(d.name,loadedEvents);
+            const hit=isBusy(d,loadedEvents);
             return {...d,busy:hit.busy,reason:hit.reason,eventId:hit.eventId,distText:matrix.rows[i].elements[0].distance.text,distVal:matrix.rows[i].elements[0].distance.value};
         });
         ranking.sort((a,b)=>(a.busy-b.busy)||(a.distVal-a.distVal));
@@ -171,14 +170,21 @@ async function loadEvents(from,to,kIds,kKey){
     return all;
 }
 
-function isBusy(name,events){
-    const s=name.toLowerCase().trim();
-    const l=s.split(" ").pop();
+function isBusy(driver,events){
+    const s = driver.name.toLowerCase().trim();
+    const lastName = s.split(" ")[0];
+    const fixedId = driver.id ? driver.id.toLowerCase() : null;
+
     for(const ev of events){
-        let t=(ev.title||"")+" "+(ev.description||"")+" "+(ev.subCalendars?ev.subCalendars.join(" "):"");
-        if(t.toLowerCase().includes(s)||t.toLowerCase().includes(l))return{busy:true,reason:ev.title,eventId:ev.id};
+        let t = (ev.title||"") + " " + (ev.description||"") + " " + (ev.subCalendars?ev.subCalendars.join(" "):"");
+        t = t.toLowerCase();
+        
+        // Prüfe ID (falls vorhanden) ODER Name
+        if((fixedId && t.includes(fixedId)) || t.includes(s) || t.includes(lastName)){
+            return {busy:true, reason:ev.title, eventId:ev.id};
+        }
     }
-    return{busy:false};
+    return {busy:false};
 }
 
 function loadGoogle(key){return new Promise(resolve=>{if(typeof google!=="undefined")return resolve();const s=document.createElement("script");s.src=`https://maps.googleapis.com/maps/api/js?key=${key}`;s.onload=resolve;document.head.appendChild(s);});}
@@ -188,16 +194,16 @@ function render(list){
     document.getElementById("results").innerHTML=list.map(d=>`
     <div class="driver ${d.busy?'busy':'free'}">
         <div>
-            <strong>${d.name}</strong><br><small>${d.distText}</small><br>
-            ${d.busy?`<span style="color:var(--red);font-weight:bold;">BESETZT</span><br><button class="del-btn" onclick="deleteEvent('${d.eventId}')">Löschen</button>`:`<button class="book-btn" onclick="openBookingModal('${d.name.replace(/'/g,"\\'")}')">BUCHEN</button>`}
+            <strong>${d.name}</strong><br>
+            ${d.busy?`<span style="color:var(--red);font-weight:bold;">⚠️ BESETZT: ${d.reason}</span><br><button class="del-btn" onclick="deleteEvent('${d.eventId}')">Termin löschen</button>`:`<button class="book-btn" onclick="openBookingModal('${d.name.replace(/'/g,"\\'")}', '${d.id||""}')">BUCHEN</button>`}
         </div>
-        <div><strong>${d.distText}</strong></div>
+        <div style="text-align:right"><strong>${d.distText}</strong><br><small>Entfernung</small></div>
     </div>`).join("");
 }
 
-function openBookingModal(name){
-    currentDriverForBooking=name.trim();
-    document.getElementById('popDriver').value=currentDriverForBooking;
+function openBookingModal(name, id){
+    document.getElementById('popDriver').value=name;
+    document.getElementById('popId').value=id; // Kann leer sein
     document.getElementById('bookingModal').style.display='flex';
 }
 function closeModal(){document.getElementById('bookingModal').style.display='none';}
@@ -208,8 +214,9 @@ function updatePopDesc(){
 }
 
 async function confirmBooking(){
-    const driver=currentDriverForBooking;
-    const desc=document.getElementById('popDesc').value;
+    const driverName = document.getElementById('popDriver').value;
+    const driverId = document.getElementById('popId').value;
+    const desc = document.getElementById('popDesc').value;
     closeModal();
     try{
         const kKey=localStorage.getItem("kKey");
@@ -225,22 +232,18 @@ async function confirmBooking(){
             title:school,
             description:desc,
             wholeDay:whole,
-            subCalendars:[driver]
+            subCalendars:[driverId ? driverId : driverName] // Nutzt ID wenn da, sonst Name
         };
 
-        log("⏳ Sende Buchung für " + driver + "...");
+        log("⏳ Buche...");
         const r=await fetch("https://corsproxy.io/?"+encodeURIComponent("https://api.kalender.digital/public/event"),{
             method:"POST",
             headers:{"Content-Type":"application/json","X-API-KEY":kKey},
             body:JSON.stringify(payload)
         });
         
-        if(!r.ok){
-            const resData = await r.json();
-            throw new Error(resData.message || "Fehler am Kalender-Server");
-        }
-        
-        alert("✅ Erfolgreich eingetragen!");
+        if(!r.ok) throw new Error("Fehler beim Speichern.");
+        alert("✅ Eingetragen!");
         run();
     }catch(e){
         alert("❌ Fehler: " + e.message);
@@ -249,7 +252,7 @@ async function confirmBooking(){
 }
 
 async function deleteEvent(id){
-    if(!confirm("Diesen Termin wirklich löschen?"))return;
+    if(!confirm("Löschen?"))return;
     try{
         await fetch("https://corsproxy.io/?"+encodeURIComponent(`https://api.kalender.digital/public/event/${id}`),{method:"DELETE",headers:{"X-API-KEY":localStorage.getItem("kKey")}});
         run();
