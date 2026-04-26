@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Springer-Dispo Pro v21</title>
+<title>Springer-Dispo Pro v23</title>
 <style>
 :root{--blue:#2563eb;--green:#16a34a;--red:#dc2626;--bg:#eef2f7;}
 *{box-sizing:border-box}
@@ -31,9 +31,9 @@ button{border:none;border-radius:10px;cursor:pointer;font-weight:700;}
 <body>
 
 <div class="card">
-    <h2>Springer-Dispo Pro v21</h2>
+    <h2>Springer-Dispo Pro v23</h2>
     
-    <label>Einrichtung / Ziel (Beispielliste)</label>
+    <label>Einrichtung / Ziel</label>
     <select id="schoolSelect" onchange="document.getElementById('destPlz').value=this.value">
         <option value="30655">Albert-Liebmann-Schule (30655)</option>
         <option value="30165">Lebenshilfe Büttnerstraße (30165)</option>
@@ -105,14 +105,15 @@ button{border:none;border-radius:10px;cursor:pointer;font-weight:700;}
 </div>
 
 <script>
-// EXAKTE NAMEN AUS DEINER LISTE
 const drivers=[
 {name:"Aschenbach André",plz:"30989"},{name:"Ohm Lars",plz:"30559"},{name:"Bachmeier Reinhard",plz:"30659"},
 {name:"Isfahan Mozaffaey Hamid",plz:"30519"},{name:"Otto Alexander",plz:"30173"},{name:"Türkel Tuncer",plz:"30161"},
 {name:"Schrader Harald",plz:"30880"},{name:"Neubauer Michael",plz:"30853"},{name:"Ferkau Eckart",plz:"30851"},
-{name:"Bethmann Ekkehard",plz:"31535"},{name:"Hauer Frank",plz:"30900"},{name:"Häge Klaus Dieter",plz:"30519"},
+{name:"Bethmann Ekkehard",plz:"31535"},{name:"Hauer Frank",plz:"30900"},
+{name:"Häge Klaus-Dieter",plz:"30519"}, // Bindestrich ergänzt
 {name:"Grimpe Dirk",plz:"30827"},{name:"Moser Siegfried",plz:"30827"},{name:"Von Treskow Albrecht",plz:"30659"},
-{name:"Beka Jonel",plz:"31275"},{name:"Giuseppe Caruso",plz:"30880"},{name:"Popescu Viorel ",plz:"30827"},
+{name:"Beka Jonel",plz:"31275"},{name:"Giuseppe Caruso",plz:"30880"},
+{name:"Popescu Viorel-Florinel",plz:"30827"}, // Exakter Name mit Bindestrich
 {name:"Bodewell Thomas",plz:"30853"}
 ];
 
@@ -138,7 +139,7 @@ async function run(){
     try{
         const kKey=localStorage.getItem("kKey"),kIds=localStorage.getItem("kIds"),gKey=localStorage.getItem("gKey");
         if(!kKey||!kIds||!gKey)return alert("Setup fehlt!");
-        log("📅 Lade Daten...");
+        log("📅 Lade Kalender-Daten...");
         loadedEvents=await loadEvents(document.getElementById("dateFrom").value,document.getElementById("dateTo").value,kIds,kKey);
         await loadGoogle(gKey);
         const matrix=await getDistances(document.getElementById("destPlz").value);
@@ -148,7 +149,7 @@ async function run(){
         });
         ranking.sort((a,b)=>(a.busy-b.busy)||(a.distVal-a.distVal));
         render(ranking);
-        log("✅ Analyse fertig.");
+        log("✅ Analyse abgeschlossen.");
     }catch(e){log("❌ "+e.message);}
 }
 
@@ -163,9 +164,11 @@ async function loadEvents(from,to,kIds,kKey){
 }
 
 function isBusy(name,events){
-    const s=name.toLowerCase().trim(),l=s.split(" ").pop().toLowerCase();
+    // Wir suchen bei der Verfügbarkeit nach Teilen des Namens, falls Bindestriche das Problem sind
+    const s=name.toLowerCase().replace("-"," ").trim();
+    const l=s.split(" ").pop();
     for(const ev of events){
-        let t=(ev.title||"")+" "+(ev.description||"")+" "+(ev.who||"")+" "+(ev.subCalendars?ev.subCalendars.join(" "):"");
+        let t=(ev.title||"")+" "+(ev.description||"")+" "+(ev.subCalendars?ev.subCalendars.join(" "):"");
         if(t.toLowerCase().includes(s)||t.toLowerCase().includes(l))return{busy:true,reason:ev.title,eventId:ev.id};
     }
     return{busy:false};
@@ -179,7 +182,7 @@ function render(list){
     <div class="driver ${d.busy?'busy':'free'}">
         <div>
             <strong>${d.name}</strong><br><small>${d.distText}</small><br>
-            ${d.busy?`<span style="color:var(--red);font-weight:bold;">BESETZT</span><br><button class="del-btn" onclick="deleteEvent('${d.eventId}')">Löschen</button>`:`<button class="book-btn" onclick="openBookingModal('${d.name.replace(/'/g,"\\'")}')">BUCHEN</button>`}
+            ${d.busy?`<span style="color:var(--red);font-weight:bold;">BESETZT</span><br><button class="del-btn" onclick="deleteEvent('${d.eventId}')">Termin löschen</button>`:`<button class="book-btn" onclick="openBookingModal('${d.name.replace(/'/g,"\\'")}')">BUCHEN</button>`}
         </div>
         <div><strong>${d.distText}</strong></div>
     </div>`).join("");
@@ -215,10 +218,10 @@ async function confirmBooking(){
             title:school,
             description:desc,
             wholeDay:whole,
-            subCalendars:[driver] // Keine Änderung am Namen, exakt wie in Liste
+            subCalendars:[driver]
         };
 
-        log("⏳ Sende Buchung für " + driver);
+        log("⏳ Buchung läuft...");
         const r=await fetch("https://corsproxy.io/?"+encodeURIComponent("https://api.kalender.digital/public/event"),{
             method:"POST",
             headers:{"Content-Type":"application/json","X-API-KEY":kKey},
@@ -227,23 +230,23 @@ async function confirmBooking(){
         
         if(!r.ok){
             const errData = await r.json();
-            throw new Error(errData.message || "Kalender-Server verweigert Zugriff.");
+            throw new Error(errData.message || "Der Kalender akzeptiert diesen Namen nicht.");
         }
         
-        alert("✅ Erfolgreich gebucht für " + driver);
+        alert("✅ Erfolgreich gebucht!");
         run();
     }catch(e){
-        alert("❌ Fehler bei " + driver + ":\n" + e.message);
+        alert("❌ Fehler: " + e.message + "\nBitte prüfen, ob der Name '" + driver + "' exakt so im Kalender steht.");
         log("Bereit.");
     }
 }
 
 async function deleteEvent(id){
-    if(!confirm("Löschen?"))return;
+    if(!confirm("Wirklich löschen?"))return;
     try{
         await fetch("https://corsproxy.io/?"+encodeURIComponent(`https://api.kalender.digital/public/event/${id}`),{method:"DELETE",headers:{"X-API-KEY":localStorage.getItem("kKey")}});
         run();
-    }catch(e){alert("❌ Fehler");}
+    }catch(e){alert("❌ Fehler beim Löschen");}
 }
 </script>
 </body>
