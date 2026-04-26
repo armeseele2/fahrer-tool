@@ -182,28 +182,9 @@ small{color:#666;}
 <select id="schoolSelect" onchange="document.getElementById('destPlz').value=this.value">
 <option value="30655">Albert-Liebmann-Schule (30655)</option>
 <option value="30165">Lebenshilfe Büttnerstraße (30165)</option>
-<option value="30900">Kindergarten Domino (30900)</option>
-<option value="30419">Kindergarten - Forst Mecklenheide (30419)</option>
-<option value="30880">Freie Martinschule (30880)</option>
-<option value="30851">Kindergarten Langenhagen (30851)</option>
-<option value="30629">Kindergarten Misburg (30629)</option>
-<option value="31535">Michael-Ende-Schule (31535)</option>
-<option value="31515">Paul-Moor-Schule (31515)</option>
-<option value="30938">Pestalozzi-Schule (30938)</option>
-<option value="31303">Grundschule Otze (31303)</option>
-<option value="31303">Schule am Wasserwerk (31303)</option>
-<option value="31319">Schule im Großen Freien (31319)</option>
-<option value="30900">Unter den Eichen/BOS (30900)</option>
-<option value="30179">Stötzner-Schule (30179)</option>
 <option value="30449">Wilhelm-Schade-Schule (30449)</option>
-<option value="30559">Bildungszentrum f. Taubblinde (30559)</option>
-<option value="30900">GS Bissendorf/ Brelingen (30900)</option>
-<option value="30855">Adolf-Reichwein-Schule (30855)</option>
-<option value="30982">Calenberger Schule (30982)</option>
-<option value="30938">Kindergarten Craney (30938)</option>
-<option value="30890">Bert-Brecht-Schule (30890)</option>
-<option value="30853">Gutzmann Schule (30853)</option>
-<option value="30926">Anne Frank Schule (30926)</option>
+<option value="30853">Pestalozzi-Schule (30853)</option>
+<option value="30880">Mecklenheide Forst (30880)</option>
 </select>
 
 <label>Ziel-PLZ</label>
@@ -249,6 +230,7 @@ small{color:#666;}
 <div id="results"></div>
 
 <script>
+// Die NEUE vollständige Liste aller 18 Fahrer
 const drivers = [
     {name:"Aschenbach André", plz:"30989"},
     {name:"Ohm Lars", plz:"30559"},
@@ -350,4 +332,123 @@ async function loadEvents(from,to,kIds,kKey){
     return all;
 }
 
-function isBusy(name
+function isBusy(name,events){
+    if (!events || events.length === 0) return { busy: false, reason: "", eventId: null };
+    const searchName = name.toLowerCase().trim();
+    const lastName = searchName.split(" ").pop();
+
+    for(const ev of events){
+        let txt="";
+        if(ev.title) txt+=" "+ev.title.toLowerCase();
+        if(ev.description) txt+=" "+ev.description.toLowerCase();
+        if(ev.who) txt+=" "+ev.who.toLowerCase();
+        if(Array.isArray(ev.subCalendars)) txt+=" "+ev.subCalendars.join(" ").toLowerCase();
+
+        if(txt.includes(searchName) || (lastName && txt.includes(lastName))){
+            return{ busy:true, reason:ev.title||"Belegt", eventId:ev.id };
+        }
+    }
+    return{ busy:false, reason:"", eventId: null };
+}
+
+function loadGoogle(key){
+    return new Promise(resolve=>{
+        if(typeof google!=="undefined") return resolve();
+        const s=document.createElement("script");
+        s.src=`https://maps.googleapis.com/maps/api/js?key=${key}`;
+        s.onload=resolve;
+        document.head.appendChild(s);
+    });
+}
+
+function getDistances(dest){
+    return new Promise((resolve,reject)=>{
+        new google.maps.DistanceMatrixService().getDistanceMatrix({
+            origins:drivers.map(d=>d.plz),
+            destinations:[dest],
+            travelMode:"DRIVING"
+        },(res,status)=>{
+            if(status!=="OK") return reject(new Error("Google Fehler"));
+            resolve(res);
+        });
+    });
+}
+
+function render(list){
+    document.getElementById("results").innerHTML=list.map(d=>`
+        <div class="driver ${d.busy?'busy':'free'}">
+            <div>
+                <strong>${d.name}</strong><br>
+                <small>${d.distText} entfernt</small><br>
+                ${d.busy
+                    ? `<span class="state busy">BESETZT</span><br><small>${d.reason}</small><br>
+                       <button class="del-btn" onclick="deleteEvent('${d.eventId}', '${safe(d.name)}')">🗑️ Termin löschen</button>`
+                    : `<span class="state free">FREI</span><br>
+                       <button class="book-btn" onclick="book('${safe(d.name)}')">BUCHEN</button>`
+                }
+            </div>
+            <div style="font-size:1.1rem;font-weight:bold;">
+                ${d.distText}
+            </div>
+        </div>
+    `).join("");
+}
+
+function safe(t){ return t.replace(/'/g,"\\'"); }
+
+async function book(driver){
+    try{
+        const kKey=localStorage.getItem("kKey");
+        const from=document.getElementById("dateFrom").value;
+        const to=document.getElementById("dateTo").value;
+        const whole=document.getElementById("wholeDay").checked;
+        const start=document.getElementById("startTime").value;
+        const end=document.getElementById("endTime").value;
+        const title=document.getElementById("schoolSelect").selectedOptions[0].text;
+        const desc=document.getElementById("desc").value || "Automatisch gebucht";
+
+        let payload={
+            startDate: whole ? `${from} 00:00:00` : `${from} ${start}:00`,
+            endDate: whole ? `${to} 23:59:59` : `${to} ${end}:00`,
+            timeZone:"Europe/Berlin",
+            title:title,
+            description:desc,
+            wholeDay:whole,
+            subCalendars:[driver],
+            links:[]
+        };
+
+        log("📝 Buche...");
+        const url="https://api.kalender.digital/public/event";
+        const proxy="https://corsproxy.io/?"+encodeURIComponent(url);
+        const r=await fetch(proxy,{
+            method:"POST",
+            headers:{"Content-Type":"application/json","X-API-KEY":kKey},
+            body:JSON.stringify(payload)
+        });
+        if(!r.ok) throw new Error("Buchung fehlgeschlagen");
+        alert("✅ Gebucht: "+driver);
+        run();
+    }catch(e){ console.error(e); alert("❌ "+e.message); }
+}
+
+async function deleteEvent(eventId, driverName) {
+    if(!eventId || eventId === "null") { alert("Fehler: Termin-ID nicht gefunden."); return; }
+    if(!confirm(`Soll der Termin für ${driverName} wirklich gelöscht werden?`)) return;
+    try {
+        const kKey = localStorage.getItem("kKey");
+        log("🗑️ Lösche Termin...");
+        const url = `https://api.kalender.digital/public/event/${eventId}`;
+        const proxy = "https://corsproxy.io/?" + encodeURIComponent(url);
+        const r = await fetch(proxy, {
+            method: "DELETE",
+            headers: { "X-API-KEY": kKey }
+        });
+        if (!r.ok) throw new Error("Löschen fehlgeschlagen");
+        alert("✅ Termin für " + driverName + " gelöscht.");
+        run();
+    } catch (e) { alert("❌ Fehler: " + e.message); }
+}
+</script>
+</body>
+</html>
