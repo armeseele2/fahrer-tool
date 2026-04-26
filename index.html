@@ -3,107 +3,83 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Springer-Dispo Pro v18</title>
-
+<title>Springer-Dispo Pro v21</title>
 <style>
-:root{
---blue:#2563eb; --blue2:#1d4ed8; --green:#16a34a; --green2:#15803d;
---red:#dc2626; --bg:#eef2f7; --card:#ffffff; --text:#111827;
---muted:#6b7280; --line:#e5e7eb;
-}
+:root{--blue:#2563eb;--green:#16a34a;--red:#dc2626;--bg:#eef2f7;}
 *{box-sizing:border-box}
-body{
-margin:0; padding:24px; font-family:Segoe UI,Arial,sans-serif;
-background: radial-gradient(circle at top left,#dbeafe 0%,transparent 35%), var(--bg);
-color:var(--text);
-}
-.card{
-max-width:920px; margin:auto; background:rgba(255,255,255,.95);
-padding:28px; border-radius:18px; box-shadow:0 20px 45px rgba(0,0,0,.08);
-}
-h2{ margin:0 0 20px; text-align:center; color:var(--blue); font-weight:800; }
-label{ display:block; margin:10px 0 6px; font-size:.9rem; font-weight:700; }
-input,select,textarea{ width:100%; padding:12px 14px; border:1px solid var(--line); border-radius:12px; outline:none; }
-.row{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-.pop-row { display: flex; gap: 10px; margin-bottom: 15px; }
-.pop-col { flex: 1; }
-.inline{ display:flex; align-items:center; gap:10px; margin-top:10px; padding:12px; border:1px solid var(--line); border-radius:12px; background:#f8fafc; }
-.inline input{width:auto}
-button{ border:none; border-radius:12px; cursor:pointer; font-weight:700; }
-.main-btn{ width:100%; padding:14px; margin-top:16px; color:#fff; background:linear-gradient(135deg,var(--blue),var(--blue2)); font-size:1.1rem; }
-.setup-btn{ width:100%; padding:10px; margin-top:10px; background:#eef2f7; color:var(--muted); }
-.book-btn{ margin-top:8px; padding:9px 14px; background:var(--green); color:#fff; }
-.del-btn{ margin-top:8px; padding:8px 12px; background:#fff; color:var(--red); border:1px solid #fecaca; }
-.modal-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.6); backdrop-filter:blur(6px); z-index:1000; justify-content:center; align-items:center; }
-.modal-content { background:white; padding:30px; border-radius:24px; width:90%; max-width:500px; }
-.modal-footer { margin-top:25px; display:flex; gap:12px; }
-.cancel-btn { flex:1; padding:14px; background:#f1f5f9; color:#475569; }
-.confirm-btn { flex:2; padding:14px; background:var(--blue); color:white; }
-.log{ margin-top:18px; background:#0f172a; color:#22c55e; padding:14px; border-radius:14px; font-family:monospace; min-height:60px; white-space:pre-wrap; }
-#results{ max-width:920px; margin:22px auto; }
-.driver{ background:#fff; padding:18px; border-radius:16px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 8px 20px rgba(0,0,0,.05); border-left:6px solid #ccc; }
-.free{border-left-color:var(--green)}
-.busy{border-left-color:var(--red)}
-.state{ display:inline-block; margin-top:8px; padding:6px 12px; border-radius:999px; font-size:.78rem; font-weight:800; color:#fff; }
-.state.free{background:var(--green)}
-.state.busy{background:var(--red)}
-@media(max-width:760px){ .row{grid-template-columns:1fr} .driver{flex-direction:column;align-items:flex-start} }
+body{margin:0;padding:20px;font-family:sans-serif;background:var(--bg);color:#111827;}
+.card{max-width:900px;margin:auto;background:#fff;padding:25px;border-radius:15px;box-shadow:0 10px 30px rgba(0,0,0,0.1);}
+h2{text-align:center;color:var(--blue);margin-top:0;}
+label{display:block;margin:10px 0 5px;font-weight:700;font-size:0.85rem;}
+input,select,textarea{width:100%;padding:12px;border:1px solid #e5e7eb;border-radius:10px;font-size:1rem;}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:15px;}
+.inline{display:flex;align-items:center;gap:10px;margin:15px 0;padding:10px;background:#f8fafc;border-radius:10px;}
+.inline input{width:auto;}
+button{border:none;border-radius:10px;cursor:pointer;font-weight:700;}
+.main-btn{width:100%;padding:15px;background:var(--blue);color:#fff;font-size:1.1rem;margin-top:10px;}
+#results{max-width:900px;margin:20px auto;}
+.driver{background:#fff;padding:15px;border-radius:12px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 4px 10px rgba(0,0,0,0.05);border-left:5px solid #ccc;}
+.free{border-left-color:var(--green);}
+.busy{border-left-color:var(--red);}
+.book-btn{padding:10px 20px;background:var(--green);color:#fff;}
+.del-btn{padding:8px 12px;background:#fff;color:var(--red);border:1px solid #fecaca;font-size:0.8rem;}
+.modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:2000;justify-content:center;align-items:center;backdrop-filter:blur(4px);}
+.modal-content{background:#fff;padding:25px;border-radius:20px;width:95%;max-width:450px;}
+.log{margin-top:15px;background:#1e293b;color:#4ade80;padding:12px;border-radius:10px;font-family:monospace;font-size:0.8rem;min-height:50px;white-space:pre-wrap;}
 </style>
 </head>
 <body>
 
 <div class="card">
-<h2>Springer-Dispo Pro v18</h2>
+    <h2>Springer-Dispo Pro v21</h2>
+    
+    <label>Einrichtung / Ziel (Beispielliste)</label>
+    <select id="schoolSelect" onchange="document.getElementById('destPlz').value=this.value">
+        <option value="30655">Albert-Liebmann-Schule (30655)</option>
+        <option value="30165">Lebenshilfe Büttnerstraße (30165)</option>
+        <option value="30449">Wilhelm-Schade-Schule (30449)</option>
+        <option value="30853">Pestalozzi-Schule (30853)</option>
+        <option value="30880">Mecklenheide Forst (30880)</option>
+        <option value="30539">Gutzmannschule (30539)</option>
+        <option value="30419">Schule auf dem Gebirge (30419)</option>
+        <option value="30629">Paul-Klee-Schule (30629)</option>
+        <option value="30171">Leinetalschulen (30171)</option>
+        <option value="30827">Schule am Storchennest (30827)</option>
+        <option value="30916">Erich-Kästner-Schule (30916)</option>
+    </select>
+    
+    <input type="hidden" id="destPlz" value="30655">
 
-<label>Einrichtung / Ziel</label>
-<select id="schoolSelect" onchange="document.getElementById('destPlz').value=this.value">
-    <option value="30655">Albert-Liebmann-Schule (30655)</option>
-    <option value="30165">Lebenshilfe Büttnerstraße (30165)</option>
-    <option value="30449">Wilhelm-Schade-Schule (30449)</option>
-    <option value="30853">Pestalozzi-Schule (30853)</option>
-    <option value="30880">Mecklenheide Forst (30880)</option>
-    <option value="30539">Gutzmannschule (30539)</option>
-    <option value="30419">Schule auf dem Gebirge (30419)</option>
-    <option value="30629">Paul-Klee-Schule (30629)</option>
-    <option value="30171">Leinetalschulen (30171)</option>
-    <option value="30827">Schule am Storchennest (30827)</option>
-    <option value="30916">Erich-Kästner-Schule (30916)</option>
-</select>
+    <div class="row">
+        <div><label>Von</label><input type="date" id="dateFrom" value="2026-04-24"></div>
+        <div><label>Bis</label><input type="date" id="dateTo" value="2026-04-24"></div>
+    </div>
 
-<label>Ziel-PLZ</label>
-<input id="destPlz" value="30655">
+    <div class="inline">
+        <input type="checkbox" id="wholeDay" checked onchange="toggleTime()">
+        <label for="wholeDay" style="margin:0">Ganztägig buchen</label>
+    </div>
 
-<div class="row">
-    <div><label>Von Datum</label><input type="date" id="dateFrom" value="2026-04-24"></div>
-    <div><label>Bis Datum</label><input type="date" id="dateTo" value="2026-04-24"></div>
-</div>
+    <div class="row" id="timeBox" style="display:none">
+        <div><label>Start</label><input type="time" id="startTime" value="07:00"></div>
+        <div><label>Ende</label><input type="time" id="endTime" value="13:00"></div>
+    </div>
 
-<div class="inline">
-    <input type="checkbox" id="wholeDay" checked onchange="toggleTime()">
-    <label for="wholeDay" style="margin:0">Ganztägig buchen</label>
-</div>
-
-<div class="row" id="timeBox" style="display:none">
-    <div><label>Startzeit</label><input type="time" id="startTime" value="07:00"></div>
-    <div><label>Endzeit</label><input type="time" id="endTime" value="13:00"></div>
-</div>
-
-<button class="main-btn" onclick="run()">Verfügbarkeit & Ranking prüfen</button>
-<button class="setup-btn" onclick="setup()">⚙️ Setup</button>
-<div id="log" class="log">Bereit.</div>
+    <button class="main-btn" onclick="run()">Verfügbarkeit & Ranking prüfen</button>
+    <button onclick="setup()" style="width:100%;background:none;color:gray;font-size:0.7rem;margin-top:10px;">Setup</button>
+    <div id="log" class="log">Bereit.</div>
 </div>
 
 <div id="results"></div>
 
 <div id="bookingModal" class="modal-overlay">
     <div class="modal-content">
-        <h3 style="color:var(--blue)">Termin bestätigen</h3>
+        <h3>Termin buchen</h3>
         <label>Fahrer</label>
-        <input type="text" id="popDriver" readonly style="background:#f8fafc">
-        <div id="popDateText" style="font-size:0.9rem; font-weight:700; margin-bottom:10px;"></div>
-        <div class="pop-row">
-            <div class="pop-col">
-                <label>Meldung von</label>
+        <input type="text" id="popDriver" readonly>
+        <div class="row">
+            <div>
+                <label>Wer meldet?</label>
                 <select id="nameSelect" onchange="updatePopDesc()">
                     <option value="">-- Name --</option>
                     <option value="Angela">Angela</option><option value="Anja">Anja</option><option value="Beate">Beate</option>
@@ -114,39 +90,38 @@ button{ border:none; border-radius:12px; cursor:pointer; font-weight:700; }
                     <option value="Nina">Nina</option><option value="Petra">Petra</option><option value="Ralf">Ralf</option><option value="Steffi">Steffi</option>
                 </select>
             </div>
-            <div class="pop-col">
+            <div>
                 <label>Tour</label>
                 <select id="tourSelect" onchange="updatePopDesc()"><option value="">-- Tour --</option></select>
             </div>
         </div>
-        <label>Notiz</label>
-        <textarea id="popDesc" rows="3"></textarea>
-        <div class="modal-footer">
-            <button class="cancel-btn" onclick="closeModal()">Abbrechen</button>
-            <button class="confirm-btn" onclick="confirmBooking()">Jetzt buchen</button>
+        <label>Beschreibung</label>
+        <textarea id="popDesc" rows="2"></textarea>
+        <div style="margin-top:20px;display:flex;gap:10px;">
+            <button onclick="closeModal()" style="background:#eee;flex:1;padding:12px;">Abbruch</button>
+            <button onclick="confirmBooking()" style="background:var(--blue);color:#fff;flex:2;padding:12px;">Eintragen</button>
         </div>
     </div>
 </div>
 
 <script>
+// EXAKTE NAMEN AUS DEINER LISTE
 const drivers=[
 {name:"Aschenbach André",plz:"30989"},{name:"Ohm Lars",plz:"30559"},{name:"Bachmeier Reinhard",plz:"30659"},
 {name:"Isfahan Mozaffaey Hamid",plz:"30519"},{name:"Otto Alexander",plz:"30173"},{name:"Türkel Tuncer",plz:"30161"},
 {name:"Schrader Harald",plz:"30880"},{name:"Neubauer Michael",plz:"30853"},{name:"Ferkau Eckart",plz:"30851"},
-{name:"Bethmann Ekkehard",plz:"31535"},{name:"Hauer Frank",plz:"30900"},{name:"Kruse Jens Roland",plz:"31275"},
-{name:"Grimpe Dirk",plz:"30827"},{name:"Häge Klaus Dieter",plz:"30519"},{name:"Von Treskow Albrecht",plz:"30659"},
-{name:"Caruso Guiseppe",plz:"30880"},{name:"Popescu Viorel",plz:"30827"},{name:"Beka Jonel",plz:"31275"}
+{name:"Bethmann Ekkehard",plz:"31535"},{name:"Hauer Frank",plz:"30900"},{name:"Häge Klaus Dieter",plz:"30519"},
+{name:"Grimpe Dirk",plz:"30827"},{name:"Moser Siegfried",plz:"30827"},{name:"Von Treskow Albrecht",plz:"30659"},
+{name:"Beka Jonel",plz:"31275"},{name:"Giuseppe Caruso",plz:"30880"},{name:"Popescu Viorel ",plz:"30827"},
+{name:"Bodewell Thomas",plz:"30853"}
 ];
 
 let loadedEvents=[];
 let currentDriverForBooking = "";
 
-window.onload = function() {
-    const ts = document.getElementById('tourSelect');
-    for(let i=1; i<=30; i++) {
-        let opt = document.createElement('option'); opt.value = "Tour " + i; opt.innerText = "Tour " + i;
-        ts.appendChild(opt);
-    }
+window.onload=()=>{
+    const ts=document.getElementById('tourSelect');
+    for(let i=1;i<=30;i++){let o=document.createElement('option');o.value="Tour "+i;o.innerText="Tour "+i;ts.appendChild(o);}
 };
 
 function setup(){
@@ -157,132 +132,117 @@ function setup(){
 }
 
 function log(t){document.getElementById("log").textContent=t;}
-function toggleTime(){ document.getElementById("timeBox").style.display=document.getElementById("wholeDay").checked?"none":"grid"; }
+function toggleTime(){document.getElementById("timeBox").style.display=document.getElementById("wholeDay").checked?"none":"grid";}
 
 async function run(){
     try{
-        const kKey=localStorage.getItem("kKey"), kIds=localStorage.getItem("kIds"), gKey=localStorage.getItem("gKey");
-        if(!kKey||!kIds||!gKey) return alert("Setup unvollständig.");
-        log("📅 Lade Termine...");
-        loadedEvents = await loadEvents(document.getElementById("dateFrom").value, document.getElementById("dateTo").value, kIds, kKey);
+        const kKey=localStorage.getItem("kKey"),kIds=localStorage.getItem("kIds"),gKey=localStorage.getItem("gKey");
+        if(!kKey||!kIds||!gKey)return alert("Setup fehlt!");
+        log("📅 Lade Daten...");
+        loadedEvents=await loadEvents(document.getElementById("dateFrom").value,document.getElementById("dateTo").value,kIds,kKey);
         await loadGoogle(gKey);
-        const matrix = await getDistances(document.getElementById("destPlz").value);
-        let ranking = drivers.map((d,i)=>{
-            const hit = isBusy(d.name, loadedEvents);
-            return {...d, busy:hit.busy, reason:hit.reason, eventId:hit.eventId, distText:matrix.rows[i].elements[0].distance.text, distVal:matrix.rows[i].elements[0].distance.value};
+        const matrix=await getDistances(document.getElementById("destPlz").value);
+        let ranking=drivers.map((d,i)=>{
+            const hit=isBusy(d.name,loadedEvents);
+            return {...d,busy:hit.busy,reason:hit.reason,eventId:hit.eventId,distText:matrix.rows[i].elements[0].distance.text,distVal:matrix.rows[i].elements[0].distance.value};
         });
-        ranking.sort((a,b)=>(a.busy-b.busy)||(a.distVal-b.distVal));
+        ranking.sort((a,b)=>(a.busy-b.busy)||(a.distVal-a.distVal));
         render(ranking);
         log("✅ Analyse fertig.");
-    }catch(e){log("❌ Fehler: "+e.message);}
+    }catch(e){log("❌ "+e.message);}
 }
 
 async function loadEvents(from,to,kIds,kKey){
     let all=[];
-    for(const raw of kIds.split(",")){
-        const url=`https://api.kalender.digital/public/event?calendarId=${encodeURIComponent(raw.trim())}&startDate=${from}&endDate=${to}T23:59:59&v=${Date.now()}`;
+    for(const id of kIds.split(",")){
+        const url=`https://api.kalender.digital/public/event?calendarId=${id.trim()}&startDate=${from}&endDate=${to}T23:59:59`;
         const r=await fetch("https://corsproxy.io/?"+encodeURIComponent(url),{headers:{"X-API-KEY":kKey}});
-        if(r.ok){ const data=await r.json(); all.push(...(data.events||data)); }
+        if(r.ok){const d=await r.json();all.push(...(d.events||d));}
     }
     return all;
 }
 
 function isBusy(name,events){
-    const s=name.toLowerCase().trim(), l=s.split(" ").pop();
+    const s=name.toLowerCase().trim(),l=s.split(" ").pop().toLowerCase();
     for(const ev of events){
         let t=(ev.title||"")+" "+(ev.description||"")+" "+(ev.who||"")+" "+(ev.subCalendars?ev.subCalendars.join(" "):"");
-        if(t.toLowerCase().includes(s)||t.toLowerCase().includes(l)) return{busy:true,reason:ev.title,eventId:ev.id};
+        if(t.toLowerCase().includes(s)||t.toLowerCase().includes(l))return{busy:true,reason:ev.title,eventId:ev.id};
     }
     return{busy:false};
 }
 
-function loadGoogle(key){ return new Promise(resolve=>{ if(typeof google!=="undefined") return resolve(); const s=document.createElement("script"); s.src=`https://maps.googleapis.com/maps/api/js?key=${key}`; s.onload=resolve; document.head.appendChild(s); }); }
-
-function getDistances(dest){ return new Promise((resolve,reject)=>{ new google.maps.DistanceMatrixService().getDistanceMatrix({origins:drivers.map(d=>d.plz),destinations:[dest],travelMode:"DRIVING"},(res,status)=>status!=="OK"?reject():resolve(res)); }); }
+function loadGoogle(key){return new Promise(resolve=>{if(typeof google!=="undefined")return resolve();const s=document.createElement("script");s.src=`https://maps.googleapis.com/maps/api/js?key=${key}`;s.onload=resolve;document.head.appendChild(s);});}
+function getDistances(dest){return new Promise((resolve,reject)=>{new google.maps.DistanceMatrixService().getDistanceMatrix({origins:drivers.map(d=>d.plz),destinations:[dest],travelMode:"DRIVING"},(res,status)=>status!=="OK"?reject():resolve(res));});}
 
 function render(list){
     document.getElementById("results").innerHTML=list.map(d=>`
     <div class="driver ${d.busy?'busy':'free'}">
         <div>
-            <strong>${d.name}</strong><br><small>${d.distText} von Ziel</small><br>
-            ${d.busy?`<span class="state busy">BESETZT</span><br><small>${d.reason}</small><br><button class="del-btn" onclick="deleteEvent('${d.eventId}','${safe(d.name)}')">Löschen</button>`:`<span class="state free">FREI</span><br><button class="book-btn" onclick="openBookingModal('${safe(d.name)}')">AUSWÄHLEN</button>`}
+            <strong>${d.name}</strong><br><small>${d.distText}</small><br>
+            ${d.busy?`<span style="color:var(--red);font-weight:bold;">BESETZT</span><br><button class="del-btn" onclick="deleteEvent('${d.eventId}')">Löschen</button>`:`<button class="book-btn" onclick="openBookingModal('${d.name.replace(/'/g,"\\'")}')">BUCHEN</button>`}
         </div>
         <div><strong>${d.distText}</strong></div>
     </div>`).join("");
 }
 
-function safe(t){return t.replace(/'/g,"\\'");}
-
-function openBookingModal(name) {
-    currentDriverForBooking = name;
-    document.getElementById('popDriver').value = name;
-    const dateFrom = document.getElementById('dateFrom').value;
-    const dateTo = document.getElementById('dateTo').value;
-    const wholeDay = document.getElementById('wholeDay').checked;
-    document.getElementById('popDateText').innerText = `${dateFrom} bis ${dateTo} ${wholeDay?'(Ganztägig)':''}`;
-    document.getElementById('nameSelect').value = "";
-    document.getElementById('tourSelect').value = "";
-    document.getElementById('popDesc').value = "";
-    document.getElementById('bookingModal').style.display = 'flex';
+function openBookingModal(name){
+    currentDriverForBooking=name;
+    document.getElementById('popDriver').value=name;
+    document.getElementById('bookingModal').style.display='flex';
+}
+function closeModal(){document.getElementById('bookingModal').style.display='none';}
+function updatePopDesc(){
+    const n=document.getElementById('nameSelect').value;
+    const t=document.getElementById('tourSelect').value;
+    document.getElementById('popDesc').value=(n?n+" meldet: ":"")+(t?t:"");
 }
 
-function closeModal(){ document.getElementById('bookingModal').style.display='none'; }
-
-function updatePopDesc() {
-    const n = document.getElementById('nameSelect').value;
-    const t = document.getElementById('tourSelect').value;
-    document.getElementById('popDesc').value = (n ? n + " meldet: " : "") + (t ? t : "");
-}
-
-async function confirmBooking() {
-    const driver = currentDriverForBooking;
-    const desc = document.getElementById('popDesc').value;
+async function confirmBooking(){
+    const driver=currentDriverForBooking;
+    const desc=document.getElementById('popDesc').value;
     closeModal();
-    
-    try {
-        const kKey = localStorage.getItem("kKey");
-        const from = document.getElementById("dateFrom").value;
-        const to = document.getElementById("dateTo").value;
-        const whole = document.getElementById("wholeDay").checked;
-        const school = document.getElementById('schoolSelect').selectedOptions[0].text;
+    try{
+        const kKey=localStorage.getItem("kKey");
+        const from=document.getElementById("dateFrom").value;
+        const to=document.getElementById("dateTo").value;
+        const whole=document.getElementById("wholeDay").checked;
+        const school=document.getElementById('schoolSelect').selectedOptions[0].text;
 
-        const payload = {
-            startDate: whole ? `${from} 00:00:00` : `${from} ${document.getElementById("startTime").value}:00`,
-            endDate: whole ? `${to} 23:59:59` : `${to} ${document.getElementById("endTime").value}:00`,
-            timeZone: "Europe/Berlin",
-            title: school,
-            description: desc,
-            wholeDay: whole,
-            subCalendars: [driver]
+        const payload={
+            startDate:whole?`${from} 00:00:00`:`${from} ${document.getElementById("startTime").value}:00`,
+            endDate:whole?`${to} 23:59:59`:`${to} ${document.getElementById("endTime").value}:00`,
+            timeZone:"Europe/Berlin",
+            title:school,
+            description:desc,
+            wholeDay:whole,
+            subCalendars:[driver] // Keine Änderung am Namen, exakt wie in Liste
         };
 
-        log("⏳ Buche " + driver + "...");
-        const proxyUrl = "https://corsproxy.io/?" + encodeURIComponent("https://api.kalender.digital/public/event");
-        const r = await fetch(proxyUrl, {
-            method: "POST",
-            headers: { "Content-Type": "application/json", "X-API-KEY": kKey },
-            body: JSON.stringify(payload)
+        log("⏳ Sende Buchung für " + driver);
+        const r=await fetch("https://corsproxy.io/?"+encodeURIComponent("https://api.kalender.digital/public/event"),{
+            method:"POST",
+            headers:{"Content-Type":"application/json","X-API-KEY":kKey},
+            body:JSON.stringify(payload)
         });
-
-        if (!r.ok) {
-            const err = await r.json();
-            throw new Error(err.message || "Kalender verweigert Buchung");
+        
+        if(!r.ok){
+            const errData = await r.json();
+            throw new Error(errData.message || "Kalender-Server verweigert Zugriff.");
         }
-        alert("✅ Gebucht!");
+        
+        alert("✅ Erfolgreich gebucht für " + driver);
         run();
-    } catch (e) {
-        alert("❌ Fehler: " + e.message);
+    }catch(e){
+        alert("❌ Fehler bei " + driver + ":\n" + e.message);
         log("Bereit.");
     }
 }
 
-async function deleteEvent(id,name){
-    if(!confirm("Löschen?")) return;
+async function deleteEvent(id){
+    if(!confirm("Löschen?"))return;
     try{
-        const r=await fetch("https://corsproxy.io/?"+encodeURIComponent(`https://api.kalender.digital/public/event/${id}`),{
-            method:"DELETE", headers:{"X-API-KEY":localStorage.getItem("kKey")}
-        });
-        if(r.ok){ alert("✅ Gelöscht"); run(); }
+        await fetch("https://corsproxy.io/?"+encodeURIComponent(`https://api.kalender.digital/public/event/${id}`),{method:"DELETE",headers:{"X-API-KEY":localStorage.getItem("kKey")}});
+        run();
     }catch(e){alert("❌ Fehler");}
 }
 </script>
