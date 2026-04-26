@@ -1,17 +1,269 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Springer-Dispo Pro v16</title>
+
 <style>
-/* ... (Bisheriger Style) ... */
+:root{
+--blue:#2563eb;
+--blue2:#1d4ed8;
+--green:#16a34a;
+--green2:#15803d;
+--red:#dc2626;
+--bg:#eef2f7;
+--card:#ffffff;
+--text:#111827;
+--muted:#6b7280;
+--line:#e5e7eb;
+}
+
+*{box-sizing:border-box}
+
+body{
+margin:0;
+padding:24px;
+font-family:Segoe UI,Arial,sans-serif;
+background:
+radial-gradient(circle at top left,#dbeafe 0%,transparent 35%),
+radial-gradient(circle at bottom right,#dcfce7 0%,transparent 35%),
+var(--bg);
+color:var(--text);
+}
+
+.card{
+max-width:920px;
+margin:auto;
+background:rgba(255,255,255,.95);
+padding:28px;
+border-radius:18px;
+box-shadow:0 20px 45px rgba(0,0,0,.08);
+}
+
+h2{
+margin:0 0 20px;
+font-size:1.8rem;
+font-weight:800;
+text-align:center;
+color:var(--blue);
+letter-spacing: -0.5px;
+}
+
+label{
+display:block;
+margin:10px 0 6px;
+font-size:.9rem;
+font-weight:700;
+}
+
+input,select,textarea{
+width:100%;
+padding:12px 14px;
+border:1px solid var(--line);
+border-radius:12px;
+font-size:1rem;
+background:#fff;
+outline: none;
+}
+
+.row{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:14px;
+}
+
 .pop-row {
     display: flex;
     gap: 10px;
     margin-bottom: 15px;
 }
 .pop-col { flex: 1; }
-select.pop-select {
-    background: #f1f5f9;
-    border: 1px solid var(--blue);
-    font-weight: bold;
+
+.inline{
+display:flex;
+align-items:center;
+gap:10px;
+margin-top:10px;
+padding:12px;
+border:1px solid var(--line);
+border-radius:12px;
+background:#f8fafc;
+}
+
+.inline input{width:auto}
+
+button{
+border:none;
+border-radius:12px;
+cursor:pointer;
+font-weight:700;
+}
+
+.main-btn{
+width:100%;
+padding:14px;
+margin-top:16px;
+color:#fff;
+background:linear-gradient(135deg,var(--blue),var(--blue2));
+font-size: 1.1rem;
+}
+
+.setup-btn{
+width:100%;
+padding:12px;
+margin-top:10px;
+background:#eef2f7;
+color: var(--muted);
+}
+
+.book-btn{
+margin-top:8px;
+padding:9px 14px;
+background:linear-gradient(135deg,var(--green),var(--green2));
+color:#fff;
+}
+
+.del-btn{
+margin-top:8px;
+padding:8px 12px;
+background:#fff;
+color:var(--red);
+border:1px solid #fecaca;
+}
+
+/* POPUP / MODAL */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(6px);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background: white;
+    padding: 30px;
+    border-radius: 24px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3);
+}
+
+.modal-footer {
+    margin-top: 25px;
+    display: flex;
+    gap: 12px;
+}
+
+.cancel-btn { flex: 1; padding: 14px; background: #f1f5f9; color: #475569; }
+.confirm-btn { flex: 2; padding: 14px; background: var(--blue); color: white; }
+
+.log{
+margin-top:18px;
+background:#0f172a;
+color:#22c55e;
+padding:14px;
+border-radius:14px;
+font-family:Consolas,monospace;
+font-size:.84rem;
+min-height:72px;
+white-space:pre-wrap;
+}
+
+#results{ max-width:920px; margin:22px auto; }
+
+.driver{
+background:#fff;
+padding:18px;
+border-radius:16px;
+margin-bottom:14px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+box-shadow:0 8px 20px rgba(0,0,0,.05);
+border-left:6px solid #ccc;
+}
+
+.free{border-left-color:var(--green)}
+.busy{border-left-color:var(--red)}
+
+.state{
+display:inline-block;
+margin-top:8px;
+padding:6px 12px;
+border-radius:999px;
+font-size:.78rem;
+font-weight:800;
+color:#fff;
+}
+
+.state.free{background:var(--green)}
+.state.busy{background:var(--red)}
+
+small{color:var(--muted)}
+
+@media(max-width:760px){
+.row{grid-template-columns:1fr}
+.driver{flex-direction:column;align-items:flex-start}
 }
 </style>
+</head>
+
+<body>
+
+<div class="card">
+<h2>Springer-Dispo Pro v16</h2>
+
+<label>Einrichtung / Ziel</label>
+<select id="schoolSelect" onchange="document.getElementById('destPlz').value=this.value">
+<option value="30655">Albert-Liebmann-Schule (30655)</option>
+<option value="30165">Lebenshilfe Büttnerstraße (30165)</option>
+<option value="30449">Wilhelm-Schade-Schule (30449)</option>
+<option value="30853">Pestalozzi-Schule (30853)</option>
+<option value="30880">Mecklenheide Forst (30880)</option>
+</select>
+
+<label>Ziel-PLZ</label>
+<input id="destPlz" value="30655">
+
+<div class="row">
+<div>
+<label>Von Datum</label>
+<input type="date" id="dateFrom" value="2026-04-24">
+</div>
+<div>
+<label>Bis Datum</label>
+<input type="date" id="dateTo" value="2026-04-24">
+</div>
+</div>
+
+<div class="inline">
+<input type="checkbox" id="wholeDay" checked onchange="toggleTime()">
+<label for="wholeDay" style="margin:0">Ganztägig buchen</label>
+</div>
+
+<div class="row" id="timeBox" style="display:none">
+<div>
+<label>Startzeit</label>
+<input type="time" id="startTime" value="07:00">
+</div>
+<div>
+<label>Endzeit</label>
+<input type="time" id="endTime" value="13:00">
+</div>
+</div>
+
+<button class="main-btn" onclick="run()">Verfügbarkeit & Ranking prüfen</button>
+<button class="setup-btn" onclick="setup()">⚙️ Setup (Keys / IDs)</button>
+
+<div id="log" class="log">Bereit.</div>
+</div>
+
+<div id="results"></div>
 
 <div id="bookingModal" class="modal-overlay">
     <div class="modal-content">
@@ -26,26 +278,24 @@ select.pop-select {
         <div class="pop-row">
             <div class="pop-col">
                 <label>Wer meldet sich?</label>
-                <select id="nameSelect" class="pop-select" onchange="updatePopDesc()">
-                    <option value="">-- Name wählen --</option>
+                <select id="nameSelect" onchange="updatePopDesc()">
+                    <option value="">-- Name --</option>
                     <option value="Andrea">Andrea</option>
                     <option value="Heike">Heike</option>
                     <option value="Angela">Angela</option>
                     <option value="Karin">Karin</option>
-                    <option value="Sabine">Sabine</option>
-                    <option value="Petra">Petra</option>
                 </select>
             </div>
             <div class="pop-col">
                 <label>Welche Tour?</label>
-                <select id="tourSelect" class="pop-select" onchange="updatePopDesc()">
+                <select id="tourSelect" onchange="updatePopDesc()">
                     <option value="">-- Tour --</option>
-                    </select>
+                </select>
             </div>
         </div>
 
-        <label>Beschreibung (Vorschau / Ergänzung)</label>
-        <textarea id="popDesc" rows="3" placeholder="Wähle oben Name und Tour..."></textarea>
+        <label>Beschreibung (Vorschau / Notiz)</label>
+        <textarea id="popDesc" rows="3" placeholder="Wähle Name und Tour..."></textarea>
 
         <div class="modal-footer">
             <button class="cancel-btn" onclick="closeModal()">Abbrechen</button>
@@ -55,9 +305,30 @@ select.pop-select {
 </div>
 
 <script>
-/* ... (Fahrerliste und bisherige Funktionen bleiben gleich) ... */
+const drivers=[
+{name:"Aschenbach André",plz:"30989"},
+{name:"Ohm Lars",plz:"30559"},
+{name:"Bachmeier Reinhard",plz:"30659"},
+{name:"Isfahan Mozaffaey Hamid",plz:"30519"},
+{name:"Otto Alexander",plz:"30173"},
+{name:"Türkel Tuncer",plz:"30161"},
+{name:"Schrader Harald",plz:"30880"},
+{name:"Neubauer Michael",plz:"30853"},
+{name:"Ferkau Eckart",plz:"30851"},
+{name:"Bethmann Ekkehard",plz:"31535"},
+{name:"Hauer Frank",plz:"30900"},
+{name:"Kruse Jens Roland",plz:"31275"},
+{name:"Grimpe Dirk",plz:"30827"},
+{name:"Häge Klaus Dieter",plz:"30519"},
+{name:"Von Treskow Albrecht",plz:"30659"},
+{name:"Caruso Guiseppe",plz:"30880"},
+{name:"Popescu Viorel",plz:"30827"},
+{name:"Beka Jonel",plz:"31275"}
+];
 
-// Befülle die Tour-Liste von 1 bis 30 beim Laden
+let loadedEvents=[];
+let currentDriverForBooking = "";
+
 window.onload = function() {
     const ts = document.getElementById('tourSelect');
     for(let i=1; i<=30; i++) {
@@ -68,46 +339,111 @@ window.onload = function() {
     }
 };
 
+function setup(){
+localStorage.setItem("kKey",prompt("API-Key:",localStorage.getItem("kKey")||""));
+localStorage.setItem("kIds",prompt("Kalender-ID(s):",localStorage.getItem("kIds")||""));
+localStorage.setItem("gKey",prompt("Google API Key:",localStorage.getItem("gKey")||""));
+location.reload();
+}
+
+function log(t){document.getElementById("log").textContent=t;}
+
+function toggleTime(){
+document.getElementById("timeBox").style.display=
+document.getElementById("wholeDay").checked?"none":"grid";
+}
+
+async function run(){
+try{
+const kKey=localStorage.getItem("kKey"), kIds=localStorage.getItem("kIds"), gKey=localStorage.getItem("gKey");
+if(!kKey||!kIds||!gKey) return alert("Setup ausfüllen.");
+log("📅 Lade Kalender...");
+loadedEvents=await loadEvents(document.getElementById("dateFrom").value, document.getElementById("dateTo").value, kIds, kKey);
+await loadGoogle(gKey);
+const matrix=await getDistances(document.getElementById("destPlz").value);
+let ranking=drivers.map((d,i)=>{
+const hit=isBusy(d.name,loadedEvents);
+return{...d,busy:hit.busy,reason:hit.reason,eventId:hit.eventId,distText:matrix.rows[i].elements[0].distance.text,distVal:matrix.rows[i].elements[0].distance.value};
+});
+ranking.sort((a,b)=>(a.busy-b.busy)||(a.distVal-b.distVal));
+render(ranking);
+log("✅ Fertig.");
+}catch(e){log("❌ "+e.message);}
+}
+
+async function loadEvents(from,to,kIds,kKey){
+let all=[];
+for(const raw of kIds.split(",")){
+const url=`https://api.kalender.digital/public/event?calendarId=${encodeURIComponent(raw.trim())}&startDate=${from}&endDate=${to}T23:59:59&v=${Date.now()}`;
+const r=await fetch("https://corsproxy.io/?"+encodeURIComponent(url),{headers:{"X-API-KEY":kKey}});
+if(r.ok){ const data=await r.json(); all.push(...(data.events||data)); }
+}
+return all;
+}
+
+function isBusy(name,events){
+const s=name.toLowerCase().trim(), l=s.split(" ").pop();
+for(const ev of events){
+let t=(ev.title||"")+" "+(ev.description||"")+" "+(ev.who||"")+" "+(ev.subCalendars?ev.subCalendars.join(" "):"");
+if(t.toLowerCase().includes(s)||t.toLowerCase().includes(l)) return{busy:true,reason:ev.title,eventId:ev.id};
+}
+return{busy:false};
+}
+
+function loadGoogle(key){
+return new Promise(resolve=>{
+if(typeof google!=="undefined") return resolve();
+const s=document.createElement("script");
+s.src=`https://maps.googleapis.com/maps/api/js?key=${key}`;
+s.onload=resolve;
+document.head.appendChild(s);
+});
+}
+
+function getDistances(dest){
+return new Promise((resolve,reject)=>{
+new google.maps.DistanceMatrixService().getDistanceMatrix({origins:drivers.map(d=>d.plz),destinations:[dest],travelMode:"DRIVING"},(res,status)=>status!=="OK"?reject():resolve(res));
+});
+}
+
+function render(list){
+document.getElementById("results").innerHTML=list.map(d=>`
+<div class="driver ${d.busy?'busy':'free'}">
+<div>
+<strong>${d.name}</strong><br><small>${d.distText} entfernt</small><br>
+${d.busy?`<span class="state busy">BESETZT</span><br><small>${d.reason}</small><br><button class="del-btn" onclick="deleteEvent('${d.eventId}','${safe(d.name)}')">🗑️ Löschen</button>`:`<span class="state free">FREI</span><br><button class="book-btn" onclick="openBookingModal('${safe(d.name)}')">BUCHEN</button>`}
+</div>
+<div><strong>${d.distText}</strong></div>
+</div>`).join("");
+}
+
+function safe(t){return t.replace(/'/g,"\\'");}
+
 function openBookingModal(name) {
     currentDriverForBooking = name;
     document.getElementById('popDriver').value = name;
-    
     const schoolText = document.getElementById('schoolSelect').selectedOptions[0].text;
     const dateFrom = document.getElementById('dateFrom').value;
     const dateTo = document.getElementById('dateTo').value;
     const wholeDay = document.getElementById('wholeDay').checked;
-    
     let timeInfo = wholeDay ? '(Ganztägig)' : `(${document.getElementById('startTime').value}-${document.getElementById('endTime').value} Uhr)`;
-    
     document.getElementById('popDateText').innerText = `Vom ${dateFrom} bis ${dateTo} ${timeInfo}`;
-    
-    // Resets
     document.getElementById('nameSelect').value = "";
     document.getElementById('tourSelect').value = "";
     document.getElementById('popDesc').value = "";
-    
     document.getElementById('bookingModal').style.display = 'flex';
 }
 
-// Neue Funktion: Baut den Text automatisch zusammen
+function closeModal(){ document.getElementById('bookingModal').style.display='none'; }
+
 function updatePopDesc() {
     const name = document.getElementById('nameSelect').value;
     const tour = document.getElementById('tourSelect').value;
     let finalBtn = "";
-    
-    if(name) {
-        finalBtn = name + " meldet sich: ";
-    }
-    if(tour) {
-        finalBtn += tour;
-    }
-    
+    if(name) finalBtn = name + " meldet sich: ";
+    if(tour) finalBtn += tour;
     document.getElementById('popDesc').value = finalBtn;
 }
-
-/* ... (confirmBooking und executeBooking bleiben gleich wie im reparierten Code zuvor) ... */
-
-function closeModal(){ document.getElementById('bookingModal').style.display='none'; }
 
 async function confirmBooking() {
     const desc = document.getElementById('popDesc').value || "Keine Beschreibung";
@@ -115,5 +451,44 @@ async function confirmBooking() {
     executeBooking(currentDriverForBooking, desc);
 }
 
-// ... (Restliche Fetch-Funktionen wie gehabt) ...
+async function executeBooking(driver, desc){
+try{
+const kKey=localStorage.getItem("kKey");
+const from=document.getElementById("dateFrom").value;
+const to=document.getElementById("dateTo").value;
+const whole=document.getElementById("wholeDay").checked;
+const schoolText = document.getElementById('schoolSelect').selectedOptions[0].text;
+const payload={
+    startDate:whole?`${from} 00:00:00`:`${from} ${document.getElementById("startTime").value}:00`,
+    endDate:whole?`${to} 23:59:59`:`${to} ${document.getElementById("endTime").value}:00`,
+    timeZone:"Europe/Berlin",
+    title:schoolText,
+    description:desc,
+    wholeDay:whole,
+    subCalendars:[driver]
+};
+log("📝 Buche...");
+const r=await fetch("https://corsproxy.io/?"+encodeURIComponent("https://api.kalender.digital/public/event"),{
+    method:"POST",
+    headers:{"Content-Type":"application/json","X-API-KEY":kKey},
+    body:JSON.stringify(payload)
+});
+if(!r.ok) throw new Error();
+alert("✅ Gebucht");
+run();
+}catch(e){alert("❌ Fehler bei Buchung");}
+}
+
+async function deleteEvent(id,name){
+if(!confirm("Löschen?")) return;
+try{
+const r=await fetch("https://corsproxy.io/?"+encodeURIComponent(`https://api.kalender.digital/public/event/${id}`),{
+    method:"DELETE",
+    headers:{"X-API-KEY":localStorage.getItem("kKey")}
+});
+if(r.ok){ alert("✅ Gelöscht"); run(); }
+}catch(e){alert("❌ Fehler beim Löschen");}
+}
 </script>
+</body>
+</html>
