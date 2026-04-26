@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Springer-Dispo Pro</title>
+    <title>Springer-Dispo Pro v2</title>
     <style>
         :root {
             --primary: #2563eb;
@@ -21,125 +21,78 @@
             background-color: var(--bg);
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             color: var(--text-main);
-            line-height: 1.5;
         }
 
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-        }
+        .container { max-width: 600px; margin: 0 auto; }
 
         .header-card {
             background: var(--card-bg);
-            padding: 24px;
+            padding: 20px;
             border-radius: 20px;
             box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
             margin-bottom: 20px;
         }
 
-        h2 {
-            margin: 0 0 20px 0;
-            font-size: 24px;
-            text-align: center;
-            color: var(--primary);
-            font-weight: 800;
-        }
+        h2 { margin: 0 0 20px 0; font-size: 22px; text-align: center; color: var(--primary); font-weight: 800; }
 
-        .input-group { margin-bottom: 16px; }
+        .input-group { margin-bottom: 12px; }
 
-        label {
-            display: block;
-            margin-bottom: 6px;
-            font-weight: 600;
-            font-size: 14px;
-            color: var(--text-sub);
-        }
+        label { display: block; margin-bottom: 4px; font-weight: 600; font-size: 13px; color: var(--text-sub); }
 
         input, select {
             width: 100%;
-            padding: 12px 16px;
+            padding: 10px 14px;
             border: 1.5px solid #e2e8f0;
-            border-radius: 12px;
-            font-size: 16px; /* Verhindert Auto-Zoom auf iPhone */
-            transition: border-color 0.2s;
+            border-radius: 10px;
+            font-size: 16px;
             background: #fff;
+            box-sizing: border-box;
         }
 
-        input:focus {
-            outline: none;
-            border-color: var(--primary);
-        }
-
-        .row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
+        .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
         .checkbox-container {
             display: flex;
             align-items: center;
             background: #f1f5f9;
-            padding: 12px;
-            border-radius: 12px;
+            padding: 10px;
+            border-radius: 10px;
             margin: 10px 0;
             cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
         }
 
-        .checkbox-container input {
-            width: auto;
-            margin-right: 12px;
-            transform: scale(1.2);
-        }
-
-        button {
-            border: none;
-            border-radius: 12px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+        .checkbox-container input { width: auto; margin-right: 10px; transform: scale(1.2); }
 
         .main-btn {
             width: 100%;
-            padding: 16px;
+            padding: 14px;
             background: var(--primary);
             color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: 700;
             font-size: 16px;
+            cursor: pointer;
             box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
         }
 
-        .main-btn:active { transform: scale(0.98); }
-
         .setup-btn {
-            background: none;
-            color: var(--text-sub);
-            width: 100%;
-            margin-top: 10px;
-            font-size: 13px;
-            text-decoration: underline;
+            background: none; border: none; color: var(--text-sub);
+            width: 100%; margin-top: 8px; font-size: 12px; text-decoration: underline; cursor: pointer;
         }
 
         .log {
-            margin-top: 15px;
-            background: #1e293b;
-            color: #38bdf8;
-            padding: 10px;
-            border-radius: 10px;
-            font-family: 'Courier New', monospace;
-            font-size: 12px;
-            min-height: 20px;
+            margin-top: 12px; background: #1e293b; color: #38bdf8;
+            padding: 8px; border-radius: 8px; font-family: monospace; font-size: 11px;
         }
 
-        /* Fahrer Liste */
         .driver-card {
             background: var(--card-bg);
-            margin-bottom: 12px;
-            padding: 16px;
-            border-radius: 16px;
+            margin-bottom: 10px;
+            padding: 14px;
+            border-radius: 15px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -148,38 +101,27 @@
         }
 
         .driver-card.free { border-left-color: var(--success); }
-        .driver-card.busy { border-left-color: var(--danger); opacity: 0.8; }
+        .driver-card.busy { border-left-color: var(--danger); }
 
-        .driver-info h3 { margin: 0 0 4px 0; font-size: 17px; }
-        .driver-info p { margin: 0; font-size: 13px; color: var(--text-sub); }
+        .driver-info h3 { margin: 0; font-size: 16px; }
+        .driver-info p { margin: 2px 0; font-size: 12px; color: var(--text-sub); }
 
         .status-badge {
-            font-size: 11px;
-            font-weight: 800;
-            padding: 4px 8px;
-            border-radius: 6px;
-            text-transform: uppercase;
-            display: inline-block;
-            margin-top: 5px;
+            font-size: 10px; font-weight: 800; padding: 3px 7px;
+            border-radius: 5px; text-transform: uppercase; display: inline-block; margin: 5px 0;
         }
 
         .status-badge.free { background: #dcfce7; color: #166534; }
         .status-badge.busy { background: #fee2e2; color: #991b1b; }
 
         .action-btn {
-            padding: 10px 16px;
-            font-size: 14px;
+            padding: 8px 14px; border-radius: 8px; font-weight: 700; border: none; cursor: pointer; font-size: 13px;
         }
 
-        .book-btn { background: var(--success); color: white; margin-top: 10px; }
-        .del-btn { background: white; color: var(--danger); border: 1.5px solid var(--danger); margin-top: 10px; }
+        .book-btn { background: var(--success); color: white; }
+        .del-btn { background: white; color: var(--danger); border: 1.5px solid var(--danger); }
 
-        .dist-tag {
-            text-align: right;
-            font-weight: 800;
-            color: var(--primary);
-            font-size: 18px;
-        }
+        .dist-tag { text-align: right; font-weight: 800; color: var(--primary); font-size: 16px; }
     </style>
 </head>
 <body>
@@ -189,7 +131,7 @@
         <h2>Springer-Dispo 15.9</h2>
 
         <div class="input-group">
-            <label>Zielort / Einrichtung</label>
+            <label>Zielort</label>
             <select id="schoolSelect" onchange="document.getElementById('destPlz').value=this.value">
                 <option value="30655">Albert-Liebmann-Schule (30655)</option>
                 <option value="30165">Lebenshilfe Büttnerstraße (30165)</option>
@@ -219,7 +161,7 @@
         </div>
 
         <div class="input-group">
-            <label>Ziel-PLZ (automatisch)</label>
+            <label>Ziel-PLZ</label>
             <input id="destPlz" value="30655">
         </div>
 
@@ -251,12 +193,12 @@
         </div>
 
         <div class="input-group">
-            <label>Info / Tournummer</label>
+            <label>Info / Tour</label>
             <input id="desc" placeholder="z.B. Tour 27">
         </div>
 
         <button class="main-btn" onclick="run()">VERFÜGBARKEIT PRÜFEN</button>
-        <button class="setup-btn" onclick="setup()">⚙️ Einstellungen öffnen</button>
+        <button class="setup-btn" onclick="setup()">⚙️ Einstellungen</button>
 
         <div id="log" class="log">Bereit.</div>
     </div>
@@ -265,7 +207,6 @@
 </div>
 
 <script>
-// --- FUNKTIONEN BLEIBEN IDENTISCH ZU DEINEM CODE ---
 const drivers = [
     {name:"Aschenbach André", plz:"30989"},
     {name:"Ohm Lars", plz:"30559"},
@@ -290,9 +231,9 @@ const drivers = [
 let loadedEvents=[];
 
 function setup(){
-    localStorage.setItem("kKey",prompt("Kalender.digital API-Key:",localStorage.getItem("kKey")||""));
-    localStorage.setItem("kIds",prompt("Kalender-ID(s), komma getrennt:",localStorage.getItem("kIds")||""));
-    localStorage.setItem("gKey",prompt("Google API Key:",localStorage.getItem("gKey")||""));
+    localStorage.setItem("kKey",prompt("API-Key:",localStorage.getItem("kKey")||""));
+    localStorage.setItem("kIds",prompt("Kalender-IDs:",localStorage.getItem("kIds")||""));
+    localStorage.setItem("gKey",prompt("Google Key:",localStorage.getItem("gKey")||""));
     location.reload();
 }
 
@@ -304,19 +245,15 @@ function toggleTime(){
 
 async function run(){
     try{
-        const kKey=localStorage.getItem("kKey");
-        const kIds=localStorage.getItem("kIds");
-        const gKey=localStorage.getItem("gKey");
-        if(!kKey||!kIds||!gKey){ alert("Bitte Setup ausfüllen."); return; }
-        const from=document.getElementById("dateFrom").value;
-        const to=document.getElementById("dateTo").value;
-        const dest=document.getElementById("destPlz").value;
-
-        log("📅 Lade Kalender...");
+        const kKey=localStorage.getItem("kKey"), kIds=localStorage.getItem("kIds"), gKey=localStorage.getItem("gKey");
+        if(!kKey||!kIds||!gKey) return alert("Setup fehlt");
+        
+        const from=document.getElementById("dateFrom").value, to=document.getElementById("dateTo").value, dest=document.getElementById("destPlz").value;
+        log("📅 Lade Daten...");
         loadedEvents=await loadEvents(from,to,kIds,kKey);
         log("🗺️ Google Maps...");
         await loadGoogle(gKey);
-        log("📏 Distanzberechnung...");
+        log("📏 Distanzen...");
         const matrix=await getDistances(dest);
 
         let ranking=drivers.map((d,i)=>{
@@ -329,8 +266,8 @@ async function run(){
         });
         ranking.sort((a,b)=>(a.busy-b.busy)||(a.distVal-b.distVal));
         render(ranking);
-        log("✅ Fertig.");
-    }catch(e){ log("❌ "+e.message); }
+        log("✅ Analyse fertig.");
+    }catch(e){ log("❌ Fehler: "+e.message); }
 }
 
 async function loadEvents(from,to,kIds,kKey){
@@ -347,10 +284,14 @@ async function loadEvents(from,to,kIds,kKey){
 }
 
 function isBusy(name,events){
+    if (!events) return { busy: false, reason: "", eventId: null };
     const searchName = name.toLowerCase().trim();
+    const lastName = searchName.split(" ").pop();
     for(const ev of events){
         let txt = (ev.title + " " + (ev.description||"")).toLowerCase();
-        if(txt.includes(searchName)) return{ busy:true, reason:ev.title||"Belegt", eventId:ev.id };
+        if(txt.includes(searchName) || (lastName && txt.includes(lastName))) {
+            return { busy:true, reason:ev.title||"Belegt", eventId:ev.id };
+        }
     }
     return { busy:false, reason:"", eventId: null };
 }
@@ -369,7 +310,7 @@ function getDistances(dest){
     return new Promise((resolve,reject)=>{
         new google.maps.DistanceMatrixService().getDistanceMatrix({
             origins:drivers.map(d=>d.plz), destinations:[dest], travelMode:"DRIVING"
-        },(res,status)=>{ if(status!=="OK") reject(); else resolve(res); });
+        },(res,status)=>{ if(status!=="OK") reject(new Error("Google Fehler")); else resolve(res); });
     });
 }
 
@@ -378,10 +319,10 @@ function render(list){
         <div class="driver-card ${d.busy?'busy':'free'}">
             <div class="driver-info">
                 <h3>${d.name}</h3>
-                <p>${d.plz} • ${d.distText} entfernt</p>
+                <p>${d.distText} • ${d.plz}</p>
                 <span class="status-badge ${d.busy?'busy':'free'}">${d.busy?'Besetzt':'Verfügbar'}</span>
-                ${d.busy ? `<br><small style="color:var(--danger)">${d.reason}</small><br><button class="action-btn del-btn" onclick="deleteEvent('${d.eventId}', '${d.name}')">Löschen</button>` 
-                         : `<br><button class="action-btn book-btn" onclick="book('${d.name}')">JETZT BUCHEN</button>`}
+                ${d.busy ? `<br><small style="color:var(--danger)">${d.reason}</small><br><button class="action-btn del-btn" onclick="deleteEvent('${d.eventId}', '${d.name}')">🗑️ Löschen</button>` 
+                         : `<br><button class="action-btn book-btn" onclick="book('${d.name}')">BUCHEN</button>`}
             </div>
             <div class="dist-tag">${d.distText}</div>
         </div>
@@ -391,11 +332,8 @@ function render(list){
 async function book(driver){
     try {
         const kKey=localStorage.getItem("kKey");
-        const from=document.getElementById("dateFrom").value;
-        const to=document.getElementById("dateTo").value;
-        const whole=document.getElementById("wholeDay").checked;
-        const start=document.getElementById("startTime").value;
-        const end=document.getElementById("endTime").value;
+        const from=document.getElementById("dateFrom").value, to=document.getElementById("dateTo").value, whole=document.getElementById("wholeDay").checked;
+        const start=document.getElementById("startTime").value, end=document.getElementById("endTime").value;
         const title=document.getElementById("schoolSelect").selectedOptions[0].text;
         const desc=document.getElementById("desc").value || "Automatisch gebucht";
 
@@ -411,16 +349,19 @@ async function book(driver){
             method:"POST", headers:{"Content-Type":"application/json","X-API-KEY":kKey},
             body:JSON.stringify(payload)
         });
-        if(r.ok) { alert("Gebucht!"); run(); }
-    } catch(e) { alert("Fehler"); }
+        if(r.ok) { alert("Erfolgreich gebucht!"); run(); } else { alert("Fehler bei Buchung"); }
+    } catch(e) { alert("Fehler: "+e.message); }
 }
 
 async function deleteEvent(eventId, name) {
-    if(!confirm(name+" löschen?")) return;
-    const kKey=localStorage.getItem("kKey");
-    const proxy="https://corsproxy.io/?https%3A%2F%2Fapi.kalender.digital%2Fpublic%2Fevent%2F"+eventId;
-    const r=await fetch(proxy,{ method:"DELETE", headers:{"X-API-KEY":kKey} });
-    if(r.ok) run();
+    if(!eventId || eventId === "null") return alert("ID fehlt");
+    if(!confirm(name+" wirklich löschen?")) return;
+    try {
+        const kKey=localStorage.getItem("kKey");
+        const proxy="https://corsproxy.io/?https%3A%2F%2Fapi.kalender.digital%2Fpublic%2Fevent%2F"+eventId;
+        const r=await fetch(proxy,{ method:"DELETE", headers:{"X-API-KEY":kKey} });
+        if(r.ok) { alert("Gelöscht!"); run(); }
+    } catch(e) { alert("Löschen fehlgeschlagen"); }
 }
 </script>
 </body>
