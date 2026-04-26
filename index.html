@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Springer-Dispo Pro v29 - KOMPLETT</title>
+<title>Springer-Dispo Pro v30 - MASTER</title>
 <style>
 :root{--blue:#2563eb;--green:#16a34a;--red:#dc2626;--bg:#eef2f7;}
 *{box-sizing:border-box}
@@ -31,10 +31,11 @@ button{border:none;border-radius:10px;cursor:pointer;font-weight:700;}
 <body>
 
 <div class="card">
-    <h2>Springer-Dispo Pro v29</h2>
+    <h2>Springer-Dispo Pro v30</h2>
     
-    <label>Einrichtung / Ziel</label>
+    <label>Einrichtung / Ziel auswählen</label>
     <select id="schoolSelect" onchange="document.getElementById('destPlz').value=this.value">
+        <option value="">-- Ziel wählen --</option>
         <option value="30655">Albert-Liebmann-Schule (30655)</option>
         <option value="30165">Lebenshilfe Büttnerstraße (30165)</option>
         <option value="30449">Wilhelm-Schade-Schule (30449)</option>
@@ -62,12 +63,12 @@ button{border:none;border-radius:10px;cursor:pointer;font-weight:700;}
     </div>
 
     <div class="row" id="timeBox" style="display:none">
-        <div><label>Start</label><input type="time" id="startTime" value="07:00"></div>
-        <div><label>Ende</label><input type="time" id="endTime" value="13:00"></div>
+        <div><label>Startzeit</label><input type="time" id="startTime" value="07:00"></div>
+        <div><label>Endzeit</label><input type="time" id="endTime" value="13:00"></div>
     </div>
 
     <button class="main-btn" onclick="run()">Verfügbarkeit & Ranking prüfen</button>
-    <button onclick="setup()" style="width:100%;background:none;color:gray;font-size:0.7rem;margin-top:10px;">Setup</button>
+    <button onclick="setup()" style="width:100%;background:none;color:gray;font-size:0.7rem;margin-top:10px;">Setup / API Keys</button>
     <div id="log" class="log">Bereit.</div>
 </div>
 
@@ -83,34 +84,20 @@ button{border:none;border-radius:10px;cursor:pointer;font-weight:700;}
                 <label>Wer meldet?</label>
                 <select id="nameSelect" onchange="updatePopDesc()">
                     <option value="">-- Melder --</option>
-                    <option value="Angela">Angela</option>
-                    <option value="Anja">Anja</option>
-                    <option value="Beate">Beate</option>
-                    <option value="Bettina">Bettina</option>
-                    <option value="Birgit">Birgit</option>
-                    <option value="Christiane">Christiane</option>
-                    <option value="Daniela">Daniela</option>
-                    <option value="Frank">Frank</option>
-                    <option value="Gerhard">Gerhard</option>
-                    <option value="Heike">Heike</option>
-                    <option value="Jürgen">Jürgen</option>
-                    <option value="Karin">Karin</option>
-                    <option value="Katja">Katja</option>
-                    <option value="Kerstin">Kerstin</option>
-                    <option value="Klaus">Klaus</option>
-                    <option value="Manuela">Manuela</option>
-                    <option value="Marion">Marion</option>
-                    <option value="Michael">Michael</option>
-                    <option value="Moni">Moni</option>
-                    <option value="Nicole">Nicole</option>
-                    <option value="Nina">Nina</option>
-                    <option value="Petra">Petra</option>
-                    <option value="Ralf">Ralf</option>
-                    <option value="Sabine">Sabine</option>
-                    <option value="Silke">Silke</option>
-                    <option value="Steffi">Steffi</option>
-                    <option value="Susanne">Susanne</option>
-                    <option value="Ute">Ute</option>
+                    <option value="Angela">Angela</option><option value="Anja">Anja</option>
+                    <option value="Beate">Beate</option><option value="Bettina">Bettina</option>
+                    <option value="Birgit">Birgit</option><option value="Christiane">Christiane</option>
+                    <option value="Daniela">Daniela</option><option value="Frank">Frank</option>
+                    <option value="Gerhard">Gerhard</option><option value="Heike">Heike</option>
+                    <option value="Jürgen">Jürgen</option><option value="Karin">Karin</option>
+                    <option value="Katja">Katja</option><option value="Kerstin">Kerstin</option>
+                    <option value="Klaus">Klaus</option><option value="Manuela">Manuela</option>
+                    <option value="Marion">Marion</option><option value="Michael">Michael</option>
+                    <option value="Moni">Moni</option><option value="Nicole">Nicole</option>
+                    <option value="Nina">Nina</option><option value="Petra">Petra</option>
+                    <option value="Ralf">Ralf</option><option value="Sabine">Sabine</option>
+                    <option value="Silke">Silke</option><option value="Steffi">Steffi</option>
+                    <option value="Susanne">Susanne</option><option value="Ute">Ute</option>
                 </select>
             </div>
             <div>
@@ -128,26 +115,13 @@ button{border:none;border-radius:10px;cursor:pointer;font-weight:700;}
 </div>
 
 <script>
-// VOLLSTÄNDIGE LISTE DER FAHRER (Basierend auf deinen Angaben)
 const drivers=[
-    {name:"Aschenbach André", plz:"30989"},
-    {name:"Ohm Lars", plz:"30559"},
-    {name:"Bachmeier Reinhard", plz:"30659"},
-    {name:"Isfahan Mozaffaey Hamid", plz:"30519"},
-    {name:"Otto Alexander", plz:"30173"},
-    {name:"Türkel Tuncer", plz:"30161"},
-    {name:"Schrader Harald", plz:"30880"},
-    {name:"Neubauer Michael", plz:"30853"},
-    {name:"Ferkau Eckart", plz:"30851"},
-    {name:"Bethmann Ekkehard", plz:"31535"},
-    {name:"Hauer Frank", plz:"30900"},
-    {name:"Häge Klaus Dieter", plz:"30519"},
-    {name:"Grimpe Dirk", plz:"30827"},
-    {name:"Moser Siegfried", plz:"30827"},
-    {name:"Von Treskow Albrecht", plz:"30659"},
-    {name:"Beka Jonel", plz:"31275"},
-    {name:"Giuseppe Caruso", plz:"30880"},
-    {name:"Popescu Viorel", plz:"30827"},
+    {name:"Aschenbach André", plz:"30989"},{name:"Ohm Lars", plz:"30559"},{name:"Bachmeier Reinhard", plz:"30659"},
+    {name:"Isfahan Mozaffaey Hamid", plz:"30519"},{name:"Otto Alexander", plz:"30173"},{name:"Türkel Tuncer", plz:"30161"},
+    {name:"Schrader Harald", plz:"30880"},{name:"Neubauer Michael", plz:"30853"},{name:"Ferkau Eckart", plz:"30851"},
+    {name:"Bethmann Ekkehard", plz:"31535"},{name:"Hauer Frank", plz:"30900"},{name:"Häge Klaus Dieter", plz:"30519"},
+    {name:"Grimpe Dirk", plz:"30827"},{name:"Moser Siegfried", plz:"30827"},{name:"Von Treskow Albrecht", plz:"30659"},
+    {name:"Beka Jonel", plz:"31275"},{name:"Giuseppe Caruso", plz:"30880"},{name:"Popescu Viorel", plz:"30827"},
     {name:"Bodewell Thomas", plz:"30853"}
 ];
 
@@ -173,7 +147,7 @@ async function run(){
     try{
         const kKey=localStorage.getItem("kKey"),kIds=localStorage.getItem("kIds"),gKey=localStorage.getItem("gKey");
         if(!kKey||!kIds||!gKey)return alert("Setup fehlt!");
-        log("📅 Lade Daten...");
+        log("📅 Lade Kalender-Daten...");
         loadedEvents=await loadEvents(document.getElementById("dateFrom").value,document.getElementById("dateTo").value,kIds,kKey);
         await loadGoogle(gKey);
         const matrix=await getDistances(document.getElementById("destPlz").value);
@@ -183,7 +157,7 @@ async function run(){
         });
         ranking.sort((a,b)=>(a.busy-b.busy)||(a.distVal-a.distVal));
         render(ranking);
-        log("✅ Fertig.");
+        log("✅ Alles bereit.");
     }catch(e){log("❌ "+e.message);}
 }
 
@@ -254,7 +228,7 @@ async function confirmBooking(){
             subCalendars:[driver]
         };
 
-        log("⏳ Buche...");
+        log("⏳ Sende Buchung für " + driver + "...");
         const r=await fetch("https://corsproxy.io/?"+encodeURIComponent("https://api.kalender.digital/public/event"),{
             method:"POST",
             headers:{"Content-Type":"application/json","X-API-KEY":kKey},
@@ -263,10 +237,10 @@ async function confirmBooking(){
         
         if(!r.ok){
             const resData = await r.json();
-            throw new Error(resData.message || "Kalender-Fehler");
+            throw new Error(resData.message || "Fehler am Kalender-Server");
         }
         
-        alert("✅ Eingetragen!");
+        alert("✅ Erfolgreich eingetragen!");
         run();
     }catch(e){
         alert("❌ Fehler: " + e.message);
@@ -275,7 +249,7 @@ async function confirmBooking(){
 }
 
 async function deleteEvent(id){
-    if(!confirm("Löschen?"))return;
+    if(!confirm("Diesen Termin wirklich löschen?"))return;
     try{
         await fetch("https://corsproxy.io/?"+encodeURIComponent(`https://api.kalender.digital/public/event/${id}`),{method:"DELETE",headers:{"X-API-KEY":localStorage.getItem("kKey")}});
         run();
