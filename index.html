@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Springer-Dispo Pro v36</title>
+<title>Springer-Dispo Pro v37</title>
 <style>
 :root{--blue:#2563eb;--green:#16a34a;--red:#dc2626;--bg:#eef2f7;}
 *{box-sizing:border-box}
@@ -23,15 +23,13 @@ button{border:none;border-radius:10px;cursor:pointer;font-weight:700;}
 .busy{border-left-color:var(--red);background:#fff1f2;}
 .book-btn{padding:10px 20px;background:var(--green);color:#fff;}
 .del-btn{padding:8px 12px;background:#fff;color:var(--red);border:1px solid #fecaca;font-size:0.8rem;margin-top:5px;}
-.modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:2000;justify-content:center;align-items:center;backdrop-filter:blur(4px);}
-.modal-content{background:#fff;padding:25px;border-radius:20px;width:95%;max-width:450px;}
 .log{margin-top:15px;background:#1e293b;color:#4ade80;padding:12px;border-radius:10px;font-family:monospace;font-size:0.8rem;min-height:50px;white-space:pre-wrap;}
 </style>
 </head>
 <body>
 
 <div class="card">
-    <h2>Springer-Dispo Pro v36</h2>
+    <h2>Springer-Dispo Pro v37</h2>
     
     <label>Einrichtung / Ziel auswählen</label>
     <select id="schoolSelect" onchange="document.getElementById('destPlz').value=this.value">
@@ -49,8 +47,7 @@ button{border:none;border-radius:10px;cursor:pointer;font-weight:700;}
         <option value="30916">Erich-Kästner-Schule (30916)</option>
     </select>
     
-    <label>Ziel PLZ</label>
-    <input type="text" id="destPlz" value="30655">
+    <input type="hidden" id="destPlz" value="30655">
 
     <div class="row">
         <div><label>Von</label><input type="date" id="dateFrom" value="2026-04-24"></div>
@@ -67,15 +64,15 @@ button{border:none;border-radius:10px;cursor:pointer;font-weight:700;}
         <div><label>Endzeit</label><input type="time" id="endTime" value="13:00"></div>
     </div>
 
-    <button class="main-btn" onclick="run()">Verfügbarkeit prüfen</button>
-    <button onclick="setup()" style="width:100%;background:none;color:gray;font-size:0.7rem;margin-top:10px;">Setup / API Keys</button>
+    <button class="main-btn" onclick="run()">Verfügbarkeit & Ranking prüfen</button>
+    <button onclick="setup()" style="width:100%;background:none;color:gray;font-size:0.7rem;margin-top:10px;">Setup</button>
     <div id="log" class="log">Bereit.</div>
 </div>
 
 <div id="results"></div>
 
-<div id="bookingModal" class="modal-overlay">
-    <div class="modal-content">
+<div id="bookingModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:2000;justify-content:center;align-items:center;">
+    <div style="background:#fff;padding:25px;border-radius:20px;width:95%;max-width:450px;">
         <h3>Termin eintragen</h3>
         <label>Fahrer</label>
         <input type="text" id="popDriver" readonly style="background:#f3f4f6">
@@ -86,18 +83,6 @@ button{border:none;border-radius:10px;cursor:pointer;font-weight:700;}
                     <option value="">-- Melder --</option>
                     <option value="Angela">Angela</option><option value="Anja">Anja</option>
                     <option value="Beate">Beate</option><option value="Bettina">Bettina</option>
-                    <option value="Birgit">Birgit</option><option value="Christiane">Christiane</option>
-                    <option value="Daniela">Daniela</option><option value="Frank">Frank</option>
-                    <option value="Gerhard">Gerhard</option><option value="Heike">Heike</option>
-                    <option value="Jürgen">Jürgen</option><option value="Karin">Karin</option>
-                    <option value="Katja">Katja</option><option value="Kerstin">Kerstin</option>
-                    <option value="Klaus">Klaus</option><option value="Manuela">Manuela</option>
-                    <option value="Marion">Marion</option><option value="Michael">Michael</option>
-                    <option value="Moni">Moni</option><option value="Nicole">Nicole</option>
-                    <option value="Nina">Nina</option><option value="Petra">Petra</option>
-                    <option value="Ralf">Ralf</option><option value="Sabine">Sabine</option>
-                    <option value="Silke">Silke</option><option value="Steffi">Steffi</option>
-                    <option value="Susanne">Susanne</option><option value="Ute">Ute</option>
                 </select>
             </div>
             <div>
@@ -122,7 +107,8 @@ const drivers=[
     {name:"Bethmann Ekkehard", plz:"31535"},{name:"Hauer Frank", plz:"30900"},
     {name:"Häge Klaus  Dieter", plz:"30519"}, 
     {name:"Grimpe Dirk", plz:"30827"},{name:"Moser Siegfried", plz:"30827"},{name:"Von Treskow Albrecht", plz:"30659"},
-    {name:"Beka Jonel", plz:"31275"},{name:"Giuseppe Caruso", plz:"30880"},{name:"Popescu Viorel", plz:"30827"},
+    {name:"Beka Jonel", plz:"31275"},{name:"Giuseppe Caruso", plz:"30880"},
+    {name:"Popescu Viorel Florinel", plz:"30827"},
     {name:"Bodewell Thomas", plz:"30853"}
 ];
 
@@ -148,7 +134,7 @@ async function run(){
     try{
         const kKey=localStorage.getItem("kKey"),kIds=localStorage.getItem("kIds"),gKey=localStorage.getItem("gKey");
         if(!kKey||!kIds||!gKey)return alert("Setup fehlt!");
-        log("📅 Lade Kalender-Daten...");
+        log("📅 Lade Kalender...");
         loadedEvents=await loadEvents(document.getElementById("dateFrom").value,document.getElementById("dateTo").value,kIds,kKey);
         await loadGoogle(gKey);
         const matrix=await getDistances(document.getElementById("destPlz").value);
@@ -174,13 +160,14 @@ async function loadEvents(from,to,kIds,kKey){
 
 function isBusy(fullName,events){
     const s = fullName.toLowerCase().trim();
-    const lastName = s.split(" ")[0]; 
+    const lastName = s.split(" ")[0]; // Sucht nur nach "Häge" oder "Popescu"
 
     for(const ev of events){
         let t = (ev.title||"") + " " + (ev.description||"") + " " + (ev.subCalendars?ev.subCalendars.join(" "):"");
         t = t.toLowerCase();
         
-        if(t.includes(s) || t.includes(lastName)){
+        // Wenn der Nachname im Termin vorkommt, ist er besetzt
+        if(t.includes(lastName)){
             return {busy:true, reason:ev.title, eventId:ev.id};
         }
     }
@@ -195,7 +182,7 @@ function render(list){
     <div class="driver ${d.busy?'busy':'free'}">
         <div>
             <strong>${d.name}</strong><br>
-            ${d.busy?`<span style="color:var(--red);font-weight:bold;">⚠️ BESETZT: ${d.reason}</span><br><button class="del-btn" onclick="deleteEvent('${d.eventId}')">Termin löschen</button>`:`<button class="book-btn" onclick="openBookingModal('${d.name.replace(/'/g,"\\'")}')">BUCHEN</button>`}
+            ${d.busy?`<span style="color:var(--red);font-weight:bold;">⚠️ BESETZT: ${d.reason}</span><br><button onclick="deleteEvent('${d.eventId}')" style="color:red;border:1px solid red;background:none;font-size:0.7rem;cursor:pointer;margin-top:5px;border-radius:5px;padding:3px 8px;">Löschen</button>`:`<button class="book-btn" onclick="openBookingModal('${d.name.replace(/'/g,"\\'")}')" style="padding:10px;background:var(--green);color:white;cursor:pointer;border:none;border-radius:8px;">BUCHEN</button>`}
         </div>
         <div style="text-align:right"><strong>${d.distText}</strong><br><small>Entfernung</small></div>
     </div>`).join("");
@@ -218,40 +205,20 @@ async function confirmBooking(){
     const desc=document.getElementById('popDesc').value;
     closeModal();
     try{
-        const kKey=localStorage.getItem("kKey");
-        const from=document.getElementById("dateFrom").value;
-        const to=document.getElementById("dateTo").value;
-        const whole=document.getElementById("wholeDay").checked;
-        const school=document.getElementById('schoolSelect').selectedOptions[0].text;
-
+        const kKey=localStorage.getItem("kKey"),from=document.getElementById("dateFrom").value,to=document.getElementById("dateTo").value,whole=document.getElementById("wholeDay").checked,school=document.getElementById('schoolSelect').selectedOptions[0].text;
         const payload={
             startDate:whole?`${from} 00:00:00`:`${from} ${document.getElementById("startTime").value}:00`,
             endDate:whole?`${to} 23:59:59`:`${to} ${document.getElementById("endTime").value}:00`,
-            timeZone:"Europe/Berlin",
-            title:school,
-            description:desc,
-            wholeDay:whole,
-            subCalendars:[driver]
+            timeZone:"Europe/Berlin", title:school, description:desc, wholeDay:whole, subCalendars:[driver]
         };
-
-        log("⏳ Buche " + driver + "...");
+        log("⏳ Speichere...");
         const r=await fetch("https://corsproxy.io/?"+encodeURIComponent("https://api.kalender.digital/public/event"),{
-            method:"POST",
-            headers:{"Content-Type":"application/json","X-API-KEY":kKey},
-            body:JSON.stringify(payload)
+            method:"POST",headers:{"Content-Type":"application/json","X-API-KEY":kKey},body:JSON.stringify(payload)
         });
-        
-        const responseData = await r.json();
-        if(!r.ok) {
-            console.log(responseData);
-            throw new Error(responseData.message || "Fehler beim Speichern.");
-        }
+        if(!r.ok) throw new Error("Fehler.");
         alert("✅ Eingetragen!");
         run();
-    }catch(e){
-        alert("❌ Fehler: " + e.message);
-        log("Fehler: " + e.message);
-    }
+    }catch(e){alert("❌ Fehler: " + e.message);log("Bereit.");}
 }
 
 async function deleteEvent(id){
