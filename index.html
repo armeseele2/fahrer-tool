@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Springer-Dispo Pro v45.1 (Fix-Check)</title>
+<title>Springer-Dispo Pro v45.2 (Deep-Match)</title>
 
 <style>
 :root{
@@ -31,9 +31,9 @@ button:hover{transform:translateY(-1px);}
 .driver.partial-free{border-left-color:#fbbf24;}
 .driver.full-busy{border-left-color:var(--red);background:#fff7f7;}
 .day-bar{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px;}
-.day-dot{width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:bold;cursor:help;transition: 0.2s;}
-.dot-free{background:var(--green);box-shadow: inset 0 -2px 0 rgba(0,0,0,0.1);}
-.dot-busy{background:var(--red);box-shadow: inset 0 -2px 0 rgba(0,0,0,0.1);}
+.day-dot{width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:bold;cursor:help;}
+.dot-free{background:var(--green);}
+.dot-busy{background:var(--red);}
 .state{display:inline-block;padding:4px 8px;border-radius:999px;font-size:.72rem;font-weight:700;color:#fff;margin:4px 0;}
 .state.free{background:var(--green);}
 .state.partial{background:#fbbf24;color:#92400e;}
@@ -46,7 +46,7 @@ button:hover{transform:translateY(-1px);}
 <body>
 
 <div class="card">
-    <h2>Springer-Dispo Pro v45.1</h2>
+    <h2>Springer-Dispo Pro v45.2</h2>
     <label>Einrichtung / Ziel</label>
     <select id="schoolSelect">
         <option value="">-- Einrichtung wählen --</option>
@@ -214,14 +214,19 @@ function getDateRange(start, end) {
 
 function checkDriverDays(name, range, events) {
     const searchName = name.toLowerCase().trim();
+    // Teile den Namen in Wörter auf (z.B. ["häge", "klaus", "dieter"])
+    const nameParts = searchName.split(/\s+/).filter(p => p.length > 2);
+
     return range.map(date => {
         const hit = events.find(ev => {
             const dateMatch = ev.startDate.split(' ')[0] === date;
             let nameMatch = false;
+            
             if(ev.subCalendars && Array.isArray(ev.subCalendars)) {
                 nameMatch = ev.subCalendars.some(sc => {
-                    const scName = sc.toLowerCase().trim();
-                    return scName === searchName || scName.includes(searchName) || searchName.includes(scName);
+                    const scLower = sc.toLowerCase().trim();
+                    // Prüfe ob irgendein Namens-Teil im Unterkalender vorkommt
+                    return nameParts.some(part => scLower.includes(part)) || scLower.includes(searchName);
                 });
             }
             return dateMatch && nameMatch;
