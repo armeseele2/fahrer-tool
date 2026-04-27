@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Springer-Dispo Pro v44.0</title>
+<title>Springer-Dispo Pro v45.0 (Split-Logik)</title>
 
 <style>
 :root{
@@ -28,11 +28,20 @@ button:hover{transform:translateY(-1px);}
 .log{margin-top:14px;padding:14px;background:#0f172a;color:#4ade80;font-family:Consolas,monospace;border-radius:14px;font-size:.85rem;min-height:58px;white-space:pre-wrap;}
 #results{max-width:920px;margin:18px auto;}
 .driver{background:#fff;padding:16px;border-radius:18px;margin-bottom:12px;display:flex;justify-content:space-between;gap:15px;align-items:center;box-shadow:0 8px 20px rgba(0,0,0,.06);border-left:8px solid #d1d5db;}
-.driver.free{border-left-color:var(--green);}
-.driver.busy{border-left-color:var(--red);background:#fff7f7;}
-.state{display:inline-block;padding:6px 10px;border-radius:999px;font-size:.78rem;font-weight:700;color:#fff;margin:6px 0;}
+.driver.full-free{border-left-color:var(--green);}
+.driver.partial-free{border-left-color:#fbbf24;}
+.driver.full-busy{border-left-color:var(--red);background:#fff7f7;}
+
+.day-bar{display:flex;gap:4px;margin-top:8px;}
+.day-dot{width:20px;height:20px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;font-weight:bold;cursor:help;}
+.dot-free{background:var(--green);}
+.dot-busy{background:var(--red);}
+
+.state{display:inline-block;padding:4px 8px;border-radius:999px;font-size:.72rem;font-weight:700;color:#fff;margin:4px 0;}
 .state.free{background:var(--green);}
+.state.partial{background:#fbbf24;color:#92400e;}
 .state.busy{background:var(--red);}
+
 .small{font-size:.86rem;color:var(--muted);}
 .right{min-width:110px;text-align:right;font-size:1.08rem;font-weight:800;}
 .modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:2000;justify-content:center;align-items:center;backdrop-filter:blur(4px);}
@@ -43,7 +52,7 @@ button:hover{transform:translateY(-1px);}
 <body>
 
 <div class="card">
-    <h2>Springer-Dispo Pro v44.0</h2>
+    <h2>Springer-Dispo Pro v45.0</h2>
     
     <label>Einrichtung / Ziel</label>
     <select id="schoolSelect">
@@ -72,8 +81,6 @@ button:hover{transform:translateY(-1px);}
         <option value="30890">Bert-Brecht-Schule (30890)</option>
         <option value="30853">Gutzmann Schule (30853)</option>
         <option value="30926">Anne Frank Schule (30926)</option>
-        <option value="30629">Grundschule Mühlenberg Misburg (30629)</option> 
-        <option value="30827">Ilmasi Schule (30827) </option>
     </select>
 
     <label>PLZ erstes Kind / Startpunkt</label>
@@ -125,7 +132,6 @@ button:hover{transform:translateY(-1px);}
                     <option value="Ralf">Ralf</option><option value="Sabine">Sabine</option>
                     <option value="Silke">Silke</option><option value="Steffi">Steffi</option>
                     <option value="Susanne">Susanne</option><option value="Ute">Ute</option>
-                    <option value="Yildiz">Yildiz</option>
                 </select>
             </div>
             <div>
@@ -159,7 +165,6 @@ let currentDriverForBooking = "";
 window.onload=()=>{
     const ts=document.getElementById('tourSelect');
     for(let i=1;i<=40;i++){let o=document.createElement('option');o.value="Tour "+i;o.innerText="Tour "+i;ts.appendChild(o);}
-    // PLZ automatisch füllen wenn Schule gewählt wird
     document.getElementById('schoolSelect').onchange = function() {
         if(this.value) document.getElementById('startPlz').value = this.value;
     };
@@ -174,13 +179,14 @@ function setup(){
 
 function log(txt){document.getElementById("log").textContent=txt;}
 function toggleTime(){document.getElementById("timeBox").style.display=document.getElementById("wholeDay").checked?"none":"grid";}
-function safe(t){return t.replace(/'/g,"\\'");}
+function safe(t){return t ? t.replace(/'/g,"\\'") : "";}
 
 async function run(){
     try{
         const kKey=localStorage.getItem("kKey"), kIds=localStorage.getItem("kIds"), gKey=localStorage.getItem("gKey");
         if(!kKey || !kIds || !gKey){alert("Bitte Setup ausfüllen.");return;}
         const from=document.getElementById("dateFrom").value, to=document.getElementById("dateTo").value, start=document.getElementById("startPlz").value;
+        
         log("📅 Kalender laden...");
         loadedEvents=await loadEvents(from,to,kIds,kKey);
         log("🗺️ Google Maps laden...");
@@ -188,27 +194,63 @@ async function run(){
         log("📏 Entfernungen berechnen...");
         const matrix=await getDistances(start);
         
+        const dateRange = getDateRange(from, to);
+
         let ranking=drivers.map((d,i)=>{
-            const hit=isBusy(d.name,loadedEvents);
+            const dayStates = checkDriverDays(d.name, dateRange, loadedEvents);
+            const freeCount = dayStates.filter(ds => !ds.busy).length;
             const el=matrix.rows[i].elements[0];
+            
             return {
                 ...d,
-                busy: hit.busy,
-                reason: hit.reason,
-                eventId: hit.eventId,
+                dayStates: dayStates,
+                freeCount: freeCount,
+                totalDays: dateRange.length,
                 distText: el.status==="OK" ? el.distance.text : "-",
                 distVal: el.status==="OK" ? el.distance.value : 999999
             };
         });
 
+        // Ranking: 1. Meiste freie Tage, 2. Kürzeste Entfernung
         ranking.sort((a,b) => {
-            if(a.busy !== b.busy) return a.busy ? 1 : -1;
+            if(a.freeCount !== b.freeCount) return b.freeCount - a.freeCount;
             return a.distVal - b.distVal;
         });
 
         render(ranking);
         log("✅ Fertig.");
-    }catch(e){log("❌ "+e.message);}
+    }catch(e){log("❌ "+e.message); console.error(e);}
+}
+
+function getDateRange(start, end) {
+    let dates = [];
+    let curr = new Date(start);
+    const last = new Date(end);
+    while(curr <= last) {
+        dates.push(curr.toISOString().split('T')[0]);
+        curr.setDate(curr.getDate() + 1);
+    }
+    return dates;
+}
+
+function checkDriverDays(name, range, events) {
+    const full = name.toLowerCase().trim();
+    return range.map(date => {
+        const hit = events.find(ev => {
+            let calMatch = false;
+            if(Array.isArray(ev.subCalendars)) {
+                calMatch = ev.subCalendars.some(sc => sc.toLowerCase().trim() === full || sc.toLowerCase().trim().includes(full));
+            }
+            const dateMatch = ev.startDate.startsWith(date);
+            return calMatch && dateMatch;
+        });
+        return {
+            date: date,
+            busy: !!hit,
+            reason: hit ? hit.title : "",
+            eventId: hit ? hit.id : null
+        };
+    });
 }
 
 async function loadEvents(from,to,kIds,kKey){
@@ -220,19 +262,10 @@ async function loadEvents(from,to,kIds,kKey){
         const r=await fetch(proxy,{headers:{"X-API-KEY":kKey}});
         if(!r.ok)continue;
         const data=await r.json();
-        if(Array.isArray(data))all.push(...data);else if(Array.isArray(data.events))all.push(...data.events);
+        const evs = Array.isArray(data) ? data : (data.events || []);
+        all.push(...evs);
     }
     return all;
-}
-
-function isBusy(name,events){
-    const full=name.toLowerCase().trim();
-    for(const ev of events){
-        let txt="";
-        if(Array.isArray(ev.subCalendars)) txt=ev.subCalendars.join(" ").toLowerCase().trim();
-        if(txt===full || txt.includes(full)){return{busy:true,reason:ev.title||"Belegt",eventId:ev.id};}
-    }
-    return{busy:false,reason:"",eventId:null};
 }
 
 function loadGoogle(key){
@@ -252,23 +285,34 @@ function getDistances(start){
 }
 
 function render(list){
-    document.getElementById("results").innerHTML=list.map(d=>`
-    <div class="driver ${d.busy?'busy':'free'}">
-        <div>
-            <strong>${d.name}</strong><br>
-            <div class="small">${d.plz}</div>
-            ${d.busy ? `
-                <span class="state busy">BESETZT</span><br>
-                <div class="small">${d.reason}</div>
-                <button class="del-btn" onclick="deleteEvent('${d.eventId}')">🗑️ Löschen</button>
-            ` : `
-                <span class="state free">FREI</span><br>
-                <button class="book-btn" onclick="openModal('${safe(d.name)}')">BUCHEN</button>
-            `}
+    document.getElementById("results").innerHTML=list.map(d=>{
+        const isFullFree = d.freeCount === d.totalDays;
+        const isFullBusy = d.freeCount === 0;
+        const cardClass = isFullFree ? 'full-free' : (isFullBusy ? 'full-busy' : 'partial-free');
+        const stateText = isFullFree ? 'VOLL FREI' : (isFullBusy ? 'VOLL BESETZT' : `${d.freeCount}/${d.totalDays} TAGE FREI`);
+        const stateClass = isFullFree ? 'free' : (isFullBusy ? 'busy' : 'partial');
+
+        return `
+        <div class="driver ${cardClass}">
+            <div>
+                <strong>${d.name}</strong><br>
+                <div class="small">${d.plz}</div>
+                <span class="state ${stateClass}">${stateText}</span>
+                <div class="day-bar">
+                    ${d.dayStates.map(ds => `
+                        <div class="day-dot ${ds.busy?'dot-busy':'dot-free'}" title="${ds.date}: ${ds.busy ? ds.reason : 'Frei'}">
+                            ${ds.date.split('-')[2]}
+                        </div>
+                    `).join("")}
+                </div>
+                <div style="margin-top:10px;">
+                    <button class="book-btn" onclick="openModal('${safe(d.name)}')">BUCHEN</button>
+                </div>
+            </div>
+            <div class="right">${d.distText}</div>
         </div>
-        <div class="right">${d.distText}</div>
-    </div>
-    `).join("");
+        `;
+    }).join("");
 }
 
 function openModal(name){
