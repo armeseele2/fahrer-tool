@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Springer-Dispo Pro v43.8 FINAL</title>
+<title>Springer-Dispo Pro v43.9 FINAL</title>
 
 <style>
 :root{
@@ -43,7 +43,7 @@ button:hover{transform:translateY(-1px);}
 <body>
 
 <div class="card">
-    <h2>Springer-Dispo Pro v43.8</h2>
+    <h2>Springer-Dispo Pro v43.9</h2>
     
     <label>Einrichtung / Ziel</label>
     <select id="schoolSelect">
@@ -166,12 +166,26 @@ async function run(){
         await loadGoogle(gKey);
         log("📏 Entfernungen berechnen...");
         const matrix=await getDistances(start);
+        
         let ranking=drivers.map((d,i)=>{
             const hit=isBusy(d.name,loadedEvents);
             const el=matrix.rows[i].elements[0];
-            return{...d,busy:hit.busy,reason:hit.reason,eventId:hit.eventId,distText:el.status==="OK"?el.distance.text:"-",distVal:el.status==="OK"?el.distance.value:999999};
+            return {
+                ...d,
+                busy: hit.busy,
+                reason: hit.reason,
+                eventId: hit.eventId,
+                distText: el.status==="OK" ? el.distance.text : "-",
+                distVal: el.status==="OK" ? el.distance.value : 999999
+            };
         });
-        ranking.sort((a,b)=>(a.busy-b.busy)||(a.distVal-a.distVal));
+
+        // KORRIGIERTE SORTIERUNG: Erst Status (frei vor besetzt), dann Entfernung
+        ranking.sort((a,b) => {
+            if(a.busy !== b.busy) return a.busy ? 1 : -1;
+            return a.distVal - b.distVal;
+        });
+
         render(ranking);
         log("✅ Fertig.");
     }catch(e){log("❌ "+e.message);}
