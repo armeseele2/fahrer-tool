@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Springer-Dispo Pro v43.9 FINAL</title>
+<title>Springer-Dispo Pro v44.0</title>
 
 <style>
 :root{
@@ -43,21 +43,35 @@ button:hover{transform:translateY(-1px);}
 <body>
 
 <div class="card">
-    <h2>Springer-Dispo Pro v43.9</h2>
+    <h2>Springer-Dispo Pro v44.0</h2>
     
     <label>Einrichtung / Ziel</label>
     <select id="schoolSelect">
+        <option value="">-- Einrichtung wählen --</option>
         <option value="30655">Albert-Liebmann-Schule (30655)</option>
         <option value="30165">Lebenshilfe Büttnerstraße (30165)</option>
+        <option value="30900">Kindergarten Domino (30900)</option>
+        <option value="30165">Kindergarten - Forst Mecklenheide (30165)</option>
+        <option value="30880">Freie Martinschule (30880)</option>
+        <option value="30851">Kindergarten Langenhagen (30851)</option>
+        <option value="30629">Kindergarten Misburg (30629)</option>
+        <option value="31535">Michael-Ende-Schule (31535)</option>
+        <option value="31515">Paul-Moor-Schule (31515)</option>
+        <option value="30938">Pestalozzi-Schule (30938)</option>
+        <option value="31303">Grundschule Otze (31303)</option>
+        <option value="31303">Schule am Wasserwerk (31303)</option>
+        <option value="31319">Schule im Großen Freien (31319)</option>
+        <option value="30900">Unter den Eichen/BOS (30900)</option>
+        <option value="30165">Stötzner-Schule (30165)</option>
         <option value="30449">Wilhelm-Schade-Schule (30449)</option>
-        <option value="30853">Pestalozzi-Schule (30853)</option>
-        <option value="30880">Mecklenheide Forst (30880)</option>
-        <option value="30539">Gutzmannschule (30539)</option>
-        <option value="30419">Schule auf dem Gebirge (30419)</option>
-        <option value="30629">Paul-Klee-Schule (30629)</option>
-        <option value="30171">Leinetalschulen (30171)</option>
-        <option value="30827">Schule am Storchennest (30827)</option>
-        <option value="30916">Erich-Kästner-Schule (30916)</option>
+        <option value="30559">Bildungszentrum für Taubblinde (30559)</option>
+        <option value="30900">GS Bissendorf/ Brelingen (30900)</option>
+        <option value="30855">Adolf-Reichwein-Schule (30855)</option>
+        <option value="30982">Calenberger Schule (30982)</option>
+        <option value="30938">Kindergarten Craney (30938)</option>
+        <option value="30890">Bert-Brecht-Schule (30890)</option>
+        <option value="30853">Gutzmann Schule (30853)</option>
+        <option value="30926">Anne Frank Schule (30926)</option>
     </select>
 
     <label>PLZ erstes Kind / Startpunkt</label>
@@ -142,6 +156,10 @@ let currentDriverForBooking = "";
 window.onload=()=>{
     const ts=document.getElementById('tourSelect');
     for(let i=1;i<=40;i++){let o=document.createElement('option');o.value="Tour "+i;o.innerText="Tour "+i;ts.appendChild(o);}
+    // PLZ automatisch füllen wenn Schule gewählt wird
+    document.getElementById('schoolSelect').onchange = function() {
+        if(this.value) document.getElementById('startPlz').value = this.value;
+    };
 };
 
 function setup(){
@@ -180,7 +198,6 @@ async function run(){
             };
         });
 
-        // KORRIGIERTE SORTIERUNG: Erst Status (frei vor besetzt), dann Entfernung
         ranking.sort((a,b) => {
             if(a.busy !== b.busy) return a.busy ? 1 : -1;
             return a.distVal - b.distVal;
