@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Springer-Dispo Pro v43.6 FINAL</title>
+<title>Springer-Dispo Pro v43.8 FINAL</title>
 
 <style>
 :root{
@@ -43,7 +43,7 @@ button:hover{transform:translateY(-1px);}
 <body>
 
 <div class="card">
-    <h2>Springer-Dispo Pro v43.6</h2>
+    <h2>Springer-Dispo Pro v43.8</h2>
     
     <label>Einrichtung / Ziel</label>
     <select id="schoolSelect">
@@ -250,28 +250,50 @@ function updatePopDesc(){
 }
 
 async function confirmBooking(){
+    const kKey=localStorage.getItem("kKey"),from=document.getElementById("dateFrom").value,to=document.getElementById("dateTo").value,whole=document.getElementById("wholeDay").checked,school=document.getElementById('schoolSelect').selectedOptions[0].text;
+    const desc = document.getElementById('popDesc').value;
     closeModal();
     try{
-        const kKey=localStorage.getItem("kKey"),from=document.getElementById("dateFrom").value,to=document.getElementById("dateTo").value,whole=document.getElementById("wholeDay").checked,school=document.getElementById('schoolSelect').selectedOptions[0].text;
         const payload={
             startDate:whole?`${from} 00:00:00`:`${from} ${document.getElementById("startTime").value}:00`,
             endDate:whole?`${to} 23:59:59`:`${to} ${document.getElementById("endTime").value}:00`,
-            timeZone:"Europe/Berlin",title:school,description:document.getElementById('popDesc').value,wholeDay:whole,subCalendars:[currentDriverForBooking]
+            timeZone:"Europe/Berlin",title:school,description:desc,wholeDay:whole,subCalendars:[currentDriverForBooking]
         };
         log("⏳ Speichere...");
-        await fetch("https://corsproxy.io/?"+encodeURIComponent("https://api.kalender.digital/public/event"),{
+        const url = "https://api.kalender.digital/public/event";
+        const proxy = "https://corsproxy.io/?" + encodeURIComponent(url);
+        const r = await fetch(proxy,{
             method:"POST",headers:{"Content-Type":"application/json","X-API-KEY":kKey},body:JSON.stringify(payload)
         });
-        run();
-    }catch(e){alert("Fehler beim Speichern");log("Bereit.");}
+        if(r.ok){
+            alert("✅ Eingetragen!");
+            run();
+        } else {
+            throw new Error("Fehler beim Speichern.");
+        }
+    }catch(e){
+        alert("❌ Fehler beim Speichern: " + e.message);
+        log("Bereit.");
+    }
 }
 
 async function deleteEvent(id){
-    if(!confirm("Löschen?"))return;
+    if(!confirm("Möchten Sie diesen Termin wirklich löschen?"))return;
     try{
-        await fetch("https://corsproxy.io/?"+encodeURIComponent(`https://api.kalender.digital/public/event/${id}`),{method:"DELETE",headers:{"X-API-KEY":localStorage.getItem("kKey")}});
-        run();
-    }catch(e){alert("Fehler beim Löschen");}
+        log("⏳ Lösche Termin...");
+        const url = `https://api.kalender.digital/public/event/${id}`;
+        const proxy = "https://corsproxy.io/?" + encodeURIComponent(url);
+        const r = await fetch(proxy,{method:"DELETE",headers:{"X-API-KEY":localStorage.getItem("kKey")}});
+        if(r.ok){
+            alert("✅ Gelöscht!");
+            run();
+        } else {
+            throw new Error("Fehler beim Löschen.");
+        }
+    }catch(e){
+        alert("❌ Fehler beim Löschen: " + e.message);
+        log("Bereit.");
+    }
 }
 </script>
 </body>
