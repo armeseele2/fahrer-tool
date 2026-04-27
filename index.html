@@ -13,12 +13,13 @@
 --green2:#15803d;
 --red:#dc2626;
 --bg:#eef2f7;
---card:#ffffff;
 --line:#e5e7eb;
 --text:#111827;
 --muted:#6b7280;
 }
-*{box-sizing:border-box}
+
+*{box-sizing:border-box;}
+
 body{
 margin:0;
 padding:22px;
@@ -26,54 +27,55 @@ font-family:Segoe UI,Arial,sans-serif;
 background:linear-gradient(135deg,#eef2f7,#dbeafe);
 color:var(--text);
 }
+
 .card{
 max-width:920px;
 margin:auto;
-background:rgba(255,255,255,.95);
+background:#fff;
 padding:26px;
 border-radius:24px;
 box-shadow:0 20px 60px rgba(0,0,0,.10);
 }
+
 h2{
 margin:0 0 18px;
 text-align:center;
 color:var(--blue);
-font-size:1.8rem;
 }
+
 label{
 display:block;
 margin:12px 0 6px;
-font-size:.92rem;
 font-weight:700;
+font-size:.92rem;
 }
+
 input,select,textarea{
 width:100%;
 padding:12px;
 border:1px solid var(--line);
 border-radius:12px;
 font-size:1rem;
-background:#fff;
 }
-input:focus,select:focus,textarea:focus{
-outline:none;
-border-color:var(--blue);
-box-shadow:0 0 0 3px rgba(37,99,235,.10);
-}
+
 .row{
 display:grid;
 grid-template-columns:1fr 1fr;
 gap:14px;
 }
+
 .inline{
 display:flex;
 align-items:center;
 gap:10px;
 margin-top:10px;
 }
+
 .inline input{
 width:auto;
 transform:scale(1.2);
 }
+
 button{
 border:none;
 border-radius:12px;
@@ -81,7 +83,9 @@ cursor:pointer;
 font-weight:700;
 transition:.2s;
 }
-button:hover{transform:translateY(-1px)}
+
+button:hover{transform:translateY(-1px);}
+
 .main-btn{
 width:100%;
 padding:15px;
@@ -90,18 +94,21 @@ background:linear-gradient(135deg,var(--blue),var(--blue2));
 color:#fff;
 font-size:1rem;
 }
+
 .setup-btn{
 width:100%;
 padding:12px;
 margin-top:10px;
 background:#f3f4f6;
 }
+
 .book-btn{
 padding:10px 14px;
 background:linear-gradient(135deg,var(--green),var(--green2));
 color:#fff;
 margin-top:8px;
 }
+
 .del-btn{
 padding:10px 14px;
 background:#fff;
@@ -109,6 +116,7 @@ color:var(--red);
 border:1px solid #fecaca;
 margin-top:8px;
 }
+
 .log{
 margin-top:14px;
 padding:14px;
@@ -120,10 +128,12 @@ font-size:.85rem;
 min-height:58px;
 white-space:pre-wrap;
 }
+
 #results{
 max-width:920px;
 margin:18px auto;
 }
+
 .driver{
 background:#fff;
 padding:16px;
@@ -136,11 +146,13 @@ align-items:center;
 box-shadow:0 8px 20px rgba(0,0,0,.06);
 border-left:8px solid #d1d5db;
 }
-.driver.free{border-left-color:var(--green)}
+
+.driver.free{border-left-color:var(--green);}
 .driver.busy{
 border-left-color:var(--red);
 background:#fff7f7;
 }
+
 .state{
 display:inline-block;
 padding:6px 10px;
@@ -150,18 +162,22 @@ font-weight:700;
 color:#fff;
 margin:6px 0;
 }
-.state.free{background:var(--green)}
-.state.busy{background:var(--red)}
+
+.state.free{background:var(--green);}
+.state.busy{background:var(--red);}
+
 .small{
 font-size:.86rem;
 color:var(--muted);
 }
+
 .right{
 min-width:110px;
 text-align:right;
 font-size:1.08rem;
 font-weight:800;
 }
+
 .modal{
 position:fixed;
 inset:0;
@@ -172,34 +188,38 @@ align-items:center;
 padding:18px;
 z-index:999;
 }
+
 .modal-box{
 background:#fff;
 width:100%;
 max-width:520px;
 padding:24px;
 border-radius:22px;
-box-shadow:0 25px 60px rgba(0,0,0,.22);
 }
+
 .modal-actions{
 display:flex;
 gap:10px;
 margin-top:18px;
 }
+
 .cancel-btn{
 flex:1;
 padding:12px;
 background:#e5e7eb;
 }
+
 .save-btn{
 flex:2;
 padding:12px;
 background:linear-gradient(135deg,var(--blue),var(--blue2));
 color:#fff;
 }
+
 @media(max-width:760px){
-.row{grid-template-columns:1fr}
-.driver{flex-direction:column;align-items:flex-start}
-.right{text-align:left}
+.row{grid-template-columns:1fr;}
+.driver{flex-direction:column;align-items:flex-start;}
+.right{text-align:left;}
 }
 </style>
 </head>
@@ -207,6 +227,7 @@ color:#fff;
 <body>
 
 <div class="card">
+
 <h2>Springer-Dispo Pro v43.4</h2>
 
 <label>Einrichtung / Ziel</label>
@@ -258,57 +279,13 @@ color:#fff;
 <button class="setup-btn" onclick="setup()">⚙️ API Einstellungen</button>
 
 <div id="log" class="log">Bereit.</div>
+
 </div>
 
 <div id="results"></div>
 
-<div class="modal" id="bookModal">
-<div class="modal-box">
-
-<h3 style="margin-top:0;">Fahrer buchen</h3>
-
-<label>Fahrer</label>
-<input id="popDriver" readonly>
-
-<div class="row">
-<div>
-<label>Melder</label>
-<select id="nameSelect" onchange="autoText()">
-<option value="">-- wählen --</option>
-<option>Angela</option><option>Anja</option><option>Beate</option>
-<option>Bettina</option><option>Birgit</option><option>Christiane</option>
-<option>Daniela</option><option>Frank</option><option>Gerhard</option>
-<option>Heike</option><option>Jürgen</option><option>Karin</option>
-<option>Katja</option><option>Kerstin</option><option>Klaus</option>
-<option>Manuela</option><option>Marion</option><option>Michael</option>
-<option>Moni</option><option>Nicole</option><option>Nina</option>
-<option>Petra</option><option>Ralf</option><option>Sabine</option>
-<option>Silke</option><option>Steffi</option><option>Susanne</option>
-<option>Ute</option>
-</select>
-</div>
-
-<div>
-<label>Tour</label>
-<select id="tourSelect" onchange="autoText()">
-<option value="">-- Tour --</option>
-</select>
-</div>
-</div>
-
-<label>Beschreibung</label>
-<textarea id="popDesc" rows="3"></textarea>
-
-<div class="modal-actions">
-<button class="cancel-btn" onclick="closeModal()">Abbruch</button>
-<button class="save-btn" onclick="confirmBooking()">Eintragen</button>
-</div>
-
-</div>
-</div>
-
 <script>
-const drivers=[
+const drivers = [
 {name:"Aschenbach André",plz:"30989"},
 {name:"Ohm Lars",plz:"30559"},
 {name:"Bachmeier Reinhard",plz:"30659"},
@@ -332,16 +309,6 @@ const drivers=[
 ];
 
 let loadedEvents=[];
-let currentDriver="";
-
-window.onload=()=>{
-for(let i=1;i<=40;i++){
-const o=document.createElement("option");
-o.value="Tour "+i;
-o.textContent="Tour "+i;
-document.getElementById("tourSelect").appendChild(o);
-}
-};
 
 function setup(){
 localStorage.setItem("kKey",prompt("Kalender API Key:",localStorage.getItem("kKey")||""));
@@ -350,27 +317,172 @@ localStorage.setItem("gKey",prompt("Google API Key:",localStorage.getItem("gKey"
 location.reload();
 }
 
-function log(t){document.getElementById("log").textContent=t;}
+function log(txt){
+document.getElementById("log").textContent=txt;
+}
 
 function toggleTime(){
-document.getElementById("timeBox").style.display=
-document.getElementById("wholeDay").checked?"none":"grid";
+document.getElementById("timeBox").style.display =
+document.getElementById("wholeDay").checked ? "none" : "grid";
 }
 
-function safe(t){return t.replace(/'/g,"\\'");}
+function safe(t){
+return t.replace(/'/g,"\\'");
+}
 
-function autoText(){
-const n=document.getElementById("nameSelect").value.trim();
-const t=document.getElementById("tourSelect").value.trim();
+/* WICHTIG: GLOBAL DEFINIERT */
+async function run(){
+try{
+const kKey=localStorage.getItem("kKey");
+const kIds=localStorage.getItem("kIds");
+const gKey=localStorage.getItem("gKey");
 
+if(!kKey || !kIds || !gKey){
+alert("Bitte Setup ausfüllen.");
+return;
+}
+
+const from=document.getElementById("dateFrom").value;
+const to=document.getElementById("dateTo").value;
+const start=document.getElementById("startPlz").value;
+
+log("📅 Kalender laden...");
+loadedEvents=await loadEvents(from,to,kIds,kKey);
+
+log("🗺️ Google Maps laden...");
+await loadGoogle(gKey);
+
+log("📏 Entfernungen berechnen...");
+const matrix=await getDistances(start);
+
+let ranking=drivers.map((d,i)=>{
+const hit=isBusy(d.name,loadedEvents);
+const el=matrix.rows[i].elements[0];
+
+return{
+...d,
+busy:hit.busy,
+reason:hit.reason,
+eventId:hit.eventId,
+distText:el.status==="OK" ? el.distance.text : "-",
+distVal:el.status==="OK" ? el.distance.value : 999999
+};
+});
+
+ranking.sort((a,b)=>(a.busy-b.busy)||(a.distVal-b.distVal));
+
+render(ranking);
+
+log("✅ Fertig.");
+}
+catch(e){
+console.error(e);
+log("❌ "+e.message);
+}
+}
+
+async function loadEvents(from,to,kIds,kKey){
+let all=[];
+
+for(const raw of kIds.split(",")){
+const id=raw.trim();
+
+const url=`https://api.kalender.digital/public/event?calendarId=${id}&startDate=${from}&endDate=${to}T23:59:59&timeZone=Europe/Berlin&x=${Date.now()}`;
+
+const proxy="https://corsproxy.io/?"+encodeURIComponent(url);
+
+const r=await fetch(proxy,{
+headers:{"X-API-KEY":kKey}
+});
+
+if(!r.ok) continue;
+
+const data=await r.json();
+
+if(Array.isArray(data)) all.push(...data);
+else if(Array.isArray(data.events)) all.push(...data.events);
+}
+
+return all;
+}
+
+function isBusy(name,events){
+const full=name.toLowerCase().trim();
+
+for(const ev of events){
 let txt="";
-if(n) txt += n + " meldet sich.";
-if(t) txt += (txt ? " " : "") + t;
 
-document.getElementById("popDesc").value=txt;
+if(Array.isArray(ev.subCalendars)){
+txt=ev.subCalendars.join(" ").toLowerCase().trim();
 }
 
-/* REST DEINER FUNKTIONEN BLEIBT UNVERÄNDERT */
+if(txt===full || txt.includes(full)){
+return{
+busy:true,
+reason:ev.title || "Belegt",
+eventId:ev.id
+};
+}
+}
+
+return{
+busy:false,
+reason:"",
+eventId:null
+};
+}
+
+function loadGoogle(key){
+return new Promise(resolve=>{
+if(typeof google!=="undefined"){
+resolve();
+return;
+}
+
+const s=document.createElement("script");
+s.src=`https://maps.googleapis.com/maps/api/js?key=${key}`;
+s.onload=resolve;
+document.head.appendChild(s);
+});
+}
+
+function getDistances(start){
+return new Promise((resolve,reject)=>{
+new google.maps.DistanceMatrixService().getDistanceMatrix({
+origins:drivers.map(d=>d.plz),
+destinations:[start],
+travelMode:"DRIVING"
+},(res,status)=>{
+if(status!=="OK"){
+reject(new Error("Google Fehler"));
+return;
+}
+resolve(res);
+});
+});
+}
+
+function render(list){
+document.getElementById("results").innerHTML=list.map(d=>`
+<div class="driver ${d.busy?'busy':'free'}">
+<div>
+<strong>${d.name}</strong><br>
+<div class="small">${d.plz}</div>
+
+${d.busy ? `
+<span class="state busy">BESETZT</span><br>
+<div class="small">${d.reason}</div>
+<button class="del-btn">🗑️ Löschen</button>
+` : `
+<span class="state free">FREI</span><br>
+<button class="book-btn">BUCHEN</button>
+`}
+</div>
+
+<div class="right">${d.distText}</div>
+</div>
+`).join("");
+}
 </script>
 </body>
 </html>
